@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ฟอร์มเก็บเงินสาขา IT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Vue 3 (jsDelivr - reliable CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+
+  <style>
+    body { font-family: 'Sarabun', sans-serif; }
+
+    .gf-input {
+      border: none;
+      border-bottom: 1px solid #dadce0;
+      outline: none;
+      padding: 4px 0 8px;
+      width: 100%;
+      font-size: 15px;
+      font-family: 'Sarabun', sans-serif;
+      background: transparent;
+      color: #202124;
+      transition: border-color .2s;
+    }
+    .gf-input:focus { border-bottom: 2px solid #673ab7; }
+    .gf-input.error { border-bottom: 2px solid #d93025; }
+    .gf-input::placeholder { color: #9aa0a6; font-size: 13px; }
+
+    .gf-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.12);
+      padding: 24px;
+    }
+
+    .drop-zone {
+      border: 2px dashed #c7c7c7;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .drop-zone:hover, .drop-zone.dragging {
+      border-color: #673ab7;
+      background: #f3e5f5;
+    }
+
+    .btn-primary {
+      background: #673ab7;
+      color: white;
+      font-weight: 500;
+      font-size: 14px;
+      padding: 10px 28px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: background .2s;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .btn-primary:hover { background: #5e35b1; }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+    .fade-enter-active, .fade-leave-active { transition: opacity .25s; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+    .slide-enter-active, .slide-leave-active { transition: all .3s ease; }
+    .slide-enter-from { opacity: 0; transform: translateY(20px); }
+    .slide-leave-to { opacity: 0; transform: translateY(20px); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin .8s linear infinite; display: inline-block; }
+
+    .qr-bg {
+      background: linear-gradient(145deg, #e8f5e9, #e3f2fd, #ede7f6);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen py-8 px-3">
+
+<!-- Loading fallback (hidden once Vue mounts) -->
+<div id="loading" style="text-align:center;padding:60px;color:#9aa0a6;font-family:'Sarabun',sans-serif;">
+  กำลังโหลด...
+</div>
+
+<div id="app" style="display:none">
+
+  <!-- SUCCESS -->
+  <div v-if="submitted" class="max-w-xl mx-auto text-center py-20">
+    <div class="gf-card">
+      <div style="font-size:64px">✅</div>
+      <h2 class="text-2xl font-semibold text-gray-800 mt-3 mb-2">ส่งแบบฟอร์มเรียบร้อย</h2>
+      <p class="text-gray-500 text-sm">ขอบคุณ <span class="font-semibold text-purple-700">{{ form.name }}</span> ที่ชำระเงิน</p>
+      <p class="text-gray-400 text-xs mt-1 mb-6">ระบบจะตรวจสอบสลิปภายใน 24 ชั่วโมง</p>
+      <button class="btn-primary" @click="reset">ส่งอีกครั้ง</button>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div v-else class="max-w-xl mx-auto" style="display:flex;flex-direction:column;gap:12px">
+
+    <!-- Header -->
+    <div class="gf-card" style="border-top:10px solid #673ab7">
+      <h1 class="text-2xl font-semibold text-gray-800">
+        ฟอร์มเก็บเงินสาขา<br/>
+        ประจำเดือน <span style="color:#673ab7">{{ monthTH }}</span>
+      </h1>
+
+      <!-- Bank info -->
+      <div class="mt-4 rounded-xl p-4" style="background:#f8f9fa">
+        <div class="flex items-center gap-3 mb-3">
+          <span style="font-size:28px">🏦</span>
+          <div>
+            <p class="font-semibold text-gray-800">ธนาคารกสิกรไทย</p>
+            <p class="text-gray-500 text-xs">50 บาท / เดือน</p>
+          </div>
+        </div>
+        <div class="flex gap-8 pl-1">
+          <div>
+            <p class="text-xs text-gray-400">เลขบัญชี</p>
+            <p class="font-semibold text-gray-800" style="letter-spacing:1px">202-3-90895-9</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400">ชื่อบัญชี</p>
+            <p class="font-semibold text-gray-800">นายไพศาล กองมณี</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deadline -->
+      <div class="mt-3 flex items-center gap-3 rounded-r-xl px-4 py-3"
+           style="background:#fff3e0;border-left:4px solid #ff6d00">
+        <span style="font-size:20px">⏰</span>
+        <div class="flex-1">
+          <p class="text-xs font-semibold" style="color:#e65100">กำหนดชำระ</p>
+          <p class="text-sm" style="color:#bf360c">
+            <strong>วันที่ 8 {{ monthTH }}</strong> เวลา 00:00 น.
+          </p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs" style="color:#ff6d00">เหลืออีก</p>
+          <p class="text-xl font-bold" style="color:#e65100">
+            {{ daysLeft }} <span class="text-xs font-normal">วัน</span>
+          </p>
+        </div>
+      </div>
+
+      <p class="text-xs mt-4" style="color:#d93025">* ระบุว่าเป็นคำถามที่จำเป็น</p>
+    </div>
+
+    <!-- Email -->
+    <div class="gf-card">
+      <label class="block text-sm font-medium text-gray-700 mb-3">
+        อีเมล <span style="color:#d93025">*</span>
+      </label>
+      <input v-model="form.email" type="email"
+             :class="['gf-input', errors.email ? 'error' : '']"
+             placeholder="example@ku.th"
+             @blur="validate('email')" />
+      <p v-if="errors.email" class="text-xs mt-1" style="color:#d93025">{{ errors.email }}</p>
+    </div>
+
+    <!-- Student ID -->
+    <div class="gf-card">
+      <label class="block text-sm font-medium text-gray-700 mb-3">
+        รหัสนิสิต <span style="color:#d93025">*</span>
+      </label>
+      <div class="relative">
+        <input v-model="form.studentId" type="text"
+               :class="['gf-input', errors.studentId ? 'error' : '']"
+               placeholder="กรอกรหัสนิสิต 10 หลัก"
+               maxlength="10"
+               @input="lookupStudent"
+               @blur="validate('studentId')" />
+        <span v-if="lookup.found" class="absolute right-0 top-1 text-sm" style="color:#2e7d32">✓ พบข้อมูล</span>
+        <span v-if="lookup.miss" class="absolute right-0 top-1 text-xs" style="color:#c62828">ไม่พบรหัสนี้</span>
+      </div>
+      <p v-if="errors.studentId" class="text-xs mt-1" style="color:#d93025">{{ errors.studentId }}</p>
+    </div>
+
+    <!-- Name -->
+    <div class="gf-card">
+      <label class="block text-sm font-medium text-gray-700 mb-3">
+        ชื่อ นามสกุล
+        <span class="font-normal text-gray-400">(ไม่ต้องใส่คำนำหน้า)</span>
+        <span style="color:#d93025">*</span>
+      </label>
+      <input v-model="form.name" type="text"
+             :class="['gf-input', errors.name ? 'error' : '']"
+             placeholder="ชื่อ นามสกุล"
+             @blur="validate('name')" />
+      <p v-if="errors.name" class="text-xs mt-1" style="color:#d93025">{{ errors.name }}</p>
+    </div>
+
+    <!-- Amount summary -->
+    <div class="gf-card" style="background:#ede7f6;border:1px solid #d1c4e9">
+      <p class="text-sm font-medium text-gray-700 mb-3">สรุปยอดที่ต้องชำระ</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-600">ค่าธรรมเนียมเดือน {{ monthTH }}</span>
+          <span class="font-medium text-gray-800">50.00 บาท</span>
+        </div>
+        <div v-if="penalty > 0" class="flex justify-between text-sm">
+          <span style="color:#c62828">ค่าปรับ ({{ penaltyDays }} วัน × 5 บาท)</span>
+          <span class="font-medium" style="color:#c62828">{{ penalty.toFixed(2) }} บาท</span>
+        </div>
+        <div class="flex justify-between pt-2" style="border-top:1px solid #d1c4e9">
+          <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
+          <span class="text-xl font-bold" style="color:#673ab7">
+            {{ total.toFixed(2) }} <span class="text-sm font-normal">บาท</span>
+          </span>
+        </div>
+      </div>
+      <span class="inline-block mt-3 text-xs font-medium px-3 py-1 rounded-full"
+            :style="daysLeft > 0
+              ? 'background:#e8f5e9;color:#2e7d32'
+              : 'background:#ffebee;color:#c62828'">
+        {{ daysLeft > 0 ? '🟢 ยังไม่เกินกำหนด' : '🔴 เกินกำหนดชำระแล้ว' }}
+      </span>
+    </div>
+
+    <!-- QR Code -->
+    <div class="gf-card">
+      <p class="text-sm font-medium text-gray-700 mb-4">
+        สแกน QR เพื่อชำระเงิน <span style="color:#d93025">*</span>
+      </p>
+
+      <div class="qr-bg rounded-2xl p-4">
+        <!-- KBank Make Header -->
+        <div class="rounded-xl px-4 py-2 flex items-center justify-between mb-3"
+             style="background:linear-gradient(135deg,#1a3a2a,#1b5e20)">
+          <div>
+            <p class="font-bold text-lg text-white leading-none">make</p>
+            <p class="text-xs" style="color:#a5d6a7">by KBank</p>
+          </div>
+          <div class="w-7 h-7 rounded-full flex items-center justify-center"
+               style="background:rgba(255,255,255,.15)">
+            <span class="text-white text-xs font-bold">K</span>
+          </div>
+        </div>
+
+        <!-- QR frame -->
+        <div class="bg-white rounded-2xl overflow-hidden" style="box-shadow:0 2px 12px rgba(0,0,0,.12)">
+          <!-- Blue header -->
+          <div class="flex items-center gap-3 px-4 py-3" style="background:#1a237e">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center"
+                 style="background:#00bcd4">
+              <span class="text-white text-sm font-bold">+</span>
+            </div>
+            <div>
+              <p class="text-white font-bold text-sm tracking-widest">THAI QR</p>
+              <p class="text-xs tracking-widest" style="color:#90caf9">PAYMENT</p>
+            </div>
+          </div>
+
+          <div class="px-5 py-5 text-center">
+            <!-- PromptPay badge -->
+            <div class="inline-block text-white text-xs font-bold px-5 py-1 rounded mb-4 tracking-wider"
+                 style="background:#1a237e">
+              PromptPay
+            </div>
+
+            <!-- QR SVG -->
+            <div class="flex justify-center mb-4">
+              <div class="rounded-xl border-2 border-gray-100 p-3 bg-white inline-block">
+                <svg width="150" height="150" viewBox="0 0 150 150">
+                  <!-- Top-left corner -->
+                  <rect x="5" y="5" width="40" height="40" rx="5" fill="#111"/>
+                  <rect x="10" y="10" width="30" height="30" rx="3" fill="white"/>
+                  <rect x="15" y="15" width="20" height="20" rx="2" fill="#111"/>
+                  <!-- Top-right corner -->
+                  <rect x="105" y="5" width="40" height="40" rx="5" fill="#111"/>
+                  <rect x="110" y="10" width="30" height="30" rx="3" fill="white"/>
+                  <rect x="115" y="15" width="20" height="20" rx="2" fill="#111"/>
+                  <!-- Bottom-left corner -->
+                  <rect x="5" y="105" width="40" height="40" rx="5" fill="#111"/>
+                  <rect x="10" y="110" width="30" height="30" rx="3" fill="white"/>
+                  <rect x="15" y="115" width="20" height="20" rx="2" fill="#111"/>
+                  <!-- Center logo -->
+                  <circle cx="75" cy="75" r="18" fill="white" stroke="#e0e0e0" stroke-width="1.5"/>
+                  <text x="75" y="80" text-anchor="middle" font-size="13" fill="#673ab7" font-weight="bold">QR</text>
+                  <!-- Data dots -->
+                  <rect x="55" y="7" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
+                  <rect x="65" y="7" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                  <rect x="75" y="7" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
+                  <rect x="85" y="7" width="7" height="7" rx="1" fill="#111" opacity=".3"/>
+                  <rect x="95" y="7" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                  <rect x="55" y="17" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
+                  <rect x="75" y="17" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
+                  <rect x="95" y="17" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
+                  <rect x="55" y="27" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                  <rect x="65" y="27" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                  <rect x="85" y="27" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
+                  <rect x="7" y="55" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                  <rect x="7" y="65" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                  <rect x="7" y="85" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
+                  <rect x="7" y="95" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
+                  <rect x="17" y="55" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
+                  <rect x="27" y="65" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
+                  <rect x="17" y="85" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                  <rect x="27" y="95" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                  <rect x="136" y="55" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
+                  <rect x="136" y="65" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
+                  <rect x="136" y="75" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
+                  <rect x="136" y="85" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
+                  <rect x="126" y="55" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                  <rect x="116" y="65" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                  <rect x="126" y="85" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
+                  <rect x="55" y="136" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
+                  <rect x="65" y="136" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
+                  <rect x="75" y="136" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
+                  <rect x="85" y="136" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
+                  <rect x="55" y="126" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                  <rect x="75" y="126" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                  <rect x="95" y="126" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
+                  <!-- Middle area dots -->
+                  <rect x="55" y="55" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
+                  <rect x="95" y="55" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                  <rect x="55" y="95" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
+                  <rect x="95" y="95" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                  <rect x="105" y="65" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
+                  <rect x="105" y="85" width="7" height="7" rx="1" fill="#111" opacity=".3"/>
+                  <rect x="38" y="65" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                  <rect x="38" y="85" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Account info -->
+            <p class="text-sm font-medium mb-1" style="color:#00897b">
+              สแกน QR เพื่อโอนเข้าบัญชี
+            </p>
+            <p class="font-bold text-gray-800">นาย ไพศาล กองมณี</p>
+            <p class="text-sm text-gray-500 mt-0.5">xxx-x-x0895-x</p>
+            <p class="text-xs text-gray-400 mt-0.5">เลขที่อ้างอิง 004600000149479</p>
+
+            <div class="mt-3 rounded-xl px-4 py-2 text-xs text-gray-500"
+                 style="background:#f5f5f5">
+              💬 บัญชีออมทรัพย์ IT ภา
+            </div>
+
+            <div class="flex items-center justify-between mt-3 pt-3"
+                 style="border-top:1px solid #f0f0f0">
+              <p class="text-left text-gray-400" style="font-size:10px;line-height:1.4">
+                Accepts all banks<br/>รับเงินได้จากทุกธนาคาร
+              </p>
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                   style="background:#00897b">m</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Amount hint -->
+      <div class="mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-gray-500"
+           style="background:#f8f9fa">
+        💡 กรอกจำนวน
+        <strong style="color:#673ab7">{{ total.toFixed(2) }} บาท</strong>
+        ตอนโอน
+      </div>
+    </div>
+
+    <!-- Slip upload -->
+    <div class="gf-card">
+      <label class="block text-sm font-medium text-gray-700 mb-3">
+        อัปโหลดสลิป <span style="color:#d93025">*</span>
+      </label>
+
+      <!-- Preview -->
+      <div v-if="slip.preview" class="mb-3 relative">
+        <img :src="slip.preview"
+             class="w-full rounded-xl border border-gray-200"
+             style="max-height:260px;object-fit:contain" />
+        <button @click="clearSlip"
+          class="absolute top-2 right-2 rounded-full w-7 h-7 text-white text-xs flex items-center justify-center"
+          style="background:#e53935">✕</button>
+        <p class="text-xs text-center mt-1" style="color:#2e7d32">✅ อัปโหลดสลิปแล้ว</p>
+      </div>
+
+      <!-- Drop zone -->
+      <label v-if="!slip.preview" for="slipInput"
+             :class="['drop-zone flex flex-col items-center justify-center py-8 gap-2 text-center', slip.drag ? 'dragging' : '']"
+             @dragover.prevent="slip.drag = true"
+             @dragleave="slip.drag = false"
+             @drop.prevent="onDrop">
+        <span style="font-size:36px">📎</span>
+        <p class="text-sm font-medium text-gray-600">แตะหรือลากไฟล์มาวางที่นี่</p>
+        <p class="text-xs text-gray-400">PNG, JPG ไม่เกิน 10MB</p>
+        <input id="slipInput" type="file" accept="image/*" class="hidden" @change="onFile" />
+      </label>
+
+      <p v-if="errors.slip" class="text-xs mt-1.5" style="color:#d93025">{{ errors.slip }}</p>
+    </div>
+
+    <!-- Submit -->
+    <div class="gf-card flex items-center justify-between">
+      <button class="btn-primary flex items-center gap-2"
+              :disabled="submitting" @click="submit">
+        <span v-if="submitting" class="spin">⏳</span>
+        {{ submitting ? 'กำลังส่ง...' : 'ส่งแบบฟอร์ม' }}
+      </button>
+      <button @click="reset" class="text-sm" style="color:#673ab7">ล้างแบบฟอร์ม</button>
+    </div>
+
+    <p class="text-center text-xs text-gray-400 pb-6">
+      ระบบการเงิน · สาขาวิชาเทคโนโลยีสารสนเทศ · {{ year }}
+    </p>
+
+  </div>
+
+  <!-- Toast -->
+  <div v-if="toast.show"
+       :style="toast.ok ? 'background:#2e7d32' : 'background:#c62828'"
+       class="fixed text-white text-sm font-medium rounded-xl px-5 py-3 flex items-center gap-2"
+       style="bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2)">
+    {{ toast.ok ? '✅' : '❌' }} {{ toast.msg }}
+  </div>
+
+</div><!-- #app -->
+
+<script>
+const { createApp, ref, computed } = Vue
+
+createApp({
+  setup() {
+    // Hide loading, show app
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('app').style.display = 'block'
+
+    const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม',
+                      'มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม',
+                      'พฤศจิกายน','ธันวาคม']
+    const now = new Date()
+    const monthTH = computed(() => `${thMonths[now.getMonth()]} ${now.getFullYear() + 543}`)
+    const year = now.getFullYear() + 543
+
+    const daysLeft = computed(() => {
+      const dl = new Date(now.getFullYear(), now.getMonth(), 8, 0, 0, 0)
+      if (now > dl) return 0
+      return Math.ceil((dl - now) / 86400000)
+    })
+
+    const penaltyDays = computed(() => {
+      const dl = new Date(now.getFullYear(), now.getMonth(), 8)
+      if (now <= dl) return 0
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      const cap = now < end ? now : end
+      return Math.floor((cap - dl) / 86400000)
+    })
+    const penalty = computed(() => penaltyDays.value * 5)
+    const total = computed(() => 50 + penalty.value)
+
+    // Students (from name.md – sample subset; full list will load from DB)
+    const students = [
+      {id:'6821651931',name:'กฤตติณณ์ พุตติ'},
+      {id:'6821651949',name:'กฤตพล อภิชาตเมธี'},
+      {id:'6821651957',name:'กันตภณ เปรมปรีด์'},
+      {id:'6821651965',name:'กันตินันท์ พุ่มนิล'},
+      {id:'6821651973',name:'จินต์รัตนา ภิญโญรัตนโยธี'},
+      {id:'6821651981',name:'จิรัฐกร บุญคุ้ม'},
+      {id:'6821651990',name:'จิรานุวัฒน์ ขันธ์นิตย์'},
+      {id:'6821652007',name:'เจตนิพัทธ์ ตั๋นเจริญ'},
+      {id:'6821652015',name:'ฉัตรแก้ว ชูสืบสาย'},
+      {id:'6821652023',name:'ชญานุตม์ พุทจิระ'},
+      {id:'6821652155',name:'ธนดล อินทร'},
+      {id:'6821652724',name:'สัชฌุกร พันธุ์โสภณ'},
+      {id:'6821656363',name:'สิรภัทร สวัสดิภาพพันธ์'},
+      {id:'6821656339',name:'ภัทรพล สามงามเสือ'},
+      {id:'6821652295',name:'นภัสวรรณ ใจหาญ'},
+    ]
+
+    const form = ref({ email: '', studentId: '', name: '' })
+    const errors = ref({ email: '', studentId: '', name: '', slip: '' })
+    const lookup = ref({ found: false, miss: false })
+    const slip = ref({ preview: null, file: null, drag: false })
+    const submitting = ref(false)
+    const submitted = ref(false)
+    const toast = ref({ show: false, msg: '', ok: true })
+
+    function showToast(msg, ok = true) {
+      toast.value = { show: true, msg, ok }
+      setTimeout(() => toast.value.show = false, 3000)
+    }
+
+    function lookupStudent() {
+      const id = form.value.studentId
+      lookup.value = { found: false, miss: false }
+      if (id.length < 10) return
+      const s = students.find(x => x.id === id)
+      if (s) { form.value.name = s.name; lookup.value.found = true }
+      else lookup.value.miss = true
+    }
+
+    function validate(f) {
+      if (f === 'email') {
+        if (!form.value.email) errors.value.email = 'กรุณากรอกอีเมล'
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email))
+          errors.value.email = 'รูปแบบอีเมลไม่ถูกต้อง'
+        else errors.value.email = ''
+      }
+      if (f === 'studentId') {
+        if (!form.value.studentId) errors.value.studentId = 'กรุณากรอกรหัสนิสิต'
+        else if (form.value.studentId.length !== 10) errors.value.studentId = 'ต้องมี 10 หลัก'
+        else errors.value.studentId = ''
+      }
+      if (f === 'name') {
+        errors.value.name = form.value.name.trim() ? '' : 'กรุณากรอกชื่อ-นามสกุล'
+      }
+    }
+
+    function onFile(e) { loadFile(e.target.files[0]) }
+    function onDrop(e) { slip.value.drag = false; loadFile(e.dataTransfer.files[0]) }
+    function loadFile(file) {
+      if (!file) return
+      if (file.size > 10 * 1024 * 1024) { showToast('ไฟล์ใหญ่เกิน 10MB', false); return }
+      slip.value.file = file
+      errors.value.slip = ''
+      const r = new FileReader()
+      r.onload = e => slip.value.preview = e.target.result
+      r.readAsDataURL(file)
+    }
+    function clearSlip() { slip.value = { preview: null, file: null, drag: false } }
+
+    async function submit() {
+      validate('email'); validate('studentId'); validate('name')
+      if (!slip.value.file) errors.value.slip = 'กรุณาอัปโหลดสลิป'
+      if (errors.value.email || errors.value.studentId || errors.value.name || errors.value.slip) {
+        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', false); return
+      }
+      submitting.value = true
+      await new Promise(r => setTimeout(r, 1500))
+      submitting.value = false
+      submitted.value = true
+    }
+
+    function reset() {
+      form.value = { email: '', studentId: '', name: '' }
+      errors.value = { email: '', studentId: '', name: '', slip: '' }
+      lookup.value = { found: false, miss: false }
+      clearSlip()
+      submitted.value = false
+    }
+
+    return {
+      form, errors, lookup, slip, submitting, submitted, toast,
+      monthTH, year, daysLeft, penaltyDays, penalty, total,
+      lookupStudent, validate, onFile, onDrop, clearSlip, submit, reset
+    }
+  }
+}).mount('#app')
+</script>
+
+</body>
+</html>

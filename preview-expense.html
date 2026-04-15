@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบเบิกเงิน · IT Finance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+  <style>
+    * { font-family: 'Sarabun', sans-serif; box-sizing: border-box; }
+    body { background: #f4f6fb; margin: 0; }
+
+    /* Sidebar */
+    .sidebar { width: 240px; min-height: 100vh; background: #1e1b4b; position: fixed; left: 0; top: 0; z-index: 40; transition: transform .3s; }
+    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 11px 20px; border-radius: 8px; cursor: pointer; color: #c7d2fe; font-size: 14px; font-weight: 500; transition: all .2s; margin: 2px 8px; }
+    .sidebar-item:hover { background: rgba(255,255,255,.1); color: white; }
+    .sidebar-item.active { background: #4f46e5; color: white; box-shadow: 0 2px 8px rgba(79,70,229,.4); }
+
+    /* Main */
+    .main { margin-left: 240px; min-height: 100vh; }
+
+    /* Card */
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 20px; }
+
+    /* Status badge */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge-draft     { background: #f3f4f6; color: #6b7280; }
+    .badge-submitted { background: #dbeafe; color: #1d4ed8; }
+    .badge-pending   { background: #fef3c7; color: #d97706; }
+    .badge-approved  { background: #d1fae5; color: #059669; }
+    .badge-rejected  { background: #fee2e2; color: #dc2626; }
+    .badge-completed { background: #ede9fe; color: #7c3aed; }
+
+    /* Table */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl th { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; padding: 10px 14px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    .tbl td { padding: 13px 14px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    .tbl tr:hover td { background: #f9fafb; }
+    .tbl tr:last-child td { border-bottom: none; }
+
+    /* Modal backdrop */
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
+    @media(min-width:640px) { .modal-bg { align-items: center; } }
+    .modal-box { background: white; border-radius: 20px 20px 0 0; width: 100%; max-width: 640px; max-height: 92vh; overflow-y: auto; padding: 24px; }
+    @media(min-width:640px) { .modal-box { border-radius: 16px; } }
+
+    /* Input */
+    .inp { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 13px; font-size: 14px; font-family: 'Sarabun',sans-serif; outline: none; transition: border .2s; color: #111827; }
+    .inp:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+    .inp.err { border-color: #ef4444; }
+    select.inp { background: white; }
+
+    /* Btn */
+    .btn { display: inline-flex; align-items: center; gap: 6px; font-family: 'Sarabun',sans-serif; font-weight: 500; font-size: 14px; padding: 9px 20px; border-radius: 8px; border: none; cursor: pointer; transition: all .2s; }
+    .btn-indigo { background: #4f46e5; color: white; }
+    .btn-indigo:hover { background: #4338ca; }
+    .btn-indigo:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-white  { background: white; color: #374151; border: 1px solid #e5e7eb; }
+    .btn-white:hover { background: #f9fafb; }
+    .btn-green  { background: #059669; color: white; }
+    .btn-green:hover { background: #047857; }
+    .btn-red    { background: #dc2626; color: white; }
+    .btn-red:hover { background: #b91c1c; }
+
+    /* Steps */
+    .step { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .step-line { flex: 1; height: 2px; }
+
+    /* Slide-up animation */
+    .slide-enter-active,.slide-leave-active { transition: all .3s ease; }
+    .slide-enter-from,.slide-leave-to { opacity: 0; transform: translateY(30px); }
+    .fade-enter-active,.fade-leave-active { transition: opacity .2s; }
+    .fade-enter-from,.fade-leave-to { opacity: 0; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin .7s linear infinite; display: inline-block; }
+
+    /* Mobile */
+    @media(max-width:767px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 39; }
+    }
+
+    ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #f1f1f1; } ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Sidebar overlay (mobile) -->
+  <div v-if="sideOpen" class="overlay" @click="sideOpen=false"></div>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside :class="['sidebar', sideOpen ? 'open' : '']">
+    <div class="px-5 py-5 border-b border-indigo-900">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center">
+          <span class="text-white font-bold text-sm">IT</span>
+        </div>
+        <div>
+          <p class="text-white font-semibold text-sm leading-none">IT Finance</p>
+          <p class="text-indigo-300 text-xs mt-0.5">สาขาวิชา IT</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="py-4">
+      <p class="text-indigo-400 text-xs font-semibold px-7 mb-2 mt-2 tracking-wider">เมนูหลัก</p>
+      <div v-for="m in menus" :key="m.key"
+           :class="['sidebar-item', page===m.key ? 'active' : '']"
+           @click="page=m.key; sideOpen=false">
+        <span>{{ m.icon }}</span>
+        <span>{{ m.label }}</span>
+      </div>
+
+      <p class="text-indigo-400 text-xs font-semibold px-7 mb-2 mt-4 tracking-wider">สาธิต Role</p>
+      <div class="mx-3">
+        <select v-model="role" class="w-full rounded-lg px-3 py-2 text-sm text-white border border-indigo-700 bg-indigo-900">
+          <option value="activity_staff">Activity Staff</option>
+          <option value="treasurer">Treasurer</option>
+          <option value="super_admin">Super Admin</option>
+          <option value="auditor">Auditor</option>
+          <option value="head_it">Head of IT</option>
+        </select>
+      </div>
+    </nav>
+
+    <!-- User -->
+    <div class="absolute bottom-0 w-full px-4 py-4 border-t border-indigo-900">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center">
+          <span class="text-white text-sm font-bold">{{ userInitial }}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-white text-sm font-medium truncate">{{ userName }}</p>
+          <p class="text-indigo-400 text-xs truncate">{{ roleLabel }}</p>
+        </div>
+        <span class="text-indigo-400 text-lg cursor-pointer">⚙</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between sticky top-0 z-30" style="box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div class="flex items-center gap-3">
+        <button class="md:hidden text-gray-500 text-xl" @click="sideOpen=!sideOpen">☰</button>
+        <div>
+          <h1 class="font-semibold text-gray-800 text-base leading-none">{{ pageTitle }}</h1>
+          <p class="text-gray-400 text-xs mt-0.5">{{ today }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <button class="relative text-gray-500 hover:text-gray-700 text-xl">🔔
+            <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">3</span>
+          </button>
+        </div>
+        <button class="btn btn-indigo text-sm px-4 py-2"
+                v-if="canCreate" @click="openCreate">
+          ＋ ยื่นเบิกเงิน
+        </button>
+      </div>
+    </header>
+
+    <!-- PAGE: Dashboard -->
+    <div v-if="page==='dashboard'" class="p-5 space-y-5">
+
+      <!-- KPI cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div v-for="kpi in kpis" :key="kpi.label" class="card">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-xs text-gray-500 font-medium">{{ kpi.label }}</p>
+              <p class="text-2xl font-bold mt-1" :style="`color:${kpi.color}`">{{ kpi.value }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">{{ kpi.sub }}</p>
+            </div>
+            <span style="font-size:28px">{{ kpi.icon }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Central fund bar -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-3">
+          <p class="font-semibold text-gray-800">เงินกลางคงเหลือ</p>
+          <span class="badge badge-approved">✓ อัปเดตล่าสุด 31 มี.ค. 68</span>
+        </div>
+        <div class="flex items-end gap-4">
+          <div class="flex-1">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>ใช้ไปแล้ว 1,073 บาท</span>
+              <span class="font-semibold text-gray-800">7,138.37 บาท</span>
+            </div>
+            <div class="w-full rounded-full h-3" style="background:#e5e7eb">
+              <div class="h-3 rounded-full" style="width:87%;background:linear-gradient(90deg,#4f46e5,#7c3aed)"></div>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">87% ของยอดทั้งหมด 8,211.37 บาท</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent requests -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <p class="font-semibold text-gray-800">คำขอเบิกเงินล่าสุด</p>
+          <button @click="page='expense'" class="text-indigo-600 text-sm hover:underline">ดูทั้งหมด →</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>เลขที่</th><th>รายการ</th><th>ผู้เบิก</th><th>จำนวน</th><th>สถานะ</th><th>วันที่</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in requests.slice(0,5)" :key="r.id" class="cursor-pointer" @click="openDetail(r)">
+                <td class="font-mono text-xs text-gray-500">{{ r.id }}</td>
+                <td>
+                  <p class="font-medium text-gray-800">{{ r.title }}</p>
+                  <p class="text-xs text-gray-400">{{ r.dept }}</p>
+                </td>
+                <td class="text-sm">{{ r.requester }}</td>
+                <td class="font-semibold" :style="'color:#4f46e5'">{{ r.amount.toLocaleString() }} ฿</td>
+                <td><span :class="['badge', `badge-${r.status}`]">{{ statusLabel(r.status) }}</span></td>
+                <td class="text-xs text-gray-400">{{ r.date }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: Expense list -->
+    <div v-if="page==='expense'" class="p-5 space-y-4">
+
+      <!-- Filter tabs -->
+      <div class="card !p-0 overflow-hidden">
+        <div class="flex overflow-x-auto">
+          <button v-for="t in statusTabs" :key="t.key"
+                  @click="filterStatus=t.key"
+                  :class="['px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-2',
+                    filterStatus===t.key
+                      ? 'border-indigo-600 text-indigo-600 bg-indigo-50'
+                      : 'border-transparent text-gray-500 hover:text-gray-700']">
+            {{ t.label }}
+            <span class="text-xs px-1.5 py-0.5 rounded-full font-semibold"
+                  :style="filterStatus===t.key ? 'background:#4f46e5;color:white' : 'background:#f3f4f6;color:#6b7280'">
+              {{ countByStatus(t.key) }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search + add -->
+      <div class="flex gap-3 items-center">
+        <div class="flex-1 relative">
+          <span class="absolute left-3 top-2.5 text-gray-400 text-sm">🔍</span>
+          <input v-model="searchQ" type="text" placeholder="ค้นหารายการ..."
+                 class="inp pl-9 py-2" />
+        </div>
+        <select v-model="filterDept" class="inp w-40 py-2">
+          <option value="">ทุกฝ่าย</option>
+          <option value="กิจกรรม">กิจกรรม</option>
+          <option value="การเรียน">การเรียน</option>
+        </select>
+        <button v-if="canCreate" class="btn btn-indigo" @click="openCreate">＋ ยื่นเบิก</button>
+      </div>
+
+      <!-- List -->
+      <div class="card !p-0 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>เลขที่</th>
+                <th>รายการ</th>
+                <th>ฝ่าย</th>
+                <th>ผู้เบิก</th>
+                <th>จำนวน</th>
+                <th>สถานะ</th>
+                <th>วันที่</th>
+                <th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="filteredRequests.length===0">
+                <td colspan="8" class="text-center text-gray-400 py-10">ไม่มีรายการ</td>
+              </tr>
+              <tr v-for="r in filteredRequests" :key="r.id" class="cursor-pointer" @click="openDetail(r)">
+                <td class="font-mono text-xs text-gray-400">{{ r.id }}</td>
+                <td>
+                  <p class="font-medium text-gray-800">{{ r.title }}</p>
+                  <p class="text-xs text-gray-400">{{ r.category }}</p>
+                </td>
+                <td>
+                  <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                        :style="r.dept==='กิจกรรม' ? 'background:#dbeafe;color:#1d4ed8' : 'background:#d1fae5;color:#065f46'">
+                    {{ r.dept }}
+                  </span>
+                </td>
+                <td class="text-sm">{{ r.requester }}</td>
+                <td class="font-bold" style="color:#4f46e5">{{ r.amount.toLocaleString() }} ฿</td>
+                <td><span :class="['badge', `badge-${r.status}`]">{{ statusLabel(r.status) }}</span></td>
+                <td class="text-xs text-gray-400">{{ r.date }}</td>
+                <td @click.stop>
+                  <div class="flex gap-1">
+                    <button class="text-indigo-500 hover:text-indigo-700 text-xs px-2 py-1 rounded hover:bg-indigo-50"
+                            @click="openDetail(r)">ดู</button>
+                    <button v-if="canApprove && r.status==='pending'"
+                            class="text-green-600 hover:text-green-800 text-xs px-2 py-1 rounded hover:bg-green-50"
+                            @click="openApprove(r)">อนุมัติ</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: Fund -->
+    <div v-if="page==='fund'" class="p-5 space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="card text-center">
+          <p class="text-xs text-gray-500 mb-1">เงินกลางคงเหลือ</p>
+          <p class="text-3xl font-bold" style="color:#4f46e5">7,138.37 ฿</p>
+          <p class="text-xs text-gray-400 mt-1">ณ 31 มี.ค. 68</p>
+        </div>
+        <div class="card text-center">
+          <p class="text-xs text-gray-500 mb-1">รออนุมัติเบิก</p>
+          <p class="text-3xl font-bold" style="color:#d97706">1,580.00 ฿</p>
+          <p class="text-xs text-gray-400 mt-1">3 รายการ</p>
+        </div>
+        <div class="card text-center">
+          <p class="text-xs text-gray-500 mb-1">ใช้ไปเดือนนี้</p>
+          <p class="text-3xl font-bold" style="color:#dc2626">1,073.00 ฿</p>
+          <p class="text-xs text-gray-400 mt-1">ก.พ. 2568</p>
+        </div>
+      </div>
+      <div class="card">
+        <p class="font-semibold text-gray-800 mb-4">ประวัติรายรับ-รายจ่าย</p>
+        <table class="tbl">
+          <thead><tr><th>วันที่</th><th>รายการ</th><th>รายรับ</th><th>รายจ่าย</th><th>คงเหลือ</th></tr></thead>
+          <tbody>
+            <tr v-for="t in ledger" :key="t.id">
+              <td class="text-xs">{{ t.date }}</td>
+              <td>{{ t.title }}</td>
+              <td class="font-medium" style="color:#059669">{{ t.income ? t.income.toLocaleString()+' ฿' : '—' }}</td>
+              <td class="font-medium" style="color:#dc2626">{{ t.expense ? t.expense.toLocaleString()+' ฿' : '—' }}</td>
+              <td class="font-semibold">{{ t.balance.toLocaleString() }} ฿</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- ===== MODAL: Create Request ===== -->
+  <transition name="fade">
+  <div v-if="modal.create" class="modal-bg" @click.self="modal.create=false">
+    <transition name="slide">
+    <div class="modal-box">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-lg font-semibold text-gray-800">ยื่นคำขอเบิกเงิน</h2>
+        <button @click="modal.create=false" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-500">✕</button>
+      </div>
+
+      <!-- Approval flow steps -->
+      <div class="flex items-center mb-6 overflow-x-auto pb-1">
+        <div v-for="(s,i) in flowSteps" :key="s.key" class="flex items-center">
+          <div class="flex flex-col items-center gap-1">
+            <div class="step-dot text-xs"
+                 :style="newReq.flowStep >= i
+                   ? 'background:#4f46e5;color:white'
+                   : 'background:#e5e7eb;color:#9ca3af'">
+              {{ i+1 }}
+            </div>
+            <p class="text-xs text-gray-500 whitespace-nowrap" style="font-size:10px">{{ s.label }}</p>
+          </div>
+          <div v-if="i < flowSteps.length-1"
+               class="w-10 h-0.5 mx-1 flex-shrink-0"
+               :style="newReq.flowStep > i ? 'background:#4f46e5' : 'background:#e5e7eb'"></div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Row 1 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600 mb-1 block">ฝ่าย <span class="text-red-500">*</span></label>
+            <select v-model="newReq.dept" :class="['inp', newReq.err.dept ? 'err' : '']">
+              <option value="">เลือกฝ่าย</option>
+              <option value="กิจกรรม">กิจกรรม</option>
+              <option value="การเรียน">การเรียน</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600 mb-1 block">ประเภทสินค้า <span class="text-red-500">*</span></label>
+            <select v-model="newReq.category" :class="['inp', newReq.err.category ? 'err' : '']">
+              <option value="">เลือกประเภท</option>
+              <option>อุปกรณ์ IT</option>
+              <option>งบกิจกรรม</option>
+              <option>การเรียน / Lab</option>
+              <option>อาหาร / เดินทาง</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div>
+          <label class="text-xs font-medium text-gray-600 mb-1 block">ชื่อรายการ <span class="text-red-500">*</span></label>
+          <input v-model="newReq.title" type="text" :class="['inp', newReq.err.title ? 'err' : '']" placeholder="เช่น ซื้อแก้วน้ำสำหรับห้องประชุม" />
+        </div>
+
+        <!-- Items table -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-medium text-gray-600">รายการสินค้า <span class="text-red-500">*</span></label>
+            <button @click="addItem" class="text-xs text-indigo-600 hover:underline font-medium">＋ เพิ่มรายการ</button>
+          </div>
+          <div class="rounded-xl overflow-hidden border border-gray-200">
+            <table class="tbl text-sm">
+              <thead><tr><th>ชื่อสินค้า</th><th class="w-20">ราคา/ชิ้น</th><th class="w-16">จำนวน</th><th class="w-24">รวม</th><th class="w-8"></th></tr></thead>
+              <tbody>
+                <tr v-for="(item,i) in newReq.items" :key="i">
+                  <td><input v-model="item.name" class="inp py-1 text-sm" placeholder="ชื่อสินค้า" /></td>
+                  <td><input v-model.number="item.price" type="number" class="inp py-1 text-sm text-right" placeholder="0" /></td>
+                  <td><input v-model.number="item.qty" type="number" class="inp py-1 text-sm text-right" min="1" placeholder="1" /></td>
+                  <td class="font-medium text-right" style="color:#4f46e5">{{ (item.price*item.qty||0).toLocaleString() }} ฿</td>
+                  <td><button @click="removeItem(i)" class="text-red-400 hover:text-red-600">✕</button></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" class="text-right font-semibold text-gray-700 text-sm">รวมทั้งสิ้น</td>
+                  <td class="font-bold text-lg" style="color:#4f46e5">{{ newReq.total.toLocaleString() }} ฿</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Reason + date -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600 mb-1 block">วันที่เบิก</label>
+            <input v-model="newReq.date" type="date" class="inp" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600 mb-1 block">ฝ่ายผู้เบิก</label>
+            <input v-model="newReq.requester" type="text" class="inp" :placeholder="userName" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600 mb-1 block">เหตุผลการเบิก <span class="text-red-500">*</span></label>
+          <textarea v-model="newReq.reason" :class="['inp', newReq.err.reason ? 'err' : '']"
+                    rows="3" placeholder="อธิบายเหตุผลการเบิกเงิน..."></textarea>
+        </div>
+
+        <!-- Evidence upload -->
+        <div>
+          <label class="text-xs font-medium text-gray-600 mb-2 block">เอกสารประกอบ</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label v-for="ev in evidenceTypes" :key="ev.key"
+                   :class="['flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                     newReq.evidence.includes(ev.key)
+                       ? 'border-indigo-500 bg-indigo-50'
+                       : 'border-gray-200 hover:border-gray-300']"
+                   @click="toggleEvidence(ev.key)">
+              <span style="font-size:22px">{{ ev.icon }}</span>
+              <span class="text-xs font-medium text-gray-600 text-center leading-tight">{{ ev.label }}</span>
+              <input type="checkbox" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Budget check -->
+        <div v-if="newReq.total > 0"
+             class="flex items-center gap-3 rounded-xl px-4 py-3"
+             :style="newReq.total <= 7138.37
+               ? 'background:#d1fae5;border:1px solid #a7f3d0'
+               : 'background:#fee2e2;border:1px solid #fca5a5'">
+          <span style="font-size:20px">{{ newReq.total <= 7138.37 ? '✅' : '⚠️' }}</span>
+          <div>
+            <p class="text-sm font-semibold" :style="newReq.total <= 7138.37 ? 'color:#065f46' : 'color:#991b1b'">
+              {{ newReq.total <= 7138.37 ? 'งบเพียงพอ' : 'งบไม่เพียงพอ' }}
+            </p>
+            <p class="text-xs" :style="newReq.total <= 7138.37 ? 'color:#059669' : 'color:#dc2626'">
+              เงินกลางคงเหลือ 7,138.37 ฿ · ขอเบิก {{ newReq.total.toLocaleString() }} ฿
+            </p>
+          </div>
+        </div>
+
+      </div><!-- /form fields -->
+
+      <!-- Actions -->
+      <div class="flex gap-3 mt-6 pt-4 border-t border-gray-100">
+        <button class="btn btn-white flex-1" @click="modal.create=false">ยกเลิก</button>
+        <button class="btn btn-white" @click="saveReq('draft')">💾 บันทึกร่าง</button>
+        <button class="btn btn-indigo flex-1" @click="saveReq('submitted')"
+                :disabled="newReq.total <= 0">
+          📤 ส่งคำขอ
+        </button>
+      </div>
+    </div>
+    </transition>
+  </div>
+  </transition>
+
+  <!-- ===== MODAL: Detail ===== -->
+  <transition name="fade">
+  <div v-if="modal.detail && selected" class="modal-bg" @click.self="modal.detail=false">
+    <transition name="slide">
+    <div class="modal-box">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <p class="text-xs text-gray-400 font-mono">{{ selected.id }}</p>
+          <h2 class="text-lg font-semibold text-gray-800">{{ selected.title }}</h2>
+        </div>
+        <button @click="modal.detail=false" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 text-gray-500">✕</button>
+      </div>
+
+      <!-- Status badge -->
+      <div class="flex items-center gap-3 mb-5">
+        <span :class="['badge text-sm px-4 py-1.5', `badge-${selected.status}`]">
+          {{ statusLabel(selected.status) }}
+        </span>
+        <span class="text-gray-400 text-sm">{{ selected.date }}</span>
+      </div>
+
+      <!-- Flow timeline -->
+      <div class="flex items-center mb-5 overflow-x-auto">
+        <div v-for="(s,i) in flowSteps" :key="s.key" class="flex items-center">
+          <div class="flex flex-col items-center gap-1">
+            <div class="step-dot"
+                 :style="getFlowIndex(selected.status) >= i
+                   ? 'background:#4f46e5;color:white;font-size:12px'
+                   : 'background:#e5e7eb;color:#9ca3af;font-size:12px'">
+              {{ getFlowIndex(selected.status) > i ? '✓' : i+1 }}
+            </div>
+            <p class="text-center" style="font-size:10px;color:#9ca3af;white-space:nowrap">{{ s.label }}</p>
+          </div>
+          <div v-if="i < flowSteps.length-1" class="w-8 h-0.5 mx-1 flex-shrink-0"
+               :style="getFlowIndex(selected.status) > i ? 'background:#4f46e5' : 'background:#e5e7eb'"></div>
+        </div>
+      </div>
+
+      <!-- Info grid -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="rounded-xl p-3" style="background:#f9fafb">
+          <p class="text-xs text-gray-400">ผู้เบิก</p>
+          <p class="font-semibold text-gray-800 text-sm mt-0.5">{{ selected.requester }}</p>
+        </div>
+        <div class="rounded-xl p-3" style="background:#f9fafb">
+          <p class="text-xs text-gray-400">ฝ่าย</p>
+          <p class="font-semibold text-gray-800 text-sm mt-0.5">{{ selected.dept }}</p>
+        </div>
+        <div class="rounded-xl p-3" style="background:#f9fafb">
+          <p class="text-xs text-gray-400">ประเภท</p>
+          <p class="font-semibold text-gray-800 text-sm mt-0.5">{{ selected.category }}</p>
+        </div>
+        <div class="rounded-xl p-3" style="background:#eef2ff">
+          <p class="text-xs" style="color:#6366f1">ยอดเงิน</p>
+          <p class="font-bold text-xl mt-0.5" style="color:#4f46e5">{{ selected.amount.toLocaleString() }} ฿</p>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="rounded-xl overflow-hidden border border-gray-200 mb-4">
+        <table class="tbl text-sm">
+          <thead><tr><th>รายการ</th><th>ราคา/ชิ้น</th><th>จำนวน</th><th>รวม</th></tr></thead>
+          <tbody>
+            <tr v-for="item in selected.items" :key="item.name">
+              <td>{{ item.name }}</td>
+              <td>{{ item.price.toLocaleString() }} ฿</td>
+              <td>{{ item.qty }}</td>
+              <td class="font-semibold" style="color:#4f46e5">{{ (item.price*item.qty).toLocaleString() }} ฿</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Reason -->
+      <div class="rounded-xl p-4 mb-4" style="background:#f9fafb">
+        <p class="text-xs text-gray-400 mb-1">เหตุผลการเบิก</p>
+        <p class="text-sm text-gray-700">{{ selected.reason }}</p>
+      </div>
+
+      <!-- Approve/Reject buttons for Treasurer -->
+      <div v-if="canApprove && selected.status==='pending'" class="flex gap-3 pt-4 border-t border-gray-100">
+        <button class="btn btn-red flex-1" @click="rejectReq(selected)">✕ ปฏิเสธ</button>
+        <button class="btn btn-green flex-1" @click="approveReq(selected)">✓ อนุมัติ</button>
+      </div>
+      <div v-if="role==='super_admin' && (selected.status==='submitted'||selected.status==='pending')"
+           class="flex gap-3 pt-4 border-t border-gray-100">
+        <button class="btn flex-1 text-white" style="background:#7c3aed"
+                @click="forceApproveReq(selected)">⚡ Force Approve</button>
+      </div>
+    </div>
+    </transition>
+  </div>
+  </transition>
+
+  <!-- Toast -->
+  <transition name="fade">
+  <div v-if="toast.show"
+       :style="toast.ok ? 'background:#059669' : 'background:#dc2626'"
+       class="fixed text-white text-sm font-medium rounded-xl px-5 py-3 flex items-center gap-2"
+       style="bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2)">
+    {{ toast.ok ? '✅' : '❌' }} {{ toast.msg }}
+  </div>
+  </transition>
+
+</div><!-- #app -->
+
+<script>
+const { createApp, ref, computed, reactive } = Vue
+
+createApp({
+  setup() {
+
+    const page = ref('expense')
+    const sideOpen = ref(false)
+    const role = ref('activity_staff')
+    const filterStatus = ref('all')
+    const filterDept = ref('')
+    const searchQ = ref('')
+
+    const modal = reactive({ create: false, detail: false })
+    const selected = ref(null)
+    const toast = ref({ show: false, msg: '', ok: true })
+
+    const menus = [
+      { key: 'dashboard', label: 'Dashboard', icon: '📊' },
+      { key: 'expense',   label: 'เบิกเงิน',  icon: '💸' },
+      { key: 'fund',      label: 'เงินกลาง',   icon: '🏦' },
+    ]
+
+    const roleMap = {
+      activity_staff: { label: 'Activity Staff', name: 'นายสิรภัทร ชินนาผา' },
+      treasurer:      { label: 'Treasurer (เหรัญญิก)', name: 'นายไพศาล กองมณี' },
+      super_admin:    { label: 'Super Admin', name: 'อาจารย์ที่ปรึกษา' },
+      auditor:        { label: 'Auditor', name: 'นางสาวตรีสรา แป้นพยัคฆ์' },
+      head_it:        { label: 'Head of IT', name: 'หัวหน้าสาขา IT' },
+    }
+
+    const userName = computed(() => roleMap[role.value]?.name || '')
+    const roleLabel = computed(() => roleMap[role.value]?.label || '')
+    const userInitial = computed(() => userName.value.replace('นาย','').replace('นางสาว','').trim()[0] || 'U')
+    const canCreate = computed(() => ['activity_staff','academic_staff','super_admin'].includes(role.value))
+    const canApprove = computed(() => ['treasurer','super_admin'].includes(role.value))
+
+    const pageTitle = computed(() => {
+      const m = menus.find(x => x.key === page.value)
+      return m ? `${m.icon} ${m.label}` : ''
+    })
+
+    const today = computed(() => {
+      const d = new Date()
+      const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}`
+    })
+
+    const kpis = [
+      { label: 'เงินกลางคงเหลือ', value: '7,138 ฿', sub: 'ณ 31 มี.ค. 68', icon: '🏦', color: '#4f46e5' },
+      { label: 'รออนุมัติ', value: '3 รายการ', sub: 'มูลค่า 1,580 ฿', icon: '⏳', color: '#d97706' },
+      { label: 'อนุมัติแล้วเดือนนี้', value: '2 รายการ', sub: 'มูลค่า 654 ฿', icon: '✅', color: '#059669' },
+      { label: 'รายจ่ายรวม', value: '1,073 ฿', sub: 'ก.พ. 2568', icon: '📉', color: '#dc2626' },
+    ]
+
+    const requests = ref([
+      { id:'EXP-001', title:'ซื้อแก้วน้ำ ยากันยุง', dept:'กิจกรรม', category:'งบกิจกรรม', requester:'สิรภัทร ชินนาผา', amount:115, status:'completed', date:'11 ก.พ. 68', reason:'ใช้สำหรับซ้อมอังคารที่ 3 ก.พ. 68', items:[{name:'แก้วน้ำ',price:80,qty:1},{name:'ยากันยุง',price:35,qty:1}] },
+      { id:'EXP-002', title:'Made Max', dept:'กิจกรรม', category:'งบกิจกรรม', requester:'ธนดล อินทร', amount:590, status:'completed', date:'9 ก.พ. 68', reason:'กิจกรรมงาน Made Max ประจำปี', items:[{name:'Made Max event',price:590,qty:1}] },
+      { id:'EXP-003', title:'กระโปรงแดนเซอร์', dept:'กิจกรรม', category:'งบกิจกรรม', requester:'นภัสวรรณ ใจหาญ', amount:65, status:'approved', date:'11 ก.พ. 68', reason:'ชุดสำหรับการแสดง', items:[{name:'กระโปรงแดนเซอร์',price:65,qty:1}] },
+      { id:'EXP-004', title:'วิดฝน', dept:'การเรียน', category:'การเรียน / Lab', requester:'กันตภณ เปรมปรีด์', amount:119, status:'completed', date:'20 ก.พ. 68', reason:'อุปกรณ์ Lab', items:[{name:'วิดฝน',price:119,qty:1}] },
+      { id:'EXP-005', title:'น้ำแข็ง แก้วน้ำ', dept:'กิจกรรม', category:'อาหาร / เดินทาง', requester:'สิรภัทร ชินนาผา', amount:85, status:'pending', date:'27 ก.พ. 68', reason:'ใช้สำหรับกิจกรรมซ้อม', items:[{name:'น้ำแข็ง',price:21,qty:1},{name:'น้ำแข็ง',price:20,qty:1},{name:'แก้วน้ำ+น้ำแข็ง',price:44,qty:1}] },
+      { id:'EXP-006', title:'อุปกรณ์คอมพิวเตอร์', dept:'การเรียน', category:'อุปกรณ์ IT', requester:'ธนดล อินทร', amount:890, status:'pending', date:'10 เม.ย. 69', reason:'จัดซื้ออุปกรณ์สำหรับ Lab', items:[{name:'สาย HDMI',price:250,qty:2},{name:'เมาส์ไร้สาย',price:390,qty:1}] },
+      { id:'EXP-007', title:'ค่าเดินทางฟิลด์ทริป', dept:'การเรียน', category:'อาหาร / เดินทาง', requester:'นภัทร ธนาลงกรณ์', amount:1200, status:'submitted', date:'12 เม.ย. 69', reason:'ค่าเดินทางทัศนศึกษาโรงงาน', items:[{name:'ค่าเดินทาง',price:1200,qty:1}] },
+      { id:'EXP-008', title:'ของรางวัลกิจกรรม', dept:'กิจกรรม', category:'งบกิจกรรม', requester:'กันตภณ เปรมปรีด์', amount:480, status:'draft', date:'14 เม.ย. 69', reason:'ของรางวัลสำหรับผู้ชนะการแข่งขัน', items:[{name:'ของรางวัล',price:480,qty:1}] },
+    ])
+
+    const statusTabs = [
+      { key:'all', label:'ทั้งหมด' },
+      { key:'draft', label:'ร่าง' },
+      { key:'submitted', label:'รอตรวจสอบ' },
+      { key:'pending', label:'รออนุมัติ' },
+      { key:'approved', label:'อนุมัติแล้ว' },
+      { key:'completed', label:'เสร็จสิ้น' },
+      { key:'rejected', label:'ปฏิเสธ' },
+    ]
+
+    const filteredRequests = computed(() => {
+      return requests.value.filter(r => {
+        const matchStatus = filterStatus.value === 'all' || r.status === filterStatus.value
+        const matchDept = !filterDept.value || r.dept === filterDept.value
+        const matchQ = !searchQ.value || r.title.includes(searchQ.value) || r.requester.includes(searchQ.value)
+        return matchStatus && matchDept && matchQ
+      })
+    })
+
+    function countByStatus(key) {
+      if (key === 'all') return requests.value.length
+      return requests.value.filter(r => r.status === key).length
+    }
+
+    const statusLabelMap = {
+      draft:'ร่าง', submitted:'รอตรวจสอบ', pending:'รออนุมัติ',
+      approved:'อนุมัติแล้ว', completed:'เสร็จสิ้น', rejected:'ปฏิเสธ'
+    }
+    function statusLabel(s) { return statusLabelMap[s] || s }
+
+    const flowSteps = [
+      { key:'draft', label:'Draft' },
+      { key:'submitted', label:'Submitted' },
+      { key:'pending', label:'รอ Treasurer' },
+      { key:'approved', label:'Approved' },
+      { key:'completed', label:'เสร็จสิ้น' },
+    ]
+    function getFlowIndex(status) {
+      const idx = { draft:0, submitted:1, pending:2, approved:3, completed:4, rejected:2 }
+      return idx[status] ?? 0
+    }
+
+    // Create form
+    const newReq = reactive({
+      dept:'', category:'', title:'', reason:'', requester:'', date:'',
+      items:[{ name:'', price:0, qty:1 }],
+      evidence:[], flowStep:0,
+      err: { dept:'', category:'', title:'', reason:'' },
+      get total() {
+        return this.items.reduce((s,i) => s + (i.price||0)*(i.qty||1), 0)
+      }
+    })
+
+    const evidenceTypes = [
+      { key:'slip', icon:'💳', label:'สลิปโอน' },
+      { key:'receipt', icon:'🧾', label:'ใบเสร็จ' },
+      { key:'bill_pdf', icon:'📄', label:'บิล PDF' },
+      { key:'invoice', icon:'📋', label:'Invoice' },
+      { key:'photo', icon:'📷', label:'รูปสินค้า' },
+    ]
+
+    function addItem() { newReq.items.push({ name:'', price:0, qty:1 }) }
+    function removeItem(i) { if (newReq.items.length > 1) newReq.items.splice(i,1) }
+    function toggleEvidence(key) {
+      const idx = newReq.evidence.indexOf(key)
+      idx === -1 ? newReq.evidence.push(key) : newReq.evidence.splice(idx,1)
+    }
+
+    let nextId = 9
+    function saveReq(status) {
+      if (!newReq.dept) { newReq.err.dept = 'required'; return }
+      if (!newReq.title) { newReq.err.title = 'required'; return }
+      if (!newReq.reason) { newReq.err.reason = 'required'; return }
+
+      requests.value.unshift({
+        id: `EXP-00${nextId++}`,
+        title: newReq.title,
+        dept: newReq.dept,
+        category: newReq.category || 'งบกิจกรรม',
+        requester: newReq.requester || userName.value,
+        amount: newReq.total,
+        status,
+        date: today.value,
+        reason: newReq.reason,
+        items: [...newReq.items],
+      })
+      modal.create = false
+      showToast(status === 'draft' ? 'บันทึกร่างแล้ว' : 'ส่งคำขอเรียบร้อย')
+      Object.assign(newReq, { dept:'', category:'', title:'', reason:'', requester:'', items:[{name:'',price:0,qty:1}], evidence:[], flowStep:0, err:{} })
+    }
+
+    function openCreate() {
+      modal.create = true
+    }
+    function openDetail(r) { selected.value = r; modal.detail = true }
+    function openApprove(r) { selected.value = r; modal.detail = true }
+
+    function approveReq(r) {
+      r.status = 'approved'
+      modal.detail = false
+      showToast('อนุมัติคำขอเรียบร้อย')
+    }
+    function rejectReq(r) {
+      r.status = 'rejected'
+      modal.detail = false
+      showToast('ปฏิเสธคำขอแล้ว', false)
+    }
+    function forceApproveReq(r) {
+      r.status = 'approved'
+      modal.detail = false
+      showToast('Force Approve สำเร็จ (Super Admin)')
+    }
+
+    const ledger = [
+      { id:1, date:'31 มี.ค. 68', title:'เก็บเงินห้อง มี.ค. 68', income:4856, expense:null, balance:7138.37 },
+      { id:2, date:'28 ก.พ. 68', title:'ยอดยกมา ก.พ. 68', income:2282.37, expense:null, balance:2282.37 },
+      { id:3, date:'27 ก.พ. 68', title:'น้ำแข็ง แก้วน้ำ', income:null, expense:85, balance:2197.37 },
+      { id:4, date:'20 ก.พ. 68', title:'วิดฝน', income:null, expense:119, balance:2282.37 },
+      { id:5, date:'11 ก.พ. 68', title:'แก้วน้ำ ยากันยุง', income:null, expense:115, balance:2401.37 },
+      { id:6, date:'9 ก.พ. 68', title:'Made Max', income:null, expense:590, balance:2516.37 },
+    ]
+
+    function showToast(msg, ok=true) {
+      toast.value = { show:true, msg, ok }
+      setTimeout(() => toast.value.show = false, 3000)
+    }
+
+    return {
+      page, sideOpen, role, menus, modal, selected, toast,
+      filterStatus, filterDept, searchQ,
+      userName, roleLabel, userInitial, canCreate, canApprove, pageTitle, today,
+      kpis, requests, filteredRequests, statusTabs, countByStatus,
+      statusLabel, flowSteps, getFlowIndex,
+      newReq, evidenceTypes, addItem, removeItem, toggleEvidence, saveReq,
+      openCreate, openDetail, openApprove, approveReq, rejectReq, forceApproveReq,
+      ledger, showToast
+    }
+  }
+}).mount('#app')
+</script>
+</body>
+</html>

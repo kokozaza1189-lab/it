@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>IT Finance System</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+<style>
+*{font-family:'Sarabun',sans-serif;box-sizing:border-box}
+body{margin:0;background:#f0f2f8}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#f1f1f1}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+
+/* Layout */
+.sidebar{width:250px;min-height:100vh;background:#0f172a;position:fixed;left:0;top:0;z-index:50;transition:transform .3s;display:flex;flex-direction:column}
+.main{margin-left:250px;min-height:100vh}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49}
+
+/* Nav items */
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;cursor:pointer;color:#94a3b8;font-size:14px;font-weight:500;transition:all .2s;margin:2px 8px}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#e2e8f0}
+.nav-item.active{background:#3b82f6;color:white;box-shadow:0 4px 12px rgba(59,130,246,.4)}
+.nav-section{color:#475569;font-size:10px;font-weight:700;letter-spacing:1px;padding:12px 24px 4px;text-transform:uppercase}
+
+/* Cards */
+.card{background:white;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);padding:20px}
+.card-sm{background:white;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:16px}
+
+/* KPI */
+.kpi{background:white;border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.07);position:relative;overflow:hidden}
+.kpi-icon{font-size:36px;position:absolute;right:16px;top:14px;opacity:.12}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-draft{background:#f1f5f9;color:#64748b}
+.b-submitted{background:#dbeafe;color:#1d4ed8}
+.b-pending{background:#fef3c7;color:#b45309}
+.b-approved{background:#d1fae5;color:#065f46}
+.b-rejected{background:#fee2e2;color:#b91c1c}
+.b-completed{background:#ede9fe;color:#6d28d9}
+.b-paid{background:#d1fae5;color:#065f46}
+.b-overdue{background:#fee2e2;color:#b91c1c}
+.b-advance{background:#dbeafe;color:#1d4ed8}
+.b-pending_v{background:#fef3c7;color:#b45309}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;padding:11px 14px;background:#f8fafc;border-bottom:1px solid #f1f5f9;text-align:left;white-space:nowrap}
+.tbl td{padding:12px 14px;font-size:13.5px;color:#334155;border-bottom:1px solid #f8fafc;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl-hover tr:hover td{background:#f8fafc;cursor:pointer}
+
+/* Inputs */
+.inp{width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 13px;font-size:14px;font-family:'Sarabun',sans-serif;outline:none;transition:all .2s;color:#0f172a;background:white}
+.inp:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.inp.err{border-color:#ef4444}
+select.inp{background:white}
+textarea.inp{resize:vertical}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:'Sarabun',sans-serif;font-weight:600;font-size:13.5px;padding:9px 20px;border-radius:9px;border:none;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-blue{background:#3b82f6;color:white}.btn-blue:hover:not(:disabled){background:#2563eb}
+.btn-green{background:#10b981;color:white}.btn-green:hover:not(:disabled){background:#059669}
+.btn-red{background:#ef4444;color:white}.btn-red:hover:not(:disabled){background:#dc2626}
+.btn-violet{background:#8b5cf6;color:white}.btn-violet:hover:not(:disabled){background:#7c3aed}
+.btn-gray{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}.btn-gray:hover:not(:disabled){background:#e2e8f0}
+.btn-outline{background:white;color:#3b82f6;border:1.5px solid #3b82f6}.btn-outline:hover:not(:disabled){background:#eff6ff}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:7px}
+.btn-xs{padding:4px 10px;font-size:11px;border-radius:6px}
+.btn-icon{padding:8px;border-radius:8px;background:#f1f5f9;color:#64748b;border:none;cursor:pointer;font-size:16px;transition:all .2s}.btn-icon:hover{background:#e2e8f0}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:640px){.modal-bg{align-items:center;padding:20px}}
+.modal-box{background:white;border-radius:20px 20px 0 0;width:100%;max-width:680px;max-height:95vh;overflow-y:auto;padding:0}
+@media(min-width:640px){.modal-box{border-radius:16px}}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:white;z-index:10;border-radius:20px 20px 0 0}
+@media(min-width:640px){.modal-header{border-radius:16px 16px 0 0}}
+.modal-body{padding:20px 24px}
+.modal-footer{padding:16px 24px;border-top:1px solid #f1f5f9;position:sticky;bottom:0;background:white;display:flex;gap:10px}
+
+/* Form label */
+.lbl{display:block;font-size:12.5px;font-weight:600;color:#64748b;margin-bottom:5px}
+
+/* Animations */
+.fade-enter-active,.fade-leave-active{transition:opacity .2s}
+.fade-enter-from,.fade-leave-to{opacity:0}
+.slide-up-enter-active,.slide-up-leave-active{transition:all .3s ease}
+.slide-up-enter-from,.slide-up-leave-to{opacity:0;transform:translateY(24px)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .7s linear infinite;display:inline-block}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.pulse{animation:pulse 2s infinite}
+
+/* Login */
+.login-bg{min-height:100vh;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f172a 100%);display:flex;align-items:center;justify-content:center;padding:20px}
+
+/* Stat dot */
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+
+/* Progress bar */
+.progress-bar{height:8px;border-radius:8px;background:#e2e8f0;overflow:hidden}
+.progress-fill{height:100%;border-radius:8px;transition:width .5s ease}
+
+/* Month grid */
+.month-cell{border-radius:10px;padding:10px 8px;text-align:center;font-size:12px;cursor:pointer;transition:all .2s;border:1.5px solid transparent}
+.month-cell:hover{transform:translateY(-1px)}
+.mc-paid{background:#d1fae5;border-color:#6ee7b7;color:#065f46}
+.mc-overdue{background:#fee2e2;border-color:#fca5a5;color:#b91c1c}
+.mc-pending{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.mc-advance{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
+.mc-none{background:#f8fafc;border-color:#e2e8f0;color:#94a3b8}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ==================== LOGIN ==================== -->
+<div v-if="!loggedIn" class="login-bg">
+  <div style="width:100%;max-width:420px">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center mx-auto mb-3" style="box-shadow:0 8px 24px rgba(59,130,246,.4)">
+        <span class="text-white font-bold text-2xl">IT</span>
+      </div>
+      <h1 class="text-white text-2xl font-bold">IT Finance System</h1>
+      <p class="text-slate-400 text-sm mt-1">ระบบการเงินสาขาวิชาเทคโนโลยีสารสนเทศ</p>
+    </div>
+
+    <div class="card" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(10px)">
+      <div class="space-y-4">
+        <div>
+          <label class="lbl text-slate-300">อีเมล / รหัสนิสิต</label>
+          <input v-model="loginForm.email" type="text" class="inp" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:white" placeholder="example@ku.th หรือ 682165xxxx" @keydown.enter="doLogin"/>
+        </div>
+        <div>
+          <label class="lbl text-slate-300">รหัสผ่าน</label>
+          <input v-model="loginForm.pass" type="password" class="inp" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:white" placeholder="••••••••" @keydown.enter="doLogin"/>
+        </div>
+        <div>
+          <label class="lbl text-slate-300">เข้าสู่ระบบในฐานะ (Demo)</label>
+          <select v-model="loginForm.role" class="inp" style="background:rgba(15,23,42,.8);border-color:rgba(255,255,255,.15);color:white">
+            <option value="student">🎓 Student — นิสิตทั่วไป</option>
+            <option value="activity_staff">📋 Activity Staff — ผู้เบิกเงินกิจกรรม</option>
+            <option value="academic_staff">📚 Academic Staff — ผู้เบิกเงินการเรียน</option>
+            <option value="treasurer">💼 Treasurer — เหรัญญิก</option>
+            <option value="head_it">👔 Head of IT — หัวหน้าสาขา</option>
+            <option value="advisor">🧑‍🏫 Advisor — อาจารย์ที่ปรึกษา</option>
+            <option value="auditor">🔍 Auditor — ผู้ตรวจสอบ</option>
+            <option value="super_admin">⚡ Super Admin</option>
+          </select>
+        </div>
+        <button class="btn btn-blue w-full py-3 text-base" @click="doLogin" :disabled="logging">
+          <span v-if="logging" class="spin">⏳</span>
+          {{ logging ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ' }}
+        </button>
+        <p class="text-center text-slate-500 text-xs">ลืมรหัสผ่าน? <a href="#" class="text-blue-400">ติดต่อ Support</a></p>
+      </div>
+    </div>
+    <p class="text-center text-slate-600 text-xs mt-4">IT Finance System v2.0 · 2569</p>
+  </div>
+</div>
+
+<!-- ==================== MAIN APP ==================== -->
+<div v-else>
+
+  <!-- Mobile overlay -->
+  <div v-if="sideOpen" class="overlay" @click="sideOpen=false" style="z-index:49"></div>
+
+  <!-- ======= SIDEBAR ======= -->
+  <aside :class="['sidebar',sideOpen?'open':'']">
+    <!-- Brand -->
+    <div class="px-5 py-5" style="border-bottom:1px solid rgba(255,255,255,.06)">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center flex-shrink-0">
+          <span class="text-white font-bold text-sm">IT</span>
+        </div>
+        <div class="min-w-0">
+          <p class="text-white font-semibold text-sm leading-none truncate">IT Finance</p>
+          <p class="text-slate-500 text-xs mt-0.5">สาขาวิชา IT</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 py-3 overflow-y-auto">
+      <p class="nav-section">ภาพรวม</p>
+      <div v-for="m in filteredMenus" :key="m.key"
+           :class="['nav-item',page===m.key?'active':'']"
+           @click="page=m.key;sideOpen=false">
+        <span style="font-size:18px;width:22px;text-align:center">{{ m.icon }}</span>
+        <span>{{ m.label }}</span>
+        <span v-if="m.badge" class="ml-auto text-xs font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">{{ m.badge }}</span>
+      </div>
+    </nav>
+
+    <!-- User -->
+    <div class="px-4 py-4" style="border-top:1px solid rgba(255,255,255,.06)">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-bold"
+             :style="`background:${roleColor}`">{{ userInitial }}</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-white text-sm font-medium truncate">{{ currentUser.name }}</p>
+          <p class="text-slate-500 text-xs truncate">{{ currentUser.roleLabel }}</p>
+        </div>
+        <button class="text-slate-500 hover:text-white text-lg transition-colors" @click="loggedIn=false">⏏</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ======= MAIN ======= -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="bg-white sticky top-0 z-30 px-5 py-3 flex items-center justify-between" style="border-bottom:1px solid #f1f5f9;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+      <div class="flex items-center gap-3">
+        <button class="md:hidden btn-icon" @click="sideOpen=!sideOpen">☰</button>
+        <div>
+          <h1 class="font-bold text-slate-800 text-base leading-none">{{ pageTitle }}</h1>
+          <p class="text-slate-400 text-xs mt-0.5">{{ todayStr }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn-icon relative" @click="page='notifications'">
+          🔔
+          <span v-if="unreadCount>0" class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{{ unreadCount }}</span>
+        </button>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+             :style="`background:${roleColor}`">{{ userInitial }}</div>
+      </div>
+    </header>
+
+    <!-- ====== PAGE: DASHBOARD ====== -->
+    <div v-if="page==='dashboard'" class="p-5 space-y-5">
+
+      <!-- Welcome banner -->
+      <div class="rounded-2xl p-5 flex items-center justify-between" style="background:linear-gradient(135deg,#1e40af,#3b82f6)">
+        <div>
+          <p class="text-blue-100 text-sm">สวัสดี 👋</p>
+          <h2 class="text-white text-xl font-bold mt-0.5">{{ currentUser.name }}</h2>
+          <p class="text-blue-200 text-sm mt-1">{{ currentUser.roleLabel }} · {{ todayStr }}</p>
+        </div>
+        <div class="text-right hidden sm:block">
+          <p class="text-blue-200 text-xs">เงินกลางคงเหลือ</p>
+          <p class="text-white text-3xl font-bold">{{ centralFund.toLocaleString() }}<span class="text-lg font-normal"> ฿</span></p>
+        </div>
+      </div>
+
+      <!-- KPI row -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="kpi" v-for="k in dashKpis" :key="k.label">
+          <span class="kpi-icon">{{ k.icon }}</span>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">{{ k.label }}</p>
+          <p class="text-2xl font-bold mt-1" :style="`color:${k.color}`">{{ k.val }}</p>
+          <p class="text-xs text-slate-400 mt-0.5">{{ k.sub }}</p>
+        </div>
+      </div>
+
+      <!-- Two columns -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Recent expenses -->
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <p class="font-bold text-slate-800">คำขอเบิกล่าสุด</p>
+            <button class="text-blue-500 text-xs font-medium hover:underline" @click="page='expense'">ดูทั้งหมด →</button>
+          </div>
+          <div class="space-y-3">
+            <div v-for="r in expenses.slice(0,4)" :key="r.id"
+                 class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors"
+                 @click="openExpenseDetail(r)">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base"
+                   :style="`background:${categoryBg(r.category)}`">{{ categoryIcon(r.category) }}</div>
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-slate-800 text-sm truncate">{{ r.title }}</p>
+                <p class="text-slate-400 text-xs">{{ r.requester }} · {{ r.date }}</p>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <p class="font-bold text-sm" style="color:#3b82f6">{{ r.amount.toLocaleString() }} ฿</p>
+                <span :class="['badge text-[10px]','b-'+r.status]">{{ statusTH(r.status) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment status summary -->
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <p class="font-bold text-slate-800">สถานะการชำระเงินเดือนนี้</p>
+            <button class="text-blue-500 text-xs font-medium hover:underline" @click="page='students'">ดูทั้งหมด →</button>
+          </div>
+          <div class="space-y-3">
+            <div v-for="s in paymentStats" :key="s.label" class="flex items-center gap-3">
+              <span :class="['dot',s.dotClass]"></span>
+              <span class="text-sm text-slate-600 flex-1">{{ s.label }}</span>
+              <div class="flex items-center gap-2">
+                <div class="w-24 progress-bar">
+                  <div class="progress-fill" :style="`width:${s.pct}%;background:${s.color}`"></div>
+                </div>
+                <span class="text-sm font-bold text-slate-700 w-8 text-right">{{ s.count }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 pt-4" style="border-top:1px solid #f1f5f9">
+            <div class="flex justify-between text-xs text-slate-400">
+              <span>รวมนิสิต 95 คน</span>
+              <span>เก็บได้ {{ collectedThisMonth.toLocaleString() }} ฿ เดือนนี้</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Fund history -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <p class="font-bold text-slate-800">ประวัติเงินกลาง (3 เดือนล่าสุด)</p>
+          <button class="text-blue-500 text-xs font-medium hover:underline" @click="page='fund'">ดูทั้งหมด →</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="tbl">
+            <thead><tr><th>วันที่</th><th>รายการ</th><th>รายรับ</th><th>รายจ่าย</th><th>คงเหลือ</th></tr></thead>
+            <tbody>
+              <tr v-for="t in ledger.slice(0,5)" :key="t.id">
+                <td class="text-xs text-slate-400">{{ t.date }}</td>
+                <td class="font-medium">{{ t.title }}</td>
+                <td class="font-semibold" style="color:#10b981">{{ t.income?t.income.toLocaleString()+'฿':'—' }}</td>
+                <td class="font-semibold" style="color:#ef4444">{{ t.expense?t.expense.toLocaleString()+'฿':'—' }}</td>
+                <td class="font-bold">{{ t.balance.toLocaleString() }} ฿</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PAGE: PAYMENT (MY PAYMENTS) ====== -->
+    <div v-if="page==='payment'" class="p-5 space-y-4">
+
+      <!-- My payment header card -->
+      <div class="card">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-slate-400 text-xs">รหัสนิสิต</p>
+            <p class="font-bold text-slate-800 text-lg font-mono">{{ currentUser.studentId }}</p>
+            <p class="text-slate-600 text-sm">{{ currentUser.name }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-slate-400 text-xs">ยอดค้างทั้งหมด</p>
+            <p class="text-2xl font-bold" style="color:#ef4444">{{ myTotalDue.toLocaleString() }} ฿</p>
+            <span :class="['badge mt-1', myTotalDue>0?'b-overdue':'b-paid']">
+              {{ myTotalDue>0 ? 'มียอดค้าง' : 'ชำระครบ' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Month grid -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <p class="font-bold text-slate-800">สถานะการชำระเงิน ปี {{ currentYear }}</p>
+          <div class="flex gap-2 text-xs">
+            <span class="badge b-paid">จ่ายแล้ว</span>
+            <span class="badge b-overdue">ค้าง</span>
+            <span class="badge b-advance">จ่ายล่วงหน้า</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div v-for="m in myMonths" :key="m.month"
+               :class="['month-cell','mc-'+m.status]"
+               @click="selectedMonth=m;modal.payment=true">
+            <p class="font-bold text-base">{{ m.month }}</p>
+            <p class="text-xs mt-0.5">{{ thMonthShort[m.month-1] }}</p>
+            <p class="text-xs font-semibold mt-1">{{ m.status==='none'?'—' : m.amount+'฿' }}</p>
+            <p v-if="m.penalty>0" class="text-xs" style="color:#dc2626">+{{ m.penalty }}฿ปรับ</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pay now section -->
+      <div v-if="myTotalDue>0" class="card" style="border:2px solid #fca5a5">
+        <p class="font-bold text-slate-800 mb-3">💳 ชำระเงินที่ค้าง</p>
+        <div class="space-y-2 mb-4">
+          <div v-for="m in myOverdueMonths" :key="m.month"
+               class="flex justify-between items-center p-3 rounded-xl" style="background:#fef2f2">
+            <div>
+              <p class="font-medium text-sm">{{ thMonthShort[m.month-1] }} {{ currentYear }}</p>
+              <p class="text-xs text-slate-400">ค่าธรรมเนียม 50฿ + ค่าปรับ {{ m.penalty }}฿</p>
+            </div>
+            <p class="font-bold" style="color:#ef4444">{{ 50+m.penalty }} ฿</p>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-3 rounded-xl mb-4" style="background:#fef2f2;border:1px solid #fca5a5">
+          <p class="font-bold text-slate-800">รวมทั้งหมด</p>
+          <p class="text-xl font-bold" style="color:#ef4444">{{ myTotalDue }} ฿</p>
+        </div>
+        <button class="btn btn-blue w-full py-3" @click="modal.qr=true">📱 สแกน QR ชำระเงิน</button>
+      </div>
+
+      <!-- Advance payment -->
+      <div class="card">
+        <p class="font-bold text-slate-800 mb-3">⚡ จ่ายล่วงหน้า</p>
+        <p class="text-slate-500 text-sm mb-3">เลือกเดือนที่ต้องการจ่ายล่วงหน้าได้เลย (ไม่บังคับตามลำดับ)</p>
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
+          <div v-for="m in futureMonths" :key="m"
+               @click="toggleAdvanceMonth(m)"
+               :class="['month-cell cursor-pointer', advanceSelected.includes(m)?'mc-advance':'mc-none']">
+            <p class="font-bold">{{ m }}</p>
+            <p class="text-xs">{{ thMonthShort[m-1] }}</p>
+            <p class="text-xs font-semibold mt-1">50 ฿</p>
+          </div>
+        </div>
+        <div v-if="advanceSelected.length>0" class="flex items-center justify-between p-3 rounded-xl mb-3" style="background:#eff6ff">
+          <p class="text-sm font-medium text-slate-700">{{ advanceSelected.length }} เดือน × 50 ฿</p>
+          <p class="font-bold" style="color:#3b82f6">{{ advanceSelected.length*50 }} ฿</p>
+        </div>
+        <button v-if="advanceSelected.length>0" class="btn btn-blue w-full" @click="modal.qr=true">
+          📱 ชำระล่วงหน้า {{ advanceSelected.length*50 }} ฿
+        </button>
+      </div>
+    </div>
+
+    <!-- ====== PAGE: ALL PAYMENTS (Admin view) ====== -->
+    <div v-if="page==='all_payments'" class="p-5 space-y-4">
+      <!-- Summary -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="card-sm text-center" v-for="s in paymentStats" :key="s.label">
+          <p class="text-2xl font-bold" :style="`color:${s.color}`">{{ s.count }}</p>
+          <p class="text-xs text-slate-500 mt-0.5">{{ s.label }}</p>
+        </div>
+      </div>
+
+      <!-- Month selector -->
+      <div class="card">
+        <div class="flex items-center gap-3 flex-wrap">
+          <p class="font-semibold text-slate-700 text-sm">เดือน:</p>
+          <div class="flex gap-2 flex-wrap">
+            <button v-for="m in activeMonths" :key="m"
+                    :class="['btn btn-xs', selectedViewMonth===m?'btn-blue':'btn-gray']"
+                    @click="selectedViewMonth=m">
+              {{ thMonthShort[m-1] }}
+            </button>
+          </div>
+          <div class="ml-auto">
+            <input v-model="studentSearch" type="text" class="inp py-1.5 text-sm w-48" placeholder="🔍 ค้นหานิสิต..."/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student payment table -->
+      <div class="card !p-0 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="tbl tbl-hover">
+            <thead><tr><th>#</th><th>รหัสนิสิต</th><th>ชื่อ-สกุล</th><th>ค่าธรรมเนียม</th><th>ค่าปรับ</th><th>รวม</th><th>สถานะ</th><th>วันที่ชำระ</th></tr></thead>
+            <tbody>
+              <tr v-for="(s,i) in filteredStudents" :key="s.id" @click="openStudentDetail(s)">
+                <td class="text-slate-400 text-xs">{{ i+1 }}</td>
+                <td class="font-mono text-xs">{{ s.id }}</td>
+                <td class="font-medium">{{ s.name }}</td>
+                <td>50 ฿</td>
+                <td :style="s.penalty>0?'color:#ef4444;font-weight:600':''">{{ s.penalty>0?s.penalty+'฿':'—' }}</td>
+                <td class="font-bold" :style="s.totalDue>0?'color:#ef4444':''">{{ (50+s.penalty).toLocaleString() }} ฿</td>
+                <td><span :class="['badge','b-'+s.payStatus]">{{ payStatusTH(s.payStatus) }}</span></td>
+                <td class="text-xs text-slate-400">{{ s.paidDate||'—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PAGE: EXPENSE ====== -->
+    <div v-if="page==='expense'" class="p-5 space-y-4">
+
+      <!-- Filter bar -->
+      <div class="card !p-0 overflow-hidden">
+        <div class="flex overflow-x-auto">
+          <button v-for="t in expStatusTabs" :key="t.key"
+                  :class="['px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5',
+                    expFilter===t.key?'border-blue-500 text-blue-600 bg-blue-50':'border-transparent text-slate-500 hover:text-slate-700']"
+                  @click="expFilter=t.key">
+            {{ t.label }}
+            <span class="text-xs px-1.5 py-0.5 rounded-full"
+                  :style="expFilter===t.key?'background:#3b82f6;color:white':'background:#f1f5f9;color:#64748b'">
+              {{ expCount(t.key) }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-3 flex-wrap items-center">
+        <input v-model="expSearch" type="text" class="inp py-2 flex-1 min-w-40" placeholder="🔍 ค้นหารายการ..."/>
+        <select v-model="expDeptFilter" class="inp py-2 w-36">
+          <option value="">ทุกฝ่าย</option>
+          <option value="กิจกรรม">กิจกรรม</option>
+          <option value="การเรียน">การเรียน</option>
+        </select>
+        <button v-if="canCreate" class="btn btn-blue" @click="modal.createExp=true">＋ ยื่นเบิกเงิน</button>
+      </div>
+
+      <!-- Table -->
+      <div class="card !p-0 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="tbl tbl-hover">
+            <thead><tr><th>เลขที่</th><th>รายการ</th><th>ฝ่าย</th><th>ผู้เบิก</th><th>ยอด</th><th>สถานะ</th><th>วันที่</th><th></th></tr></thead>
+            <tbody>
+              <tr v-if="filteredExpenses.length===0"><td colspan="8" class="text-center text-slate-400 py-12">ไม่มีรายการ</td></tr>
+              <tr v-for="r in filteredExpenses" :key="r.id" @click="openExpenseDetail(r)">
+                <td class="font-mono text-xs text-slate-400">{{ r.id }}</td>
+                <td>
+                  <p class="font-semibold text-slate-800">{{ r.title }}</p>
+                  <p class="text-xs text-slate-400">{{ r.category }}</p>
+                </td>
+                <td>
+                  <span class="badge" :style="r.dept==='กิจกรรม'?'background:#dbeafe;color:#1d4ed8':'background:#d1fae5;color:#065f46'">{{ r.dept }}</span>
+                </td>
+                <td class="text-sm">{{ r.requester }}</td>
+                <td class="font-bold" style="color:#3b82f6">{{ r.amount.toLocaleString() }} ฿</td>
+                <td><span :class="['badge','b-'+r.status]">{{ statusTH(r.status) }}</span></td>
+                <td class="text-xs text-slate-400">{{ r.date }}</td>
+                <td @click.stop class="text-right">
+                  <button class="btn btn-xs btn-gray" @click="openExpenseDetail(r)">ดู</button>
+                  <button v-if="canApprove&&r.status==='pending'" class="btn btn-xs btn-green ml-1" @click="approveExp(r)">✓</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PAGE: FUND ====== -->
+    <div v-if="page==='fund'" class="p-5 space-y-4">
+      <!-- Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="card" style="border:2px solid #bfdbfe">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">เงินกลางคงเหลือ</p>
+          <p class="text-3xl font-bold mt-2" style="color:#2563eb">{{ centralFund.toLocaleString() }}</p>
+          <p class="text-slate-400 text-sm mt-0.5">บาท</p>
+          <p class="text-xs text-slate-400 mt-2">อัปเดต: 31 มี.ค. 68 · 04:20 น.</p>
+        </div>
+        <div class="card" style="border:2px solid #fde68a">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">รออนุมัติเบิก</p>
+          <p class="text-3xl font-bold mt-2" style="color:#d97706">{{ pendingAmount.toLocaleString() }}</p>
+          <p class="text-slate-400 text-sm mt-0.5">บาท / {{ pendingCount }} รายการ</p>
+        </div>
+        <div class="card" style="border:2px solid #bbf7d0">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">เบิกแล้วเดือนนี้</p>
+          <p class="text-3xl font-bold mt-2" style="color:#059669">1,073</p>
+          <p class="text-slate-400 text-sm mt-0.5">บาท / ก.พ. 2568</p>
+        </div>
+      </div>
+
+      <!-- Super Admin: adjust fund -->
+      <div v-if="role==='super_admin'" class="card" style="border:2px dashed #93c5fd">
+        <p class="font-bold text-slate-800 mb-3">⚙ ปรับยอดเงินกลาง (Super Admin)</p>
+        <div class="flex gap-3">
+          <input v-model.number="fundAdjust" type="number" class="inp flex-1" placeholder="จำนวนเงิน (บาท)"/>
+          <select v-model="fundAdjustType" class="inp w-32">
+            <option value="add">+ เพิ่ม</option>
+            <option value="sub">- ลด</option>
+          </select>
+          <input v-model="fundAdjustNote" type="text" class="inp flex-1" placeholder="หมายเหตุ"/>
+          <button class="btn btn-blue" @click="adjustFund">บันทึก</button>
+        </div>
+      </div>
+
+      <!-- Ledger -->
+      <div class="card !p-0 overflow-hidden">
+        <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <p class="font-bold text-slate-800">บัญชีรายรับ-รายจ่าย</p>
+            <div class="flex gap-2">
+              <button class="btn btn-xs btn-gray">📄 Export PDF</button>
+              <button class="btn btn-xs btn-gray">📊 Export Excel</button>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="tbl">
+            <thead><tr><th>วันที่</th><th>รายการ</th><th>หมวด</th><th>รายรับ</th><th>รายจ่าย</th><th>คงเหลือ</th><th>หมายเหตุ</th></tr></thead>
+            <tbody>
+              <tr v-for="t in ledger" :key="t.id">
+                <td class="text-xs text-slate-400 whitespace-nowrap">{{ t.date }}</td>
+                <td class="font-medium">{{ t.title }}</td>
+                <td><span class="badge" :style="t.type==='income'?'background:#d1fae5;color:#065f46':'background:#fee2e2;color:#b91c1c'">{{ t.type==='income'?'รายรับ':'รายจ่าย' }}</span></td>
+                <td class="font-semibold" style="color:#10b981">{{ t.income?('+'+t.income.toLocaleString()+'฿'):'—' }}</td>
+                <td class="font-semibold" style="color:#ef4444">{{ t.expense?('-'+t.expense.toLocaleString()+'฿'):'—' }}</td>
+                <td class="font-bold">{{ t.balance.toLocaleString() }} ฿</td>
+                <td class="text-xs text-slate-400">{{ t.note||'—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PAGE: STUDENTS ====== -->
+    <div v-if="page==='students'" class="p-5 space-y-4">
+      <!-- Tools -->
+      <div class="flex gap-3 flex-wrap items-center">
+        <input v-model="studentSearch" type="text" class="inp py-2 flex-1 min-w-40" placeholder="🔍 ค้นหาชื่อ / รหัสนิสิต..."/>
+        <select v-model="studentStatusFilter" class="inp py-2 w-36">
+          <option value="">ทุกสถานะ</option>
+          <option value="paid">จ่ายแล้ว</option>
+          <option value="overdue">ค้าง</option>
+          <option value="pending_v">รอตรวจสลิป</option>
+        </select>
+        <button v-if="isSuperAdmin" class="btn btn-blue">📥 Import Excel</button>
+        <button v-if="isSuperAdmin" class="btn btn-gray">📤 Export</button>
+      </div>
+      <div class="card !p-0 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="tbl tbl-hover">
+            <thead>
+              <tr>
+                <th>#</th><th>รหัสนิสิต</th><th>ชื่อ-นามสกุล</th>
+                <th v-for="m in [1,2,3,4]" :key="m">{{ thMonthShort[m-1] }}</th>
+                <th>ค้างทั้งหมด</th><th>สถานะ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="filteredStudents.length===0"><td colspan="10" class="text-center text-slate-400 py-12">ไม่พบข้อมูล</td></tr>
+              <tr v-for="(s,i) in filteredStudents" :key="s.id" @click="openStudentDetail(s)">
+                <td class="text-slate-400 text-xs">{{ i+1 }}</td>
+                <td class="font-mono text-xs">{{ s.id }}</td>
+                <td class="font-semibold">{{ s.name }}</td>
+                <td v-for="m in [1,2,3,4]" :key="m">
+                  <span :class="['badge text-[10px]', 'b-'+getStudentMonthStatus(s,m)]">
+                    {{ getStudentMonthStatus(s,m)==='paid'?'✓' : getStudentMonthStatus(s,m)==='overdue'?'✗':'—' }}
+                  </span>
+                </td>
+                <td class="font-bold" :style="s.totalDue>0?'color:#ef4444':''">{{ s.totalDue>0?s.totalDue+'฿':'—' }}</td>
+                <td><span :class="['badge','b-'+s.payStatus]">{{ payStatusTH(s.payStatus) }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PAGE: SETTINGS ====== -->
+    <div v-if="page==='settings'" class="p-5 space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Monthly fee -->
+        <div class="card">
+          <p class="font-bold text-slate-800 mb-4">💰 ค่าธรรมเนียมรายเดือน</p>
+          <div class="space-y-3">
+            <div>
+              <label class="lbl">ยอดชำระต่อเดือน (บาท)</label>
+              <input v-model.number="settings.monthlyFee" type="number" class="inp"/>
+            </div>
+            <div>
+              <label class="lbl">ค่าปรับต่อวัน (บาท)</label>
+              <input v-model.number="settings.penaltyPerDay" type="number" class="inp"/>
+            </div>
+            <div>
+              <label class="lbl">วันครบกำหนดชำระ</label>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 text-sm">ทุกวันที่</span>
+                <input v-model.number="settings.dueDay" type="number" min="1" max="28" class="inp w-20 text-center"/>
+                <span class="text-slate-500 text-sm">ของทุกเดือน</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Academic calendar -->
+        <div class="card">
+          <p class="font-bold text-slate-800 mb-4">📅 ปฏิทินการศึกษา</p>
+          <div class="space-y-3">
+            <div>
+              <label class="lbl">ภาคการศึกษาที่ 1</label>
+              <div class="flex gap-2">
+                <input v-model="settings.sem1Start" type="month" class="inp flex-1"/>
+                <span class="self-center text-slate-400">–</span>
+                <input v-model="settings.sem1End" type="month" class="inp flex-1"/>
+              </div>
+            </div>
+            <div>
+              <label class="lbl">ภาคการศึกษาที่ 2</label>
+              <div class="flex gap-2">
+                <input v-model="settings.sem2Start" type="month" class="inp flex-1"/>
+                <span class="self-center text-slate-400">–</span>
+                <input v-model="settings.sem2End" type="month" class="inp flex-1"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank info -->
+        <div class="card">
+          <p class="font-bold text-slate-800 mb-4">🏦 ข้อมูลบัญชีรับเงิน</p>
+          <div class="space-y-3">
+            <div>
+              <label class="lbl">ธนาคาร</label>
+              <input v-model="settings.bankName" type="text" class="inp"/>
+            </div>
+            <div>
+              <label class="lbl">เลขบัญชี</label>
+              <input v-model="settings.bankAccNo" type="text" class="inp"/>
+            </div>
+            <div>
+              <label class="lbl">ชื่อบัญชี</label>
+              <input v-model="settings.bankAccName" type="text" class="inp"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users -->
+        <div class="card">
+          <p class="font-bold text-slate-800 mb-4">👥 จัดการผู้ใช้งาน</p>
+          <div class="space-y-2">
+            <div v-for="u in systemUsers" :key="u.role" class="flex items-center justify-between p-3 rounded-xl" style="background:#f8fafc">
+              <div>
+                <p class="text-sm font-semibold text-slate-700">{{ u.roleLabel }}</p>
+                <p class="text-xs text-slate-400">{{ u.count }} คน</p>
+              </div>
+              <button class="btn btn-xs btn-outline">จัดการ</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-blue px-8" @click="showToast('บันทึกการตั้งค่าแล้ว')">💾 บันทึกการตั้งค่า</button>
+    </div>
+
+    <!-- ====== PAGE: NOTIFICATIONS ====== -->
+    <div v-if="page==='notifications'" class="p-5 space-y-3">
+      <div class="card !p-0 divide-y divide-slate-50">
+        <div v-for="n in notifications" :key="n.id"
+             :class="['flex gap-4 px-5 py-4 cursor-pointer transition-colors hover:bg-slate-50', !n.read?'bg-blue-50':'']"
+             @click="n.read=true">
+          <span class="text-2xl flex-shrink-0">{{ n.icon }}</span>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-slate-800 text-sm">{{ n.title }}</p>
+            <p class="text-slate-500 text-xs mt-0.5">{{ n.body }}</p>
+            <p class="text-slate-400 text-xs mt-1">{{ n.time }}</p>
+          </div>
+          <div v-if="!n.read" class="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- ====== MODAL: QR Payment ====== -->
+  <transition name="fade">
+  <div v-if="modal.qr" class="modal-bg" @click.self="modal.qr=false">
+    <transition name="slide-up">
+    <div class="modal-box" v-if="modal.qr">
+      <div class="modal-header">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-slate-800">ชำระเงินผ่าน QR</h2>
+          <button @click="modal.qr=false" class="btn-icon">✕</button>
+        </div>
+      </div>
+      <div class="modal-body space-y-4">
+        <!-- Amount -->
+        <div class="rounded-2xl p-4 text-center" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+          <p class="text-slate-500 text-sm">ยอดที่ต้องชำระ</p>
+          <p class="text-4xl font-bold mt-1" style="color:#2563eb">{{ myTotalDue||advanceSelected.length*50 }}<span class="text-xl font-normal"> ฿</span></p>
+        </div>
+
+        <!-- QR -->
+        <div class="rounded-2xl p-4" style="background:linear-gradient(145deg,#e8f5e9,#e3f2fd,#f3e5f5)">
+          <div class="rounded-xl px-4 py-2 flex items-center gap-2 mb-3"
+               style="background:linear-gradient(135deg,#1a3a2a,#1b5e20)">
+            <p class="font-bold text-white text-lg">make</p>
+            <p class="text-green-300 text-xs">by KBank</p>
+          </div>
+          <div class="bg-white rounded-2xl overflow-hidden shadow-lg">
+            <div class="flex items-center gap-3 px-4 py-3" style="background:#1a237e">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background:#00bcd4">
+                <span class="text-white font-bold text-sm">+</span>
+              </div>
+              <div>
+                <p class="text-white font-bold tracking-widest text-sm">THAI QR</p>
+                <p class="text-blue-300 text-xs tracking-widest">PAYMENT</p>
+              </div>
+            </div>
+            <div class="px-5 py-5 text-center">
+              <div class="inline-block text-white text-xs font-bold px-5 py-1 rounded mb-4 tracking-wider" style="background:#1a237e">PromptPay</div>
+              <div class="flex justify-center mb-4">
+                <div class="rounded-xl border-2 border-slate-100 p-3">
+                  <svg width="150" height="150" viewBox="0 0 150 150">
+                    <rect x="5" y="5" width="40" height="40" rx="5" fill="#111"/><rect x="10" y="10" width="30" height="30" rx="3" fill="white"/><rect x="15" y="15" width="20" height="20" rx="2" fill="#111"/>
+                    <rect x="105" y="5" width="40" height="40" rx="5" fill="#111"/><rect x="110" y="10" width="30" height="30" rx="3" fill="white"/><rect x="115" y="15" width="20" height="20" rx="2" fill="#111"/>
+                    <rect x="5" y="105" width="40" height="40" rx="5" fill="#111"/><rect x="10" y="110" width="30" height="30" rx="3" fill="white"/><rect x="15" y="115" width="20" height="20" rx="2" fill="#111"/>
+                    <circle cx="75" cy="75" r="18" fill="white" stroke="#e0e0e0" stroke-width="1.5"/>
+                    <text x="75" y="80" text-anchor="middle" font-size="12" fill="#3b82f6" font-weight="bold">QR</text>
+                    <rect x="55" y="7" width="7" height="7" rx="1" fill="#111" opacity=".8"/><rect x="65" y="7" width="7" height="7" rx="1" fill="#111" opacity=".5"/><rect x="75" y="7" width="7" height="7" rx="1" fill="#111" opacity=".9"/><rect x="85" y="7" width="7" height="7" rx="1" fill="#111" opacity=".3"/><rect x="95" y="7" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
+                    <rect x="7" y="55" width="7" height="7" rx="1" fill="#111" opacity=".7"/><rect x="7" y="65" width="7" height="7" rx="1" fill="#111" opacity=".5"/><rect x="7" y="75" width="7" height="7" rx="1" fill="#111" opacity=".9"/><rect x="7" y="85" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
+                    <rect x="136" y="55" width="7" height="7" rx="1" fill="#111" opacity=".8"/><rect x="136" y="65" width="7" height="7" rx="1" fill="#111" opacity=".6"/><rect x="136" y="75" width="7" height="7" rx="1" fill="#111" opacity=".4"/><rect x="136" y="85" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
+                    <rect x="55" y="136" width="7" height="7" rx="1" fill="#111" opacity=".6"/><rect x="65" y="136" width="7" height="7" rx="1" fill="#111" opacity=".9"/><rect x="75" y="136" width="7" height="7" rx="1" fill="#111" opacity=".4"/><rect x="85" y="136" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
+                    <rect x="55" y="55" width="7" height="7" rx="1" fill="#111" opacity=".4"/><rect x="95" y="55" width="7" height="7" rx="1" fill="#111" opacity=".7"/><rect x="55" y="95" width="7" height="7" rx="1" fill="#111" opacity=".8"/><rect x="95" y="95" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
+                  </svg>
+                </div>
+              </div>
+              <p class="text-sm font-medium mb-1" style="color:#00897b">สแกน QR เพื่อโอนเข้าบัญชี</p>
+              <p class="font-bold text-slate-800">{{ settings.bankAccName }}</p>
+              <p class="text-slate-500 text-sm mt-0.5">{{ settings.bankAccNo }}</p>
+              <div class="mt-3 rounded-xl px-4 py-2 text-xs text-slate-500" style="background:#f5f5f5">💬 บัญชีออมทรัพย์ IT ภา</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slip upload -->
+        <div>
+          <p class="font-semibold text-slate-700 mb-2">อัปโหลดสลิปหลังโอน</p>
+          <label v-if="!slipPreview" for="slipIn"
+                 class="flex flex-col items-center py-8 rounded-xl cursor-pointer transition-colors hover:bg-blue-50"
+                 style="border:2px dashed #93c5fd">
+            <span class="text-4xl">📎</span>
+            <p class="text-sm font-medium text-slate-500 mt-2">แตะเพื่อเลือกสลิป</p>
+            <input id="slipIn" type="file" accept="image/*" class="hidden" @change="onSlip"/>
+          </label>
+          <div v-else class="relative">
+            <img :src="slipPreview" class="w-full rounded-xl max-h-48 object-contain border"/>
+            <button @click="slipPreview=null" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs">✕</button>
+            <p class="text-xs text-center text-green-600 mt-1">✅ สลิปพร้อมส่ง</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray flex-1" @click="modal.qr=false">ยกเลิก</button>
+        <button class="btn btn-blue flex-1" @click="submitPayment">📤 ส่งสลิป</button>
+      </div>
+    </div>
+    </transition>
+  </div>
+  </transition>
+
+  <!-- ====== MODAL: Create Expense ====== -->
+  <transition name="fade">
+  <div v-if="modal.createExp" class="modal-bg" @click.self="modal.createExp=false">
+    <transition name="slide-up">
+    <div class="modal-box" v-if="modal.createExp">
+      <div class="modal-header">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-slate-800">ยื่นคำขอเบิกเงิน</h2>
+          <button @click="modal.createExp=false" class="btn-icon">✕</button>
+        </div>
+        <!-- Flow -->
+        <div class="flex items-center mt-3 overflow-x-auto">
+          <div v-for="(s,i) in flowSteps" :key="s" class="flex items-center">
+            <div class="flex flex-col items-center gap-1">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                   :style="i<=1?'background:#3b82f6;color:white':'background:#e2e8f0;color:#94a3b8'">{{ i+1 }}</div>
+              <p class="whitespace-nowrap" style="font-size:9px;color:#94a3b8">{{ s }}</p>
+            </div>
+            <div v-if="i<flowSteps.length-1" class="w-8 h-0.5 mx-1 flex-shrink-0"
+                 :style="i<1?'background:#3b82f6':'background:#e2e8f0'"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-body space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="lbl">ฝ่าย <span class="text-red-500">*</span></label>
+            <select v-model="newExp.dept" :class="['inp',newExp.err.dept?'err':'']">
+              <option value="">เลือกฝ่าย</option>
+              <option>กิจกรรม</option><option>การเรียน</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl">ประเภท <span class="text-red-500">*</span></label>
+            <select v-model="newExp.category" :class="['inp',newExp.err.category?'err':'']">
+              <option value="">เลือกประเภท</option>
+              <option>อุปกรณ์ IT</option><option>งบกิจกรรม</option>
+              <option>การเรียน / Lab</option><option>อาหาร / เดินทาง</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">ชื่อรายการ <span class="text-red-500">*</span></label>
+          <input v-model="newExp.title" :class="['inp',newExp.err.title?'err':'']" placeholder="เช่น ซื้อแก้วน้ำสำหรับห้องประชุม"/>
+        </div>
+
+        <!-- Items -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="lbl mb-0">รายการสินค้า <span class="text-red-500">*</span></label>
+            <button @click="newExp.items.push({name:'',price:0,qty:1})" class="text-blue-500 text-xs font-semibold hover:underline">＋ เพิ่ม</button>
+          </div>
+          <div class="rounded-xl border border-slate-200 overflow-hidden">
+            <table class="tbl text-sm">
+              <thead><tr><th>ชื่อสินค้า</th><th class="w-24">ราคา/ชิ้น</th><th class="w-16">จำนวน</th><th class="w-20">รวม</th><th class="w-8"></th></tr></thead>
+              <tbody>
+                <tr v-for="(it,i) in newExp.items" :key="i">
+                  <td><input v-model="it.name" class="inp text-sm py-1.5" placeholder="ชื่อสินค้า"/></td>
+                  <td><input v-model.number="it.price" type="number" class="inp text-sm py-1.5 text-right" placeholder="0"/></td>
+                  <td><input v-model.number="it.qty" type="number" min="1" class="inp text-sm py-1.5 text-right"/></td>
+                  <td class="font-bold text-right" style="color:#3b82f6">{{ ((it.price||0)*(it.qty||1)).toLocaleString() }}฿</td>
+                  <td><button @click="newExp.items.splice(i,1)" class="text-red-400 hover:text-red-600 text-sm" :disabled="newExp.items.length===1">✕</button></td>
+                </tr>
+              </tbody>
+              <tfoot><tr>
+                <td colspan="3" class="text-right font-bold text-sm text-slate-700 pr-2">รวม</td>
+                <td class="font-bold text-lg" style="color:#3b82f6">{{ newExpTotal.toLocaleString() }}฿</td>
+                <td></td>
+              </tr></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="lbl">วันที่เบิก</label>
+            <input v-model="newExp.date" type="date" class="inp"/>
+          </div>
+          <div>
+            <label class="lbl">ผู้เบิก</label>
+            <input v-model="newExp.requester" :placeholder="currentUser.name" class="inp"/>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">เหตุผลการเบิก <span class="text-red-500">*</span></label>
+          <textarea v-model="newExp.reason" :class="['inp',newExp.err.reason?'err':'']" rows="3" placeholder="อธิบายเหตุผล..."></textarea>
+        </div>
+
+        <!-- Evidence -->
+        <div>
+          <label class="lbl mb-2">เอกสารประกอบ</label>
+          <div class="grid grid-cols-5 gap-2">
+            <label v-for="ev in evTypes" :key="ev.key"
+                   :class="['flex flex-col items-center gap-1 p-2 rounded-xl border-2 cursor-pointer transition-all',
+                     newExp.evidence.includes(ev.key)?'border-blue-400 bg-blue-50':'border-slate-200 hover:border-slate-300']"
+                   @click="toggleEv(ev.key)">
+              <span class="text-xl">{{ ev.icon }}</span>
+              <span class="text-[10px] font-medium text-slate-500 text-center leading-tight">{{ ev.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Budget check -->
+        <div v-if="newExpTotal>0" class="flex items-center gap-3 rounded-xl px-4 py-3"
+             :style="newExpTotal<=centralFund?'background:#d1fae5;border:1px solid #6ee7b7':'background:#fee2e2;border:1px solid #fca5a5'">
+          <span class="text-xl">{{ newExpTotal<=centralFund?'✅':'⚠️' }}</span>
+          <div>
+            <p class="text-sm font-bold" :style="newExpTotal<=centralFund?'color:#065f46':'color:#b91c1c'">
+              {{ newExpTotal<=centralFund?'งบเพียงพอ':'งบไม่เพียงพอ' }}
+            </p>
+            <p class="text-xs" :style="newExpTotal<=centralFund?'color:#059669':'color:#dc2626'">
+              เงินกลาง {{ centralFund.toLocaleString() }} ฿ · ขอเบิก {{ newExpTotal.toLocaleString() }} ฿
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" @click="modal.createExp=false">ยกเลิก</button>
+        <button class="btn btn-gray" @click="saveExp('draft')">💾 บันทึกร่าง</button>
+        <button class="btn btn-blue flex-1" @click="saveExp('submitted')" :disabled="newExpTotal<=0">📤 ส่งคำขอ</button>
+      </div>
+    </div>
+    </transition>
+  </div>
+  </transition>
+
+  <!-- ====== MODAL: Expense Detail ====== -->
+  <transition name="fade">
+  <div v-if="modal.expDetail&&selectedExp" class="modal-bg" @click.self="modal.expDetail=false">
+    <transition name="slide-up">
+    <div class="modal-box" v-if="modal.expDetail">
+      <div class="modal-header">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs font-mono text-slate-400">{{ selectedExp.id }}</p>
+            <h2 class="text-lg font-bold text-slate-800">{{ selectedExp.title }}</h2>
+          </div>
+          <button @click="modal.expDetail=false" class="btn-icon">✕</button>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <span :class="['badge','b-'+selectedExp.status]">{{ statusTH(selectedExp.status) }}</span>
+          <span class="text-slate-400 text-xs">{{ selectedExp.date }}</span>
+        </div>
+      </div>
+      <div class="modal-body space-y-4">
+        <!-- Flow timeline -->
+        <div class="flex items-center overflow-x-auto">
+          <div v-for="(s,i) in flowSteps" :key="s" class="flex items-center">
+            <div class="flex flex-col items-center gap-1">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                   :style="getFlowIdx(selectedExp.status)>=i?'background:#3b82f6;color:white':'background:#e2e8f0;color:#94a3b8'">
+                {{ getFlowIdx(selectedExp.status)>i?'✓':i+1 }}
+              </div>
+              <p class="whitespace-nowrap" style="font-size:9px;color:#94a3b8">{{ s }}</p>
+            </div>
+            <div v-if="i<flowSteps.length-1" class="w-8 h-0.5 mx-1"
+                 :style="getFlowIdx(selectedExp.status)>i?'background:#3b82f6':'background:#e2e8f0'"></div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl p-3" style="background:#f8fafc">
+            <p class="text-xs text-slate-400">ผู้เบิก</p>
+            <p class="font-semibold text-sm mt-0.5">{{ selectedExp.requester }}</p>
+          </div>
+          <div class="rounded-xl p-3" style="background:#f8fafc">
+            <p class="text-xs text-slate-400">ฝ่าย / ประเภท</p>
+            <p class="font-semibold text-sm mt-0.5">{{ selectedExp.dept }} · {{ selectedExp.category }}</p>
+          </div>
+          <div class="rounded-xl p-3 col-span-2" style="background:#eff6ff;border:1px solid #bfdbfe">
+            <p class="text-xs" style="color:#3b82f6">ยอดเงิน</p>
+            <p class="text-2xl font-bold mt-0.5" style="color:#2563eb">{{ selectedExp.amount.toLocaleString() }} ฿</p>
+          </div>
+        </div>
+
+        <!-- Items -->
+        <div class="rounded-xl overflow-hidden border border-slate-200">
+          <table class="tbl text-sm">
+            <thead><tr><th>รายการ</th><th>ราคา</th><th>จำนวน</th><th>รวม</th></tr></thead>
+            <tbody>
+              <tr v-for="it in selectedExp.items" :key="it.name">
+                <td>{{ it.name }}</td>
+                <td>{{ it.price.toLocaleString() }} ฿</td>
+                <td>{{ it.qty }}</td>
+                <td class="font-bold" style="color:#3b82f6">{{ (it.price*it.qty).toLocaleString() }} ฿</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="rounded-xl p-4" style="background:#f8fafc">
+          <p class="text-xs text-slate-400 mb-1">เหตุผลการเบิก</p>
+          <p class="text-sm text-slate-700">{{ selectedExp.reason }}</p>
+        </div>
+
+        <!-- Reject reason input (treasurer) -->
+        <div v-if="canApprove&&selectedExp.status==='pending'">
+          <label class="lbl">หมายเหตุ (กรณีปฏิเสธ)</label>
+          <textarea v-model="rejectNote" class="inp" rows="2" placeholder="ระบุเหตุผลที่ปฏิเสธ..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray flex-1" @click="modal.expDetail=false">ปิด</button>
+        <button v-if="canApprove&&selectedExp.status==='pending'" class="btn btn-red flex-1" @click="rejectExp(selectedExp)">✕ ปฏิเสธ</button>
+        <button v-if="canApprove&&selectedExp.status==='pending'" class="btn btn-green flex-1" @click="approveExp(selectedExp)">✓ อนุมัติ</button>
+        <button v-if="role==='super_admin'&&['submitted','pending'].includes(selectedExp.status)" class="btn btn-violet flex-1" @click="forceApprove(selectedExp)">⚡ Force</button>
+      </div>
+    </div>
+    </transition>
+  </div>
+  </transition>
+
+  <!-- Toast -->
+  <transition name="fade">
+  <div v-if="toast.show"
+       :style="toast.ok?'background:#059669':'background:#dc2626'"
+       class="fixed text-white text-sm font-semibold rounded-2xl px-5 py-3 flex items-center gap-2"
+       style="bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.2);white-space:nowrap">
+    {{ toast.ok?'✅':'❌' }} {{ toast.msg }}
+  </div>
+  </transition>
+
+</div><!-- /main app -->
+</div><!-- #app -->
+
+<script>
+const { createApp, ref, computed, reactive, watch } = Vue
+
+createApp({
+  setup() {
+    /* ── Auth ── */
+    const loggedIn = ref(false)
+    const logging = ref(false)
+    const loginForm = reactive({ email:'', pass:'password', role:'student' })
+
+    const roleMap = {
+      student:        { name:'นายธนดล อินทร',        roleLabel:'Student',         studentId:'6821652155', color:'#6366f1' },
+      activity_staff: { name:'นายสิรภัทร ชินนาผา',   roleLabel:'Activity Staff',  studentId:'6821652732', color:'#8b5cf6' },
+      academic_staff: { name:'นางสาวตรีสรา แป้นพยัคฆ์', roleLabel:'Academic Staff', studentId:'6821652112', color:'#06b6d4' },
+      treasurer:      { name:'นายไพศาล กองมณี',       roleLabel:'Treasurer',       studentId:'STAFF001',   color:'#f59e0b' },
+      head_it:        { name:'หัวหน้าสาขา IT',         roleLabel:'Head of IT',      studentId:'STAFF002',   color:'#10b981' },
+      advisor:        { name:'อาจารย์ที่ปรึกษา',       roleLabel:'Advisor',         studentId:'STAFF003',   color:'#14b8a6' },
+      auditor:        { name:'นางสาวฉัตรแก้ว ชูสืบสาย', roleLabel:'Auditor',        studentId:'6821652015', color:'#ef4444' },
+      super_admin:    { name:'Super Admin',            roleLabel:'Super Admin',     studentId:'ADMIN001',   color:'#f97316' },
+    }
+
+    const role = ref('student')
+    const currentUser = computed(() => ({ ...roleMap[role.value], role: role.value }))
+    const roleColor = computed(() => currentUser.value.color)
+    const userInitial = computed(() => currentUser.value.name.replace(/นาย|นางสาว|หัวหน้า|อาจารย์/,'').trim()[0]||'?')
+    const isSuperAdmin = computed(() => role.value==='super_admin')
+    const canCreate = computed(() => ['activity_staff','academic_staff','super_admin'].includes(role.value))
+    const canApprove = computed(() => ['treasurer','super_admin'].includes(role.value))
+
+    async function doLogin() {
+      logging.value = true
+      await new Promise(r=>setTimeout(r,800))
+      role.value = loginForm.role
+      loggedIn.value = true
+      logging.value = false
+      page.value = role.value==='student'?'payment':'dashboard'
+    }
+
+    /* ── Navigation ── */
+    const page = ref('dashboard')
+    const sideOpen = ref(false)
+
+    const allMenus = [
+      { key:'dashboard',    label:'Dashboard',       icon:'📊', roles:['treasurer','head_it','advisor','auditor','super_admin','activity_staff','academic_staff'] },
+      { key:'payment',      label:'การชำระเงินของฉัน', icon:'💳', roles:['student','activity_staff','academic_staff','treasurer','super_admin'] },
+      { key:'all_payments', label:'ภาพรวมการชำระ',   icon:'📋', roles:['treasurer','head_it','advisor','auditor','super_admin'] },
+      { key:'expense',      label:'เบิกเงิน',         icon:'💸', badge: null, roles:['activity_staff','academic_staff','treasurer','super_admin','head_it','advisor'] },
+      { key:'fund',         label:'เงินกลาง',          icon:'🏦', roles:['treasurer','head_it','advisor','auditor','super_admin'] },
+      { key:'students',     label:'รายชื่อนิสิต',      icon:'👥', roles:['treasurer','head_it','advisor','auditor','super_admin'] },
+      { key:'notifications',label:'การแจ้งเตือน',    icon:'🔔', roles:['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'] },
+      { key:'settings',     label:'ตั้งค่า',           icon:'⚙️', roles:['super_admin'] },
+    ]
+    const filteredMenus = computed(() => allMenus.filter(m => m.roles.includes(role.value)))
+    const pageTitle = computed(() => allMenus.find(m=>m.key===page.value)?.label || 'IT Finance')
+
+    /* ── Date helpers ── */
+    const now = new Date()
+    const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+    const thMonthShort = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
+    const todayStr = computed(() => `${now.getDate()} ${thMonths[now.getMonth()]} ${now.getFullYear()+543}`)
+    const currentYear = now.getFullYear()+543
+
+    /* ── Settings ── */
+    const settings = reactive({
+      monthlyFee:50, penaltyPerDay:5, dueDay:8,
+      bankName:'ธนาคารกสิกรไทย', bankAccNo:'202-3-90895-9', bankAccName:'นายไพศาล กองมณี',
+      sem1Start:'2568-06', sem1End:'2568-09',
+      sem2Start:'2568-11', sem2End:'2569-02',
+    })
+
+    /* ── Central Fund ── */
+    const centralFund = ref(7138.37)
+
+    const fundAdjust = ref(0)
+    const fundAdjustType = ref('add')
+    const fundAdjustNote = ref('')
+    function adjustFund() {
+      if (!fundAdjust.value) return
+      const v = fundAdjustType.value==='add' ? fundAdjust.value : -fundAdjust.value
+      centralFund.value = Math.max(0, centralFund.value + v)
+      ledger.unshift({ id: Date.now(), date: todayStr.value, title: fundAdjustNote.value||'ปรับยอดเงินกลาง', type: v>0?'income':'expense', income: v>0?v:null, expense: v<0?Math.abs(v):null, balance: centralFund.value, note: 'Super Admin' })
+      showToast('ปรับยอดเงินกลางแล้ว')
+      fundAdjust.value=0; fundAdjustNote.value=''
+    }
+
+    /* ── Ledger ── */
+    const ledger = ref([
+      { id:1, date:'31 มี.ค. 68', title:'เก็บเงินห้อง มี.ค. 68', type:'income', income:4856, expense:null, balance:7138.37, note:'95 คน × 50฿' },
+      { id:2, date:'28 ก.พ. 68', title:'ยอดยกมา ก.พ.', type:'income', income:2282.37, expense:null, balance:2282.37, note:'' },
+      { id:3, date:'27 ก.พ. 68', title:'น้ำแข็ง แก้วน้ำ', type:'expense', income:null, expense:85, balance:2197.37, note:'' },
+      { id:4, date:'20 ก.พ. 68', title:'วิดฝน', type:'expense', income:null, expense:119, balance:2282.37, note:'' },
+      { id:5, date:'18 ก.พ. 68', title:'แก้วน้ำ น้ำแข็ง', type:'expense', income:null, expense:64, balance:2401.37, note:'ซ้อม 17 ก.พ.' },
+      { id:6, date:'15 ก.พ. 68', title:'โอนเงินคืนเพื่อน', type:'expense', income:null, expense:35, balance:2465.37, note:'จ่ายค่าห้องเกิน' },
+      { id:7, date:'11 ก.พ. 68', title:'แก้วน้ำ ยากันยุง', type:'expense', income:null, expense:115, balance:2500.37, note:'ซ้อม 3 ก.พ.' },
+      { id:8, date:'9 ก.พ. 68',  title:'Made Max', type:'expense', income:null, expense:590, balance:2615.37, note:'' },
+    ])
+
+    const pendingAmount = computed(() => expenses.value.filter(e=>e.status==='pending').reduce((s,e)=>s+e.amount,0))
+    const pendingCount = computed(() => expenses.value.filter(e=>e.status==='pending').length)
+
+    /* ── Expenses ── */
+    const expenses = ref([
+      { id:'EXP-001', title:'ซื้อแก้วน้ำ ยากันยุง', dept:'กิจกรรม', category:'งบกิจกรรม', requester:'สิรภัทร ชินนาผา', amount:115, status:'completed', date:'11 ก.พ. 68', reason:'ซ้อม 3 ก.พ. 68', items:[{name:'แก้วน้ำ',price:80,qty:1},{name:'ยากันยุง',price:35,qty:1}] },
+      { id:'EXP-002', title:'Made Max Event', dept:'กิจกรรม', category:'งบกิจกรรม', requester:'ธนดล อินทร', amount:590, status:'completed', date:'9 ก.พ. 68', reason:'กิจกรรม Made Max ประจำปี', items:[{name:'Made Max',price:590,qty:1}] },
+      { id:'EXP-003', title:'กระโปรงแดนเซอร์', dept:'กิจกรรม', category:'งบกิจกรรม', requester:'นภัสวรรณ ใจหาญ', amount:65, status:'approved', date:'11 ก.พ. 68', reason:'ชุดการแสดง', items:[{name:'กระโปรงแดนเซอร์',price:65,qty:1}] },
+      { id:'EXP-004', title:'วิดฝน', dept:'การเรียน', category:'การเรียน / Lab', requester:'กันตภณ เปรมปรีด์', amount:119, status:'completed', date:'20 ก.พ. 68', reason:'อุปกรณ์ Lab', items:[{name:'วิดฝน',price:119,qty:1}] },
+      { id:'EXP-005', title:'น้ำแข็ง แก้วน้ำ (ซ้อม)', dept:'กิจกรรม', category:'อาหาร / เดินทาง', requester:'สิรภัทร ชินนาผา', amount:85, status:'pending', date:'27 ก.พ. 68', reason:'กิจกรรมซ้อม', items:[{name:'น้ำแข็ง',price:41,qty:1},{name:'แก้วน้ำ+น้ำแข็ง',price:44,qty:1}] },
+      { id:'EXP-006', title:'อุปกรณ์ Lab IT', dept:'การเรียน', category:'อุปกรณ์ IT', requester:'ธนดล อินทร', amount:890, status:'pending', date:'10 เม.ย. 69', reason:'จัดซื้ออุปกรณ์ Lab', items:[{name:'สาย HDMI',price:250,qty:2},{name:'เมาส์ไร้สาย',price:390,qty:1}] },
+      { id:'EXP-007', title:'ค่าเดินทางฟิลด์ทริป', dept:'การเรียน', category:'อาหาร / เดินทาง', requester:'นภัทร ธนาลงกรณ์', amount:1200, status:'submitted', date:'12 เม.ย. 69', reason:'ทัศนศึกษาโรงงาน', items:[{name:'ค่าเดินทาง',price:1200,qty:1}] },
+      { id:'EXP-008', title:'ของรางวัลกิจกรรม', dept:'กิจกรรม', category:'งบกิจกรรม', requester:'กันตภณ เปรมปรีด์', amount:480, status:'draft', date:'14 เม.ย. 69', reason:'รางวัลผู้ชนะการแข่งขัน', items:[{name:'ของรางวัล',price:480,qty:1}] },
+    ])
+
+    const expFilter = ref('all')
+    const expSearch = ref('')
+    const expDeptFilter = ref('')
+    const expStatusTabs = [
+      {key:'all',label:'ทั้งหมด'},{key:'draft',label:'ร่าง'},
+      {key:'submitted',label:'รอตรวจ'},{key:'pending',label:'รออนุมัติ'},
+      {key:'approved',label:'อนุมัติ'},{key:'completed',label:'เสร็จสิ้น'},{key:'rejected',label:'ปฏิเสธ'}
+    ]
+    const expCount = k => k==='all'?expenses.value.length:expenses.value.filter(e=>e.status===k).length
+    const filteredExpenses = computed(() =>
+      expenses.value.filter(e=>{
+        const ms = expFilter.value==='all'||e.status===expFilter.value
+        const md = !expDeptFilter.value||e.dept===expDeptFilter.value
+        const mq = !expSearch.value||e.title.includes(expSearch.value)||e.requester.includes(expSearch.value)
+        return ms&&md&&mq
+      })
+    )
+
+    const statusTH = s=>({draft:'ร่าง',submitted:'รอตรวจสอบ',pending:'รออนุมัติ',approved:'อนุมัติแล้ว',completed:'เสร็จสิ้น',rejected:'ปฏิเสธ'}[s]||s)
+    const flowSteps = ['Draft','Submitted','รอ Treasurer','Approved','เสร็จสิ้น']
+    const getFlowIdx = s=>({draft:0,submitted:1,pending:2,approved:3,completed:4,rejected:2}[s]??0)
+
+    const categoryIcon = c=>({อุปกรณ์IT:'💻','อุปกรณ์ IT':'💻',งบกิจกรรม:'🎉','การเรียน / Lab':'📚','อาหาร / เดินทาง':'🍱'}[c]||'📦')
+    const categoryBg = c=>({อุปกรณ์IT:'#dbeafe','อุปกรณ์ IT':'#dbeafe',งบกิจกรรม:'#fce7f3','การเรียน / Lab':'#d1fae5','อาหาร / เดินทาง':'#fef3c7'}[c]||'#f1f5f9')
+
+    /* Create expense */
+    const modal = reactive({ createExp:false, expDetail:false, qr:false, payment:false })
+    const selectedExp = ref(null)
+    const rejectNote = ref('')
+    const evTypes = [{key:'slip',icon:'💳',label:'สลิป'},{key:'receipt',icon:'🧾',label:'ใบเสร็จ'},{key:'pdf',icon:'📄',label:'บิล PDF'},{key:'invoice',icon:'📋',label:'Invoice'},{key:'photo',icon:'📷',label:'รูปสินค้า'}]
+
+    const newExp = reactive({ dept:'',category:'',title:'',reason:'',requester:'',date:'', items:[{name:'',price:0,qty:1}],evidence:[], err:{} })
+    const newExpTotal = computed(()=>newExp.items.reduce((s,i)=>s+(i.price||0)*(i.qty||1),0))
+    function toggleEv(k){ const i=newExp.evidence.indexOf(k); i===-1?newExp.evidence.push(k):newExp.evidence.splice(i,1) }
+
+    let expSeq = 9
+    function saveExp(status){
+      newExp.err = {}
+      if(!newExp.dept){ newExp.err.dept=true }
+      if(!newExp.title){ newExp.err.title=true }
+      if(!newExp.reason){ newExp.err.reason=true }
+      if(Object.keys(newExp.err).length) return showToast('กรุณากรอกข้อมูลให้ครบ',false)
+      expenses.value.unshift({ id:`EXP-00${expSeq++}`, title:newExp.title, dept:newExp.dept, category:newExp.category||'งบกิจกรรม', requester:newExp.requester||currentUser.value.name, amount:newExpTotal.value, status, date:todayStr.value, reason:newExp.reason, items:[...newExp.items.map(i=>({...i}))] })
+      modal.createExp=false
+      showToast(status==='draft'?'บันทึกร่างแล้ว':'ส่งคำขอเรียบร้อย')
+      Object.assign(newExp,{dept:'',category:'',title:'',reason:'',requester:'',items:[{name:'',price:0,qty:1}],evidence:[],err:{}})
+    }
+
+    function openExpenseDetail(r){ selectedExp.value=r; rejectNote.value=''; modal.expDetail=true }
+    function approveExp(r){ r.status='approved'; modal.expDetail=false; showToast('อนุมัติคำขอแล้ว') }
+    function rejectExp(r){ r.status='rejected'; modal.expDetail=false; showToast('ปฏิเสธคำขอแล้ว',false) }
+    function forceApprove(r){ r.status='approved'; modal.expDetail=false; showToast('Force Approve สำเร็จ') }
+
+    /* ── Students ── */
+    const studentsData = ref([
+      {id:'6821651931',name:'กฤตติณณ์ พุตติ',        payStatus:'paid',    penalty:0,  totalDue:0,  paidDate:'5 ม.ค. 69', months:{1:'paid',2:'paid',3:'overdue',4:'none'}},
+      {id:'6821651949',name:'กฤตพล อภิชาตเมธี',       payStatus:'paid',    penalty:0,  totalDue:0,  paidDate:'6 ม.ค. 69', months:{1:'paid',2:'paid',3:'paid',4:'none'}},
+      {id:'6821651957',name:'กันตภณ เปรมปรีด์',        payStatus:'overdue', penalty:15, totalDue:65, paidDate:'',          months:{1:'paid',2:'overdue',3:'paid',4:'none'}},
+      {id:'6821651965',name:'กันตินันท์ พุ่มนิล',       payStatus:'paid',    penalty:0,  totalDue:0,  paidDate:'7 ม.ค. 69', months:{1:'paid',2:'paid',3:'paid',4:'none'}},
+      {id:'6821651973',name:'จินต์รัตนา ภิญโญรัตนโยธี', payStatus:'paid',    penalty:0,  totalDue:0,  paidDate:'4 ม.ค. 69', months:{1:'paid',2:'paid',3:'paid',4:'none'}},
+      {id:'6821652007',name:'เจตนิพัทธ์ ตั๋นเจริญ',    payStatus:'paid',    penalty:0,  totalDue:0,  paidDate:'8 ม.ค. 69', months:{1:'paid',2:'paid',3:'advance',4:'advance'}},
+      {id:'6821652015',name:'ฉัตรแก้ว ชูสืบสาย',       payStatus:'pending_v',penalty:0, totalDue:50, paidDate:'',          months:{1:'paid',2:'pending_v',3:'none',4:'none'}},
+      {id:'6821652074',name:'ณัฐกฤตา สุดดี',           payStatus:'overdue', penalty:55, totalDue:105,paidDate:'',          months:{1:'paid',2:'overdue',3:'paid',4:'none'}},
+      {id:'6821652112',name:'ตรีสรา แป้นพยัคฆ์',        payStatus:'overdue', penalty:0,  totalDue:50, paidDate:'',          months:{1:'paid',2:'paid',3:'overdue',4:'none'}},
+      {id:'6821652155',name:'ธนดล อินทร',               payStatus:'overdue', penalty:10, totalDue:135,paidDate:'',          months:{1:'overdue',2:'paid',3:'overdue',4:'none'}},
+      {id:'6821652287',name:'นภัทร ธนาลงกรณ์',          payStatus:'overdue', penalty:0,  totalDue:50, paidDate:'',          months:{1:'paid',2:'paid',3:'overdue',4:'none'}},
+      {id:'6821652295',name:'นภัสวรรณ ใจหาญ',           payStatus:'overdue', penalty:10, totalDue:60, paidDate:'',          months:{1:'paid',2:'overdue',3:'paid',4:'none'}},
+      {id:'6821652309',name:'นันทิชา นันตา',             payStatus:'paid',    penalty:0,  totalDue:0,  paidDate:'5 ม.ค. 69', months:{1:'paid',2:'paid',3:'paid',4:'none'}},
+      {id:'6821652406',name:'พงศภัค สาแก่งทราย',        payStatus:'overdue', penalty:0,  totalDue:50, paidDate:'',          months:{1:'paid',2:'paid',3:'overdue',4:'none'}},
+      {id:'6821652457',name:'พิญชาณี เนื่องชุมพร',       payStatus:'overdue', penalty:10, totalDue:60, paidDate:'',          months:{1:'paid',2:'overdue',3:'paid',4:'none'}},
+      {id:'6821652554',name:'พีรวุฒิ เกรียงวงค์',        payStatus:'overdue', penalty:0,  totalDue:50, paidDate:'',          months:{1:'paid',2:'paid',3:'overdue',4:'none'}},
+      {id:'6821652589',name:'ภาวิดา เหมือนละม้าย',       payStatus:'overdue', penalty:15, totalDue:65, paidDate:'',          months:{1:'paid',2:'overdue',3:'paid',4:'none'}},
+      {id:'6821652724',name:'สัชฌุกร พันธุ์โสภณ',        payStatus:'overdue', penalty:0,  totalDue:135,paidDate:'',          months:{1:'overdue',2:'paid',3:'overdue',4:'none'}},
+      {id:'6821652732',name:'สิรภัทร ชินนาผา',           payStatus:'overdue', penalty:60, totalDue:110,paidDate:'',          months:{1:'paid',2:'overdue',3:'paid',4:'none'}},
+      {id:'6821652759',name:'อธิคม อุชาดี',              payStatus:'overdue', penalty:10, totalDue:60, paidDate:'',          months:{1:'paid',2:'overdue',3:'paid',4:'none'}},
+      {id:'6821652783',name:'อัครพล สมสุวรรณ',           payStatus:'overdue', penalty:25, totalDue:75, paidDate:'',          months:{1:'paid',2:'overdue',3:'paid',4:'none'}},
+      {id:'6821656339',name:'ภัทรพล สามงามเสือ',         payStatus:'overdue', penalty:25, totalDue:75, paidDate:'',          months:{1:'overdue',2:'paid',3:'overdue',4:'none'}},
+      {id:'6821656363',name:'สิรภัทร สวัสดิภาพพันธ์',    payStatus:'overdue', penalty:0,  totalDue:135,paidDate:'',          months:{1:'overdue',2:'paid',3:'overdue',4:'none'}},
+    ])
+
+    const studentSearch = ref('')
+    const studentStatusFilter = ref('')
+    const filteredStudents = computed(()=>
+      studentsData.value.filter(s=>{
+        const mq = !studentSearch.value||s.name.includes(studentSearch.value)||s.id.includes(studentSearch.value)
+        const ms = !studentStatusFilter.value||s.payStatus===studentStatusFilter.value
+        return mq&&ms
+      })
+    )
+    function getStudentMonthStatus(s,m){ return s.months?.[m]||'none' }
+    const payStatusTH = s=>({paid:'จ่ายแล้ว',overdue:'ค้าง',pending_v:'รอตรวจสลิป',advance:'จ่ายล่วงหน้า',none:'—'}[s]||s)
+
+    /* Payment stats */
+    const paymentStats = computed(()=>{
+      const total = studentsData.value.length
+      const paid = studentsData.value.filter(s=>s.payStatus==='paid').length
+      const overdue = studentsData.value.filter(s=>s.payStatus==='overdue').length
+      const pending = studentsData.value.filter(s=>s.payStatus==='pending_v').length
+      return [
+        {label:'จ่ายแล้ว',count:paid,pct:Math.round(paid/total*100),color:'#10b981',dotClass:'bg-green-400'},
+        {label:'ค้างชำระ',count:overdue,pct:Math.round(overdue/total*100),color:'#ef4444',dotClass:'bg-red-400'},
+        {label:'รอตรวจสลิป',count:pending,pct:Math.round(pending/total*100),color:'#f59e0b',dotClass:'bg-yellow-400'},
+      ]
+    })
+    const collectedThisMonth = computed(()=>studentsData.value.filter(s=>s.payStatus==='paid').length*50)
+
+    /* My payment (student view) */
+    const myMonths = ref([
+      {month:1,status:'paid',amount:50,penalty:0},{month:2,status:'overdue',amount:50,penalty:35},
+      {month:3,status:'paid',amount:50,penalty:0},{month:4,status:'none',amount:0,penalty:0},
+      {month:5,status:'none',amount:0,penalty:0},{month:6,status:'none',amount:0,penalty:0},
+    ])
+    const myOverdueMonths = computed(()=>myMonths.value.filter(m=>m.status==='overdue'))
+    const myTotalDue = computed(()=>myOverdueMonths.value.reduce((s,m)=>s+50+m.penalty,0))
+    const advanceSelected = ref([])
+    const futureMonths = [7,8,9,10,11,12]
+    function toggleAdvanceMonth(m){ const i=advanceSelected.value.indexOf(m); i===-1?advanceSelected.value.push(m):advanceSelected.value.splice(i,1) }
+    const activeMonths = [1,2,3,4]
+    const selectedViewMonth = ref(1)
+    const selectedMonth = ref(null)
+
+    /* Dashboard KPIs */
+    const dashKpis = computed(()=>[
+      {label:'เงินกลางคงเหลือ', val:centralFund.value.toLocaleString()+' ฿', sub:'ณ 31 มี.ค. 68', icon:'🏦', color:'#2563eb'},
+      {label:'ยอดค้างชำระ', val:studentsData.value.filter(s=>s.payStatus==='overdue').length+' คน', sub:'เดือนปัจจุบัน', icon:'⚠️', color:'#ef4444'},
+      {label:'รออนุมัติเบิก', val:pendingCount.value+' รายการ', sub:pendingAmount.value.toLocaleString()+' ฿', icon:'⏳', color:'#f59e0b'},
+      {label:'เบิกแล้วเดือนนี้', val:'1,073 ฿', sub:'ก.พ. 2568', icon:'✅', color:'#10b981'},
+    ])
+
+    /* Notifications */
+    const notifications = ref([
+      {id:1,icon:'⚠️',title:'ค้างชำระ — มกราคม 2569',body:'ยังไม่ได้ชำระค่าธรรมเนียมเดือน ม.ค. 69 จำนวน 135 บาท',time:'วันนี้ 09:00 น.',read:false},
+      {id:2,icon:'✅',title:'สลิปผ่านการตรวจสอบ',body:'สลิปการชำระเงินเดือน ธ.ค. 68 ผ่านการตรวจสอบแล้ว',time:'เมื่อวาน 14:30 น.',read:false},
+      {id:3,icon:'💸',title:'คำขอเบิกเงินรออนุมัติ',body:'EXP-005 น้ำแข็ง แก้วน้ำ 85 บาท รออนุมัติจาก Treasurer',time:'2 วันก่อน',read:false},
+      {id:4,icon:'🔔',title:'ครบกำหนดชำระวันพรุ่งนี้',body:'ค่าธรรมเนียมเดือน เม.ย. 69 ครบกำหนดพรุ่งนี้ วันที่ 8 เม.ย.',time:'3 วันก่อน',read:true},
+      {id:5,icon:'✅',title:'คำขอเบิกเงินอนุมัติแล้ว',body:'EXP-003 กระโปรงแดนเซอร์ 65 บาท อนุมัติแล้ว',time:'1 สัปดาห์ก่อน',read:true},
+    ])
+    const unreadCount = computed(()=>notifications.value.filter(n=>!n.read).length)
+
+    /* Slip upload */
+    const slipPreview = ref(null)
+    function onSlip(e){ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>slipPreview.value=ev.target.result; r.readAsDataURL(f) }
+    function submitPayment(){ modal.qr=false; slipPreview.value=null; advanceSelected.value=[]; showToast('ส่งสลิปเรียบร้อย รอตรวจสอบ') }
+
+    /* Toast */
+    const toast = ref({show:false,msg:'',ok:true})
+    function showToast(msg,ok=true){ toast.value={show:true,msg,ok}; setTimeout(()=>toast.value.show=false,3000) }
+
+    /* Students page */
+    function openStudentDetail(s){ showToast('ดูข้อมูล: '+s.name) }
+
+    const systemUsers = [
+      {role:'student',roleLabel:'Student',count:95},
+      {role:'activity_staff',roleLabel:'Activity Staff',count:8},
+      {role:'treasurer',roleLabel:'Treasurer',count:1},
+      {role:'super_admin',roleLabel:'Super Admin',count:2},
+    ]
+
+    return {
+      loggedIn,logging,loginForm,doLogin,
+      role,currentUser,roleColor,userInitial,isSuperAdmin,canCreate,canApprove,
+      page,sideOpen,filteredMenus,pageTitle,
+      todayStr,currentYear,thMonths,thMonthShort,
+      settings,centralFund,fundAdjust,fundAdjustType,fundAdjustNote,adjustFund,
+      ledger,pendingAmount,pendingCount,
+      expenses,expFilter,expSearch,expDeptFilter,expStatusTabs,expCount,filteredExpenses,
+      statusTH,flowSteps,getFlowIdx,categoryIcon,categoryBg,
+      modal,selectedExp,rejectNote,evTypes,newExp,newExpTotal,toggleEv,saveExp,
+      openExpenseDetail,approveExp,rejectExp,forceApprove,
+      studentsData,studentSearch,studentStatusFilter,filteredStudents,getStudentMonthStatus,payStatusTH,
+      paymentStats,collectedThisMonth,
+      myMonths,myOverdueMonths,myTotalDue,advanceSelected,futureMonths,toggleAdvanceMonth,
+      activeMonths,selectedViewMonth,selectedMonth,
+      dashKpis,notifications,unreadCount,
+      slipPreview,onSlip,submitPayment,
+      showToast,toast,systemUsers,
+    }
+  }
+}).mount('#app')
+</script>
+</body>
+</html>
