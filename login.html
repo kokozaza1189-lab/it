@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>IT Finance System — Login</title>
+
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Vue.js 3 CDN -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<!-- Google Fonts: Sarabun (Thai) + Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Sarabun','Inter','sans-serif'] },
+        animation: {
+          'float':    'float 6s ease-in-out infinite',
+          'float2':   'float 8s ease-in-out infinite reverse',
+          'float3':   'float 10s ease-in-out infinite 2s',
+          'fadeIn':   'fadeIn .35s ease',
+          'slideUp':  'slideUp .35s ease',
+          'pulse-slow':'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
+          'spin-slow': 'spin 3s linear infinite',
+        },
+        keyframes: {
+          float:   { '0%,100%':{ transform:'translateY(0)' }, '50%':{ transform:'translateY(-20px)' } },
+          fadeIn:  { from:{ opacity:0 }, to:{ opacity:1 } },
+          slideUp: { from:{ opacity:0, transform:'translateY(16px)' }, to:{ opacity:1, transform:'translateY(0)' } },
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  *{ box-sizing:border-box; }
+  body{ font-family:'Sarabun','Inter',sans-serif; margin:0; }
+
+  /* Animated background gradient */
+  .bg-scene {
+    min-height:100vh;
+    background: linear-gradient(135deg, #0a0f1e 0%, #0d1f40 35%, #0a2240 60%, #091226 100%);
+    position:relative; overflow:hidden;
+  }
+
+  /* Floating orbs */
+  .orb {
+    position:absolute; border-radius:50%; filter:blur(80px); pointer-events:none;
+  }
+  .orb-1 { width:500px; height:500px; background:rgba(59,130,246,.18); top:-120px; left:-160px; animation:float 7s ease-in-out infinite; }
+  .orb-2 { width:400px; height:400px; background:rgba(139,92,246,.14); bottom:-80px; right:-120px; animation:float 9s ease-in-out infinite reverse; }
+  .orb-3 { width:300px; height:300px; background:rgba(6,182,212,.12); top:40%; left:60%; animation:float 11s ease-in-out infinite 1s; }
+  .orb-4 { width:200px; height:200px; background:rgba(236,72,153,.10); top:20%; right:10%; animation:float 8s ease-in-out infinite 3s; }
+
+  /* Grid dots overlay */
+  .grid-overlay {
+    position:absolute; inset:0; pointer-events:none;
+    background-image: radial-gradient(circle, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Glass card */
+  .glass-card {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.10);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    box-shadow: 0 25px 50px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04) inset;
+  }
+
+  /* Tab pill */
+  .tab-pill {
+    background: rgba(255,255,255,.06);
+    border-radius: 12px;
+    padding: 4px;
+  }
+  .tab-btn {
+    flex:1; padding:8px 16px; border-radius:9px; font-size:14px; font-weight:500;
+    cursor:pointer; transition:all .25s; border:none; outline:none;
+    color: rgba(255,255,255,.5);
+    background: transparent;
+  }
+  .tab-btn.active {
+    background: rgba(59,130,246,.8);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59,130,246,.4);
+  }
+
+  /* Input */
+  .field-input {
+    width:100%; padding:12px 14px 12px 42px;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    color: #fff; font-size:14px; font-family:inherit;
+    transition: all .2s; outline:none;
+  }
+  .field-input:focus {
+    border-color: rgba(59,130,246,.7);
+    background: rgba(59,130,246,.08);
+    box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  }
+  .field-input.error { border-color: rgba(239,68,68,.6); background: rgba(239,68,68,.06); }
+  .field-input::placeholder { color: rgba(255,255,255,.3); }
+  .field-input option { background:#1e293b; color:#fff; }
+
+  /* Input wrapper icon */
+  .field-wrap { position:relative; }
+  .field-icon {
+    position:absolute; left:13px; top:50%; transform:translateY(-50%);
+    font-size:16px; pointer-events:none; line-height:1;
+  }
+
+  /* Password toggle */
+  .pw-toggle {
+    position:absolute; right:13px; top:50%; transform:translateY(-50%);
+    cursor:pointer; color:rgba(255,255,255,.4); font-size:16px; padding:2px;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    width:100%; padding:13px;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color:#fff; font-size:15px; font-weight:600; font-family:inherit;
+    border:none; border-radius:12px; cursor:pointer;
+    box-shadow: 0 8px 20px rgba(99,102,241,.35);
+    transition: all .2s; letter-spacing:.3px;
+  }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 12px 28px rgba(99,102,241,.45); }
+  .btn-primary:active { transform:translateY(0); }
+  .btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+
+  /* Social button */
+  .btn-social {
+    flex:1; padding:11px 8px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius:12px; cursor:pointer;
+    color:rgba(255,255,255,.7); font-size:13px; font-family:inherit;
+    transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-social:hover { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2); }
+
+  /* Error text */
+  .err-text { color:#f87171; font-size:12px; margin-top:4px; }
+
+  /* Strength bar */
+  .strength-bar { height:3px; border-radius:2px; transition:all .3s; }
+
+  /* Divider */
+  .divider { display:flex; align-items:center; gap:12px; }
+  .divider::before,.divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.1); }
+
+  /* Slide animation */
+  .slide-enter-active,.slide-leave-active { transition:all .3s ease; }
+  .slide-enter-from { opacity:0; transform:translateX(20px); }
+  .slide-leave-to  { opacity:0; transform:translateX(-20px); }
+
+  /* Success check */
+  .success-ring {
+    width:72px; height:72px; border-radius:50%;
+    background: linear-gradient(135deg,#10b981,#059669);
+    display:flex; align-items:center; justify-content:center; margin:0 auto;
+    box-shadow: 0 0 0 12px rgba(16,185,129,.15), 0 8px 24px rgba(16,185,129,.4);
+    animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes float {
+    0%,100%{ transform:translateY(0px) }
+    50%{ transform:translateY(-18px) }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===================== BACKGROUND ===================== -->
+<div class="bg-scene">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- ===================== CONTENT ===================== -->
+  <div class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+    <div style="width:100%;max-width:440px">
+
+      <!-- ---- LOGO ---- -->
+      <div class="text-center mb-7">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+             style="background:linear-gradient(135deg,#3b82f6,#6366f1);box-shadow:0 12px 28px rgba(99,102,241,.45)">
+          <span class="text-white font-bold text-2xl" style="letter-spacing:-1px">IT</span>
+        </div>
+        <h1 class="text-white text-2xl font-bold tracking-tight">IT Finance System</h1>
+        <p class="text-slate-400 text-sm mt-1">ระบบการเงินสาขาวิชาเทคโนโลยีสารสนเทศ</p>
+      </div>
+
+      <!-- ===================== SUCCESS SCREEN ===================== -->
+      <div v-if="successMsg" class="glass-card p-8 text-center animate-slideUp">
+        <div class="success-ring mb-5">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h2 class="text-white text-xl font-bold mb-2">{{ successMsg.title }}</h2>
+        <p class="text-slate-400 text-sm mb-6">{{ successMsg.sub }}</p>
+        <button class="btn-primary" @click="successMsg=null;tab='login'">กลับสู่หน้า Login</button>
+      </div>
+
+      <!-- ===================== MAIN CARD ===================== -->
+      <div v-else class="glass-card p-7 animate-slideUp">
+
+        <!-- Tab Switch -->
+        <div class="tab-pill flex mb-7">
+          <button class="tab-btn" :class="{active:tab==='login'}" @click="switchTab('login')">เข้าสู่ระบบ</button>
+          <button class="tab-btn" :class="{active:tab==='signup'}" @click="switchTab('signup')">สมัครสมาชิก</button>
+        </div>
+
+        <!-- ================== LOGIN FORM ================== -->
+        <transition name="slide" mode="out-in">
+        <form v-if="tab==='login'" key="login" @submit.prevent="doLogin" class="space-y-4" novalidate>
+
+          <!-- Email / Student ID -->
+          <div>
+            <label class="block text-slate-300 text-sm font-medium mb-1.5">อีเมล / รหัสนิสิต</label>
+            <div class="field-wrap">
+              <span class="field-icon">✉️</span>
+              <input v-model="lf.email" class="field-input" :class="{error:le.email}"
+                     type="text" placeholder="example@ku.th หรือ 682165xxxx" autocomplete="username"/>
+            </div>
+            <p v-if="le.email" class="err-text">{{ le.email }}</p>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="text-slate-300 text-sm font-medium">รหัสผ่าน</label>
+              <a href="#" class="text-blue-400 text-xs hover:text-blue-300 transition-colors" @click.prevent="showForgot=true">ลืมรหัสผ่าน?</a>
+            </div>
+            <div class="field-wrap">
+              <span class="field-icon">🔑</span>
+              <input v-model="lf.pass" class="field-input pr-10" :class="{error:le.pass}"
+                     :type="showPass?'text':'password'" placeholder="••••••••" autocomplete="current-password"/>
+              <span class="pw-toggle" @click="showPass=!showPass">{{ showPass ? '🙈' : '👁️' }}</span>
+            </div>
+            <p v-if="le.pass" class="err-text">{{ le.pass }}</p>
+          </div>
+
+          <!-- Role selector -->
+          <div>
+            <label class="block text-slate-300 text-sm font-medium mb-1.5">Role (Demo)</label>
+            <div class="field-wrap">
+              <span class="field-icon">👤</span>
+              <select v-model="lf.role" class="field-input">
+                <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.icon }} {{ r.label }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Remember me -->
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <div class="relative">
+              <input type="checkbox" v-model="lf.remember" class="sr-only"/>
+              <div class="w-10 h-5 rounded-full transition-all duration-300"
+                   :class="lf.remember ? 'bg-blue-500' : 'bg-white/10'">
+                <div class="w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-300"
+                     :class="lf.remember ? 'left-5' : 'left-0.5'"
+                     style="box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>
+              </div>
+            </div>
+            <span class="text-slate-400 text-sm">จดจำการเข้าสู่ระบบ</span>
+          </label>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-primary mt-1" :disabled="loading">
+            <span v-if="loading" class="inline-flex items-center gap-2">
+              <svg class="animate-spin-slow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity=".25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
+              กำลังเข้าสู่ระบบ...
+            </span>
+            <span v-else>เข้าสู่ระบบ →</span>
+          </button>
+
+          <!-- Divider -->
+          <div class="divider text-slate-500 text-xs">หรือ</div>
+
+          <!-- Social login -->
+          <div class="flex gap-3">
+            <button type="button" class="btn-social" @click="socialLogin('Google')">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              Google
+            </button>
+            <button type="button" class="btn-social" @click="socialLogin('Microsoft')">
+              <svg width="16" height="16" viewBox="0 0 24 24"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="13" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="13" width="10" height="10" fill="#00a4ef"/><rect x="13" y="13" width="10" height="10" fill="#ffb900"/></svg>
+              Microsoft
+            </button>
+          </div>
+
+          <p class="text-center text-slate-500 text-xs">
+            ยังไม่มีบัญชี?
+            <button type="button" class="text-blue-400 hover:text-blue-300 font-medium transition-colors" @click="switchTab('signup')">สมัครสมาชิก</button>
+          </p>
+        </form>
+        </transition>
+
+        <!-- ================== SIGNUP FORM ================== -->
+        <transition name="slide" mode="out-in">
+        <form v-if="tab==='signup'" key="signup" @submit.prevent="doSignup" class="space-y-3.5" novalidate>
+
+          <!-- Full Name -->
+          <div>
+            <label class="block text-slate-300 text-sm font-medium mb-1.5">ชื่อ-นามสกุล <span class="text-red-400">*</span></label>
+            <div class="field-wrap">
+              <span class="field-icon">👤</span>
+              <input v-model="sf.name" class="field-input" :class="{error:se.name}"
+                     type="text" placeholder="ชื่อ นามสกุล (ภาษาไทย)"/>
+            </div>
+            <p v-if="se.name" class="err-text">{{ se.name }}</p>
+          </div>
+
+          <!-- Student ID -->
+          <div>
+            <label class="block text-slate-300 text-sm font-medium mb-1.5">รหัสนิสิต <span class="text-red-400">*</span></label>
+            <div class="field-wrap">
+              <span class="field-icon">🎓</span>
+              <input v-model="sf.studentId" class="field-input" :class="{error:se.studentId}"
+                     type="text" placeholder="682165xxxx" maxlength="10"/>
+            </div>
+            <p v-if="se.studentId" class="err-text">{{ se.studentId }}</p>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label class="block text-slate-300 text-sm font-medium mb-1.5">อีเมล <span class="text-red-400">*</span></label>
+            <div class="field-wrap">
+              <span class="field-icon">✉️</span>
+              <input v-model="sf.email" class="field-input" :class="{error:se.email}"
+                     type="email" placeholder="example@ku.th"/>
+            </div>
+            <p v-if="se.email" class="err-text">{{ se.email }}</p>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label class="block text-slate-300 text-sm font-medium mb-1.5">รหัสผ่าน <span class="text-red-400">*</span></label>
+            <div class="field-wrap">
+              <span class="field-icon">🔑</span>
+              <input v-model="sf.pass" class="field-input pr-10" :class="{error:se.pass}"
+                     :type="showPass2?'text':'password'" placeholder="อย่างน้อย 8 ตัวอักษร"
+                     autocomplete="new-password"/>
+              <span class="pw-toggle" @click="showPass2=!showPass2">{{ showPass2?'🙈':'👁️' }}</span>
+            </div>
+            <p v-if="se.pass" class="err-text">{{ se.pass }}</p>
+            <!-- Strength bar -->
+            <div v-if="sf.pass" class="mt-2 space-y-1">
+              <div class="flex gap-1">
+                <div v-for="i in 4" :key="i" class="flex-1 h-1 rounded-full transition-all duration-300"
+                     :style="{background: i<=pwStrength ? pwStrengthColor : 'rgba(255,255,255,.1)'}"></div>
+              </div>
+              <p class="text-xs" :style="{color:pwStrengthColor}">{{ pwStrengthLabel }}</p>
+            </div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div>
+            <label class="block text-slate-300 text-sm font-medium mb-1.5">ยืนยันรหัสผ่าน <span class="text-red-400">*</span></label>
+            <div class="field-wrap">
+              <span class="field-icon">🔒</span>
+              <input v-model="sf.confirm" class="field-input pr-10" :class="{error:se.confirm}"
+                     :type="showPass3?'text':'password'" placeholder="••••••••"
+                     autocomplete="new-password"/>
+              <span class="pw-toggle" @click="showPass3=!showPass3">{{ showPass3?'🙈':'👁️' }}</span>
+            </div>
+            <p v-if="se.confirm" class="err-text">{{ se.confirm }}</p>
+            <p v-else-if="sf.confirm && sf.pass===sf.confirm" class="text-emerald-400 text-xs mt-1">✓ รหัสผ่านตรงกัน</p>
+          </div>
+
+          <!-- Role -->
+          <div>
+            <label class="block text-slate-300 text-sm font-medium mb-1.5">สถานะ/บทบาท <span class="text-red-400">*</span></label>
+            <div class="field-wrap">
+              <span class="field-icon">🏷️</span>
+              <select v-model="sf.role" class="field-input" :class="{error:se.role}">
+                <option value="">เลือกสถานะ</option>
+                <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.icon }} {{ r.label }}</option>
+              </select>
+            </div>
+            <p v-if="se.role" class="err-text">{{ se.role }}</p>
+          </div>
+
+          <!-- Terms -->
+          <label class="flex items-start gap-2.5 cursor-pointer select-none">
+            <div class="relative mt-0.5 flex-shrink-0">
+              <input type="checkbox" v-model="sf.agree" class="sr-only"/>
+              <div class="w-4.5 h-4.5 w-[18px] h-[18px] rounded transition-all duration-200 flex items-center justify-center"
+                   :class="sf.agree ? 'bg-blue-500' : 'bg-white/10 border border-white/20'">
+                <svg v-if="sf.agree" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg>
+              </div>
+            </div>
+            <span class="text-slate-400 text-xs leading-relaxed">ฉันยอมรับ <a href="#" class="text-blue-400 hover:underline">เงื่อนไขการใช้งาน</a> และ <a href="#" class="text-blue-400 hover:underline">นโยบายความเป็นส่วนตัว</a></span>
+          </label>
+          <p v-if="se.agree" class="err-text -mt-2">{{ se.agree }}</p>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-primary mt-1" :disabled="loading">
+            <span v-if="loading" class="inline-flex items-center gap-2">
+              <svg class="animate-spin-slow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity=".25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
+              กำลังสมัคร...
+            </span>
+            <span v-else>สมัครสมาชิก →</span>
+          </button>
+
+          <p class="text-center text-slate-500 text-xs">
+            มีบัญชีแล้ว?
+            <button type="button" class="text-blue-400 hover:text-blue-300 font-medium transition-colors" @click="switchTab('login')">เข้าสู่ระบบ</button>
+          </p>
+        </form>
+        </transition>
+
+      </div><!-- /glass-card -->
+
+      <!-- Footer -->
+      <p class="text-center text-slate-600 text-xs mt-5">
+        IT Finance System v3.0 &nbsp;·&nbsp; สาขาวิชาเทคโนโลยีสารสนเทศ &nbsp;·&nbsp; 2569
+      </p>
+
+      <!-- Demo hint -->
+      <div class="mt-4 glass-card px-5 py-3.5">
+        <p class="text-slate-400 text-xs text-center font-medium mb-2">Demo Accounts</p>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button v-for="demo in demoAccounts" :key="demo.role"
+                  class="text-left px-3 py-2 rounded-lg text-xs transition-all hover:bg-white/10 cursor-pointer"
+                  style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)"
+                  @click="fillDemo(demo)">
+            <span class="block text-white/70 font-medium">{{ demo.icon }} {{ demo.roleLabel }}</span>
+            <span class="block text-slate-500 font-mono mt-0.5 text-[10px]">{{ demo.email }}</span>
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /max-w -->
+  </div><!-- /center -->
+</div><!-- /bg-scene -->
+
+<!-- Forgot password modal -->
+<div v-if="showForgot" class="fixed inset-0 z-50 flex items-center justify-center px-4"
+     style="background:rgba(0,0,0,.7);backdrop-filter:blur(4px)" @click.self="showForgot=false">
+  <div class="glass-card p-6 w-full max-w-sm animate-slideUp">
+    <h3 class="text-white font-bold text-lg mb-1">รีเซ็ตรหัสผ่าน</h3>
+    <p class="text-slate-400 text-sm mb-4">กรอกอีเมลที่ลงทะเบียนไว้ ระบบจะส่งลิงก์รีเซ็ตให้</p>
+    <div class="field-wrap mb-4">
+      <span class="field-icon">✉️</span>
+      <input v-model="forgotEmail" class="field-input" type="email" placeholder="example@ku.th"/>
+    </div>
+    <div class="flex gap-3">
+      <button class="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-white/10 text-slate-400"
+              style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)" @click="showForgot=false">ยกเลิก</button>
+      <button class="flex-1 btn-primary py-2.5 text-sm" @click="sendReset">ส่งลิงก์รีเซ็ต</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /#app -->
+
+<script>
+const { createApp, ref, reactive, computed } = Vue
+
+createApp({
+  setup() {
+    const tab    = ref('login')
+    const loading = ref(false)
+    const showPass  = ref(false)
+    const showPass2 = ref(false)
+    const showPass3 = ref(false)
+    const showForgot  = ref(false)
+    const forgotEmail = ref('')
+    const successMsg  = ref(null)
+
+    /* ── Roles ── */
+    const roles = [
+      { value:'student',       icon:'🎓', label:'Student — นิสิตทั่วไป' },
+      { value:'activity_staff',icon:'📋', label:'Activity Staff' },
+      { value:'academic_staff',icon:'📚', label:'Academic Staff' },
+      { value:'treasurer',     icon:'💼', label:'Treasurer — เหรัญญิก' },
+      { value:'head_it',       icon:'👔', label:'Head of IT — หัวหน้าสาขา' },
+      { value:'advisor',       icon:'🧑‍🏫', label:'Advisor — อาจารย์ที่ปรึกษา' },
+      { value:'auditor',       icon:'🔍', label:'Auditor — ผู้ตรวจสอบ' },
+      { value:'super_admin',   icon:'⚡', label:'Super Admin' },
+    ]
+
+    /* ── Demo accounts ── */
+    const demoAccounts = [
+      { icon:'🎓', roleLabel:'Student',   role:'student',   email:'682165xxxx' },
+      { icon:'💼', roleLabel:'Treasurer', role:'treasurer', email:'treasurer@ku.th' },
+      { icon:'👔', roleLabel:'Head IT',   role:'head_it',   email:'headit@ku.th' },
+      { icon:'⚡', roleLabel:'Super Admin',role:'super_admin',email:'admin@ku.th' },
+    ]
+
+    /* ── Login form ── */
+    const lf = reactive({ email:'', pass:'', role:'student', remember:false })
+    const le = reactive({ email:'', pass:'' })
+
+    /* ── Signup form ── */
+    const sf = reactive({ name:'', studentId:'', email:'', pass:'', confirm:'', role:'', agree:false })
+    const se = reactive({ name:'', studentId:'', email:'', pass:'', confirm:'', role:'', agree:'' })
+
+    /* ── Password strength ── */
+    const pwStrength = computed(() => {
+      const p = sf.pass
+      if (!p) return 0
+      let s = 0
+      if (p.length >= 8)  s++
+      if (/[A-Z]/.test(p)) s++
+      if (/[0-9]/.test(p)) s++
+      if (/[^A-Za-z0-9]/.test(p)) s++
+      return s
+    })
+    const pwStrengthColor = computed(() => ['','#ef4444','#f97316','#eab308','#10b981'][pwStrength.value])
+    const pwStrengthLabel = computed(() => ['','อ่อนมาก','อ่อน','ปานกลาง','แข็งแกร่ง'][pwStrength.value])
+
+    function switchTab(t) {
+      tab.value = t
+      Object.assign(le, { email:'', pass:'' })
+      Object.assign(se, { name:'', studentId:'', email:'', pass:'', confirm:'', role:'', agree:'' })
+    }
+
+    function fillDemo(demo) {
+      tab.value = 'login'
+      lf.email = demo.email
+      lf.pass  = 'password'
+      lf.role  = demo.role
+    }
+
+    /* ── Validate Login ── */
+    function validateLogin() {
+      le.email = ''; le.pass = ''
+      let ok = true
+      if (!lf.email.trim()) { le.email = 'กรุณากรอกอีเมล / รหัสนิสิต'; ok = false }
+      if (!lf.pass.trim())  { le.pass  = 'กรุณากรอกรหัสผ่าน'; ok = false }
+      else if (lf.pass.length < 4) { le.pass = 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร'; ok = false }
+      return ok
+    }
+
+    /* ── Validate Signup ── */
+    function validateSignup() {
+      Object.assign(se, { name:'', studentId:'', email:'', pass:'', confirm:'', role:'', agree:'' })
+      let ok = true
+      if (!sf.name.trim())     { se.name      = 'กรุณากรอกชื่อ-นามสกุล'; ok = false }
+      if (!sf.studentId.trim() || sf.studentId.length < 10) { se.studentId = 'รหัสนิสิต 10 หลัก'; ok = false }
+      if (!sf.email.trim() || !sf.email.includes('@')) { se.email = 'กรุณากรอกอีเมลที่ถูกต้อง'; ok = false }
+      if (!sf.pass || sf.pass.length < 8)  { se.pass    = 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'; ok = false }
+      if (sf.pass !== sf.confirm)          { se.confirm = 'รหัสผ่านไม่ตรงกัน'; ok = false }
+      if (!sf.role)                        { se.role    = 'กรุณาเลือกสถานะ'; ok = false }
+      if (!sf.agree)                       { se.agree   = 'กรุณายอมรับเงื่อนไข'; ok = false }
+      return ok
+    }
+
+    async function doLogin() {
+      if (!validateLogin()) return
+      loading.value = true
+      await new Promise(r => setTimeout(r, 1400))
+      loading.value = false
+      // In real app: call API, check credentials, set session
+      // For demo: redirect to main system
+      window.location.href = 'index.html'
+    }
+
+    async function doSignup() {
+      if (!validateSignup()) return
+      loading.value = true
+      await new Promise(r => setTimeout(r, 1800))
+      loading.value = false
+      successMsg.value = {
+        title: 'สมัครสมาชิกสำเร็จ!',
+        sub:   `ยินดีต้อนรับ ${sf.name} · รหัสนิสิต ${sf.studentId} ระบบจะส่งอีเมลยืนยันไปที่ ${sf.email}`
+      }
+    }
+
+    function socialLogin(provider) {
+      alert(`ฟีเจอร์ Sign in with ${provider} (ต้องเชื่อมต่อ OAuth ในระบบจริง)`)
+    }
+
+    async function sendReset() {
+      if (!forgotEmail.value) return
+      loading.value = true
+      await new Promise(r => setTimeout(r, 1000))
+      loading.value = false
+      showForgot.value = false
+      alert(`ส่งลิงก์รีเซ็ตไปที่ ${forgotEmail.value} แล้ว (Demo)`)
+      forgotEmail.value = ''
+    }
+
+    return {
+      tab, loading, showPass, showPass2, showPass3, showForgot, forgotEmail, successMsg,
+      roles, demoAccounts, lf, le, sf, se,
+      pwStrength, pwStrengthColor, pwStrengthLabel,
+      switchTab, fillDemo, doLogin, doSignup, socialLogin, sendReset
+    }
+  }
+}).mount('#app')
+</script>
+</body>
+</html>
