@@ -1,0 +1,7 @@
+application/logs/*
+!application/logs/.htaccess
+application/cache/*
+!application/cache/.htaccess
+vendor/
+assets/uploads/slips/*
+!assets/uploads/slips/.gitkeep
