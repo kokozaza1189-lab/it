@@ -731,13 +731,23 @@ textarea.inp{resize:vertical}
 
     <!-- ====== PAGE: FUND ====== -->
     <div v-if="page==='fund'" class="page-wrap space-y-4">
+      <!-- Real-time indicator -->
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2 px-3 py-2 rounded-xl pulse" style="background:#eff6ff;border:1px solid #bfdbfe">
+          <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+          <span class="text-xs font-semibold text-blue-700">บัญชีอัปเดต Real-time · {{ todayStr }}</span>
+        </div>
+        <button v-if="role==='super_admin'||role==='treasurer'" class="btn btn-xs btn-gray" @click="checkMonthlyAutoIncome">
+          📅 ตรวจสอบรายรับสิ้นเดือน
+        </button>
+      </div>
       <!-- Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="card" style="border:2px solid #bfdbfe">
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">เงินกลางคงเหลือ</p>
           <p class="text-3xl font-bold mt-2" style="color:#2563eb">{{ centralFund.toLocaleString() }}</p>
           <p class="text-slate-400 text-sm mt-0.5">บาท</p>
-          <p class="text-xs text-slate-400 mt-2">อัปเดต: 31 มี.ค. 68 · 04:20 น.</p>
+          <p class="text-xs text-slate-400 mt-2 pulse">● อัปเดต Real-time</p>
         </div>
         <div class="card" style="border:2px solid #fde68a">
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">รออนุมัติเบิก</p>
@@ -788,7 +798,10 @@ textarea.inp{resize:vertical}
       <div class="card !p-0 overflow-hidden">
         <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9">
           <div class="flex items-center justify-between flex-wrap gap-3">
-            <p class="font-bold text-slate-800">บัญชีรายรับ-รายจ่าย</p>
+            <div class="flex items-center gap-3">
+              <p class="font-bold text-slate-800">บัญชีรายรับ-รายจ่าย</p>
+              <span class="badge b-paid text-[10px] pulse">● Real-time · {{ ledger.length }} รายการ</span>
+            </div>
             <div class="flex gap-2">
               <button class="btn btn-xs btn-gray" @click="exportLedgerExcel">📊 Export Excel</button>
             </div>
@@ -1858,7 +1871,7 @@ createApp({
       loggedIn.value = true
       logging.value = false
       page.value = 'dashboard'
-      nextTick(initCashflowChart)
+      nextTick(() => { initCashflowChart(); checkMonthlyAutoIncome() })
     }
 
     /* ── Navigation ── */
@@ -1879,8 +1892,22 @@ createApp({
     const bottomNavMenus = computed(() => {
       const all = filteredMenus.value
       if (all.length <= 5) return all
-      const priority = ['dashboard','payment','expense','fund','settings']
-      const picked = priority.map(k => all.find(m => m.key===k)).filter(Boolean)
+      // Role-aware priority so key pages surface in mobile bottom nav
+      let priorityKeys
+      const r = role.value
+      if (['head_it','advisor','auditor'].includes(r)) {
+        priorityKeys = ['dashboard','all_payments','students','fund','settings']
+      } else if (r === 'treasurer') {
+        priorityKeys = ['dashboard','all_payments','expense','students','fund']
+      } else if (r === 'super_admin') {
+        priorityKeys = ['dashboard','expense','all_payments','students','fund']
+      } else if (r === 'student') {
+        priorityKeys = ['dashboard','payment','notifications','settings']
+      } else {
+        // activity_staff, academic_staff
+        priorityKeys = ['dashboard','payment','expense','notifications','settings']
+      }
+      const picked = priorityKeys.map(k => all.find(m => m.key===k)).filter(Boolean)
       all.forEach(m => { if (picked.length<5 && !picked.find(p=>p.key===m.key)) picked.push(m) })
       return picked
     })
@@ -2176,6 +2203,45 @@ createApp({
     let expSeq = parseInt(localStorage.getItem('it_expSeq')||'9')
     const _saved = localStorage.getItem('it_expenses')
     if (_saved) { try { const p=JSON.parse(_saved); if(p.length) expenses.value=p } catch(e){} }
+
+    /* ── Ledger persistence ── */
+    function persistLedger() {
+      try { localStorage.setItem('it_ledger', JSON.stringify(ledger.value)); localStorage.setItem('it_fund', String(centralFund.value)) } catch(e){}
+    }
+    const _savedLedger = localStorage.getItem('it_ledger')
+    if (_savedLedger) { try { const p=JSON.parse(_savedLedger); if(Array.isArray(p)&&p.length) ledger.value=p } catch(e){} }
+    const _savedFund = localStorage.getItem('it_fund')
+    if (_savedFund) { const f=parseFloat(_savedFund); if(!isNaN(f)) centralFund.value=f }
+    watch(ledger, persistLedger, { deep:true })
+    watch(centralFund, persistLedger)
+
+    /* ── Monthly auto-income (runs on 28th of each month) ── */
+    function checkMonthlyAutoIncome() {
+      const d = new Date()
+      const day   = d.getDate()
+      const month = d.getMonth()          // 0-indexed
+      const year  = d.getFullYear()
+      if (day < 28) return               // only run on/after the 28th
+      const markerKey = `income-${year}-${month+1}`
+      // Don't add twice for the same month
+      if (ledger.value.some(t => t._autoKey === markerKey)) return
+      const paidCount = studentsData.value.filter(s => s.payStatus === 'paid').length
+      const income = paidCount * settings.monthlyFee
+      if (income <= 0) return
+      centralFund.value = centralFund.value + income
+      ledger.value.unshift({
+        id: Date.now(),
+        date: `28 ${thMonths[month]} ${year+543}`,
+        title: `รายรับเดือน${thMonths[month]} ${year+543}`,
+        type: 'income',
+        income: income,
+        expense: null,
+        balance: centralFund.value,
+        note: `${paidCount} คน × ${settings.monthlyFee}฿`,
+        _autoKey: markerKey
+      })
+      showToast(`💰 คีย์รายรับเดือน${thMonths[month]} ${income.toLocaleString()}฿ อัตโนมัติแล้ว`)
+    }
 
     const editingExpId = ref(null)
 
@@ -2549,7 +2615,7 @@ createApp({
       role,currentUser,roleColor,userInitial,isSuperAdmin,canCreate,canApprove,canEditPayment,
       page,sideOpen,filteredMenus,bottomNavMenus,pageTitle,
       todayStr,currentYear,thMonths,thMonthShort,
-      settings,centralFund,fundAdjust,fundAdjustType,fundAdjustNote,adjustFund,deleteLedger,importLedgerExcel,exportLedgerExcel,
+      settings,centralFund,fundAdjust,fundAdjustType,fundAdjustNote,adjustFund,deleteLedger,importLedgerExcel,exportLedgerExcel,checkMonthlyAutoIncome,
       ledger,pendingAmount,pendingCount,
       expenses,expFilter,expSearch,expDeptFilter,expStatusTabs,expCount,filteredExpenses,
       statusTH,flowSteps,getFlowIdx,categoryIcon,categoryBg,
