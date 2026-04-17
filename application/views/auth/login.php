@@ -39,8 +39,6 @@ body{margin:0}
 .login-divider{display:flex;align-items:center;gap:12px;color:rgba(255,255,255,.25);font-size:12px}
 .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
 .ferr-msg{color:#f87171;font-size:12px;margin-top:4px}
-.demo-chip{text-align:left;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:all .2s;font-family:'Sarabun',sans-serif;width:100%}
-.demo-chip:hover{background:rgba(255,255,255,.09)}
 .login-success-ring{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 0 12px rgba(16,185,129,.15),0 8px 24px rgba(16,185,129,.4)}
 @keyframes lo-slideup{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .lo-slideup{animation:lo-slideup .35s ease}
@@ -114,7 +112,7 @@ body{margin:0}
         <div>
           <div class="flex justify-between items-center mb-1.5">
             <label class="text-slate-300 text-sm font-medium">รหัสผ่าน</label>
-            <button type="button" class="text-blue-400 text-xs hover:text-blue-300 transition-colors" @click="showForgot=true">ลืมรหัสผ่าน?</button>
+            <span class="text-slate-500 text-xs">ลืมรหัสผ่าน? ติดต่อผู้ดูแลระบบ</span>
           </div>
           <div class="fwrap">
             <span class="ficon">🔑</span>
@@ -129,16 +127,6 @@ body{margin:0}
           <span v-if="loading" class="inline-flex items-center gap-2"><span class="spin" style="font-size:14px">⏳</span> กำลังเข้าสู่ระบบ...</span>
           <span v-else>เข้าสู่ระบบ →</span>
         </button>
-
-        <div class="login-divider">หรือทดลองใช้ Demo</div>
-
-        <!-- Demo accounts -->
-        <div class="grid grid-cols-2 gap-1.5">
-          <button v-for="d in demos" :key="d.role" type="button" class="demo-chip" @click="fillDemo(d)">
-            <span class="block text-white/70 font-medium text-xs">{{ d.icon }} {{ d.label }}</span>
-            <span class="block text-slate-500 font-mono mt-0.5" style="font-size:10px">{{ d.email }}</span>
-          </button>
-        </div>
 
         <p class="text-center text-slate-500 text-xs">
           ยังไม่มีบัญชี?
@@ -214,13 +202,9 @@ body{margin:0}
             <span class="ficon">🏷️</span>
             <select name="role" v-model="sf.role" class="finp" :class="{ferr:se.role}">
               <option value="">เลือกสถานะ</option>
-              <option value="student">🎓 Student — นิสิตทั่วไป</option>
-              <option value="activity_staff">📋 Activity Staff</option>
-              <option value="academic_staff">📚 Academic Staff</option>
-              <option value="treasurer">💼 Treasurer</option>
-              <option value="head_it">👔 Head of IT</option>
-              <option value="advisor">🧑‍🏫 Advisor</option>
-              <option value="auditor">🔍 Auditor</option>
+              <option value="student">🎓 นิสิต</option>
+              <option value="activity_staff">📋 เจ้าหน้าที่กิจกรรม</option>
+              <option value="academic_staff">📚 เจ้าหน้าที่วิชาการ</option>
             </select>
           </div>
           <p v-if="se.role" class="ferr-msg">{{ se.role }}</p>
@@ -239,26 +223,10 @@ body{margin:0}
       </transition>
     </div>
 
-    <p class="text-center text-slate-600 text-xs mt-5">IT Finance System v3.0 · สาขาวิชาเทคโนโลยีสารสนเทศ · 2569</p>
+    <p class="text-center text-slate-600 text-xs mt-5">IT Finance System · สาขาวิชาเทคโนโลยีสารสนเทศ มก. · <?= date('Y')+543 ?></p>
   </div>
 </div>
 
-<!-- Forgot password modal -->
-<div v-if="showForgot" class="fixed inset-0 z-50 flex items-center justify-center px-4"
-     style="background:rgba(0,0,0,.75);backdrop-filter:blur(4px)" @click.self="showForgot=false">
-  <div class="login-glass p-6 w-full lo-slideup" style="max-width:360px">
-    <h3 class="text-white font-bold text-lg mb-1">รีเซ็ตรหัสผ่าน</h3>
-    <p class="text-slate-400 text-sm mb-4">กรอกอีเมลที่ลงทะเบียนไว้ ระบบจะส่งลิงก์รีเซ็ตให้</p>
-    <div class="fwrap mb-4">
-      <span class="ficon">✉️</span>
-      <input v-model="forgotEmail" class="finp" type="email" placeholder="example@ku.th"/>
-    </div>
-    <div class="flex gap-3">
-      <button class="flex-1 btn-social" style="padding:10px" @click="showForgot=false">ยกเลิก</button>
-      <button class="flex-1 btn-login" style="padding:10px;font-size:14px" @click="sendReset">ส่งลิงก์รีเซ็ต</button>
-    </div>
-  </div>
-</div>
 </div>
 
 <script>
@@ -270,8 +238,6 @@ createApp({
     const showPass   = ref(false)
     const showPass2  = ref(false)
     const showPass3  = ref(false)
-    const showForgot = ref(false)
-    const forgotEmail = ref('')
     const successMsg  = ref(<?= isset($success) ? json_encode($success) : 'null' ?>)
 
     const lf = reactive({ email: '', pass: '' })
@@ -287,19 +253,6 @@ createApp({
     })
     const pwStrengthColor = computed(() => ['','#ef4444','#f97316','#eab308','#10b981'][pwStrength.value])
     const pwStrengthLabel = computed(() => ['','อ่อนมาก','อ่อน','ปานกลาง','แข็งแกร่ง'][pwStrength.value])
-
-    const demos = [
-      { icon:'🎓', label:'Student',    role:'student',    email:'student@ku.th',   pass:'password' },
-      { icon:'💼', label:'Treasurer',  role:'treasurer',  email:'treasurer@ku.th', pass:'password' },
-      { icon:'👔', label:'Head IT',    role:'head_it',    email:'headit@ku.th',    pass:'password' },
-      { icon:'⚡', label:'Super Admin',role:'super_admin',email:'admin@ku.th',     pass:'password' },
-    ]
-
-    function fillDemo(d) {
-      tab.value = 'login'
-      lf.email = d.email
-      lf.pass  = d.pass
-    }
 
     function validateLogin() {
       le.email = ''; le.pass = ''
@@ -352,16 +305,9 @@ createApp({
       f.submit()
     }
 
-    function sendReset() {
-      if (!forgotEmail.value.trim()) return
-      alert('ส่งลิงก์รีเซ็ตไปที่ ' + forgotEmail.value + ' แล้ว (Demo)')
-      showForgot.value = false
-      forgotEmail.value = ''
-    }
-
-    return { tab, loading, showPass, showPass2, showPass3, showForgot, forgotEmail, successMsg,
-             lf, le, sf, se, pwStrength, pwStrengthColor, pwStrengthLabel, demos,
-             fillDemo, submitLogin, submitSignup, sendReset }
+    return { tab, loading, showPass, showPass2, showPass3, successMsg,
+             lf, le, sf, se, pwStrength, pwStrengthColor, pwStrengthLabel,
+             submitLogin, submitSignup }
   }
 }).mount('#app')
 </script>

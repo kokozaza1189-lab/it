@@ -23,15 +23,19 @@ class Auth extends MY_Controller {
             if ($this->form_validation->run()) {
                 $user = $this->User_model->get_by_email($this->input->post('email', TRUE));
                 if ($user && $this->User_model->verify_password($this->input->post('password'), $user->password)) {
-                    $this->session->set_userdata([
-                        'logged_in'  => TRUE,
-                        'user_id'    => $user->id,
-                        'name'       => $user->name,
-                        'email'      => $user->email,
-                        'role'       => $user->role,
-                        'student_id' => $user->student_id,
-                    ]);
-                    redirect('dashboard');
+                    if (!$user->is_active) {
+                        $data['error'] = 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
+                    } else {
+                        $this->session->set_userdata([
+                            'logged_in'  => TRUE,
+                            'user_id'    => $user->id,
+                            'name'       => $user->name,
+                            'email'      => $user->email,
+                            'role'       => $user->role,
+                            'student_id' => $user->student_id,
+                        ]);
+                        redirect('dashboard');
+                    }
                 } else {
                     $data['error'] = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
                 }
@@ -53,12 +57,21 @@ class Auth extends MY_Controller {
             $this->form_validation->set_rules('confirm',    'Confirm',  'required|matches[password]');
             $this->form_validation->set_rules('role',       'Role',     'required');
             if ($this->form_validation->run()) {
+                $role = $this->input->post('role', TRUE);
+                // Block self-registration as privileged roles
+                $blocked = ['super_admin', 'treasurer', 'head_it', 'advisor', 'auditor'];
+                if (in_array($role, $blocked)) {
+                    $data['errors']['role'] = 'ไม่สามารถสมัครสมาชิกในตำแหน่งนี้ได้ กรุณาติดต่อผู้ดูแลระบบ';
+                    $data['tab'] = 'signup';
+                    $this->load->view('auth/login', $data ?? []);
+                    return;
+                }
                 $this->User_model->create([
                     'name'       => $this->input->post('name', TRUE),
                     'student_id' => $this->input->post('student_id', TRUE),
                     'email'      => $this->input->post('email', TRUE),
                     'password'   => $this->input->post('password'),
-                    'role'       => $this->input->post('role', TRUE),
+                    'role'       => $role,
                 ]);
                 $data['success'] = 'สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ';
             } else {
