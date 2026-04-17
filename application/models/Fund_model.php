@@ -8,10 +8,8 @@ class Fund_model extends CI_Model {
     }
 
     public function get_balance() {
-        $row = $this->db->select_max('id')->get('fund_ledger')->row();
-        if (!$row || !$row->id) return 0;
-        $latest = $this->db->where('id', $row->id)->get('fund_ledger')->row();
-        return $latest ? (float)$latest->balance : 0;
+        $row = $this->db->select('balance')->order_by('id','DESC')->limit(1)->get('fund_ledger')->row();
+        return $row ? (float)$row->balance : 0;
     }
 
     public function add_entry($data) {
@@ -21,20 +19,37 @@ class Fund_model extends CI_Model {
     }
 
     public function delete_entry($id) {
-        // Recalculate balances after deletion is complex; mark as handled
         $this->db->where('id', $id)->delete('fund_ledger');
     }
 
-    public function get_monthly_summary($year = 2568) {
-        $months = [];
-        $th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    // Recalculate running balance for all entries in chronological order
+    public function recalc_balances() {
+        $entries = $this->db->order_by('id','ASC')->get('fund_ledger')->result();
+        $bal = 0;
+        foreach ($entries as $e) {
+            $bal += (float)$e->income - (float)$e->expense;
+            $this->db->where('id', $e->id)->update('fund_ledger', ['balance' => $bal]);
+        }
+    }
+
+    // Monthly summary using txn_date (ISO date column)
+    public function get_monthly_summary($year_be = 2568) {
+        $year_ad = $year_be - 543;
+        $months  = [];
         for ($m = 1; $m <= 12; $m++) {
-            $like = $th_months[$m] . ' ' . substr((string)$year, 2);
-            $inc = $this->db->select_sum('income')->like('entry_date', $th_months[$m])->where('type','income')->get('fund_ledger')->row();
-            $exp = $this->db->select_sum('expense')->like('entry_date', $th_months[$m])->where('type','expense')->get('fund_ledger')->row();
+            $row_i = $this->db->query(
+                "SELECT COALESCE(SUM(income),0)  AS total FROM fund_ledger
+                 WHERE type='income'  AND YEAR(txn_date)=? AND MONTH(txn_date)=?",
+                [$year_ad, $m]
+            )->row();
+            $row_e = $this->db->query(
+                "SELECT COALESCE(SUM(expense),0) AS total FROM fund_ledger
+                 WHERE type='expense' AND YEAR(txn_date)=? AND MONTH(txn_date)=?",
+                [$year_ad, $m]
+            )->row();
             $months[$m] = [
-                'income'  => $inc  ? (float)$inc->income  : 0,
-                'expense' => $exp  ? (float)$exp->expense : 0,
+                'income'  => $row_i ? (float)$row_i->total : 0,
+                'expense' => $row_e ? (float)$row_e->total : 0,
             ];
         }
         return $months;

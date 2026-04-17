@@ -11,7 +11,7 @@ class Dashboard extends MY_Controller {
     public function index() {
         $this->require_login();
         $user = $this->get_user();
-        $year = 2568;
+        $year = $this->acad_year;
 
         $stats    = $this->Payment_model->get_stats($year);
         $balance  = $this->Fund_model->get_balance();
@@ -21,13 +21,12 @@ class Dashboard extends MY_Controller {
         $expenses = $this->Expense_model->get_all(['status' => 'pending']);
         $overdue  = $this->Payment_model->get_all_overdue($year);
 
-        // My payment info (for student role)
         $my_payments = [];
-        if (in_array($user['role'], ['student','activity_staff','academic_staff'])) {
+        if (!in_array($user['role'], ['treasurer','head_it','advisor','auditor','super_admin'])) {
             $my_payments = $this->Payment_model->get_by_student($user['student_id'], $year);
         }
 
-        $data = [
+        $this->render('dashboard/index', [
             'title'       => 'Dashboard — IT Finance',
             'stats'       => $stats,
             'balance'     => $balance,
@@ -37,8 +36,6 @@ class Dashboard extends MY_Controller {
             'expenses'    => array_slice($expenses, 0, 5),
             'overdue'     => $overdue,
             'my_payments' => $my_payments,
-            'year'        => $year,
-        ];
-        $this->render('dashboard/index', $data);
+        ]);
     }
 }

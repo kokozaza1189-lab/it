@@ -14,8 +14,14 @@ class MY_Controller extends CI_Controller {
         'super_admin'    => ['label' => 'Super Admin',   'color' => '#f97316'],
     ];
 
+    protected $settings  = [];
+    protected $acad_year = 2568;
+
     public function __construct() {
         parent::__construct();
+        $this->load->model('Setting_model');
+        $this->settings  = $this->Setting_model->get_all();
+        $this->acad_year = (int)($this->settings['academic_year'] ?? 2568);
     }
 
     protected function require_login() {
@@ -29,7 +35,7 @@ class MY_Controller extends CI_Controller {
         $this->require_login();
         $current = $this->session->userdata('role');
         if (!in_array($current, (array)$roles)) {
-            show_error('Access denied', 403);
+            show_error('คุณไม่มีสิทธิ์เข้าถึงหน้านี้', 403);
         }
     }
 
@@ -48,6 +54,9 @@ class MY_Controller extends CI_Controller {
     protected function render($view, $data = []) {
         $data['current_user'] = $this->get_user();
         $data['page']         = $view;
+        $data['settings']     = $this->settings;
+        $data['acad_year']    = $this->acad_year;
+        if (!isset($data['year'])) $data['year'] = $this->acad_year;
         $this->load->view('templates/header', $data);
         $this->load->view('templates/sidebar', $data);
         $this->load->view($view, $data);
@@ -61,13 +70,14 @@ class MY_Controller extends CI_Controller {
     }
 
     protected function can($action) {
-        $role = $this->session->userdata('role');
+        $role  = $this->session->userdata('role');
         $perms = [
-            'create_expense' => ['activity_staff','academic_staff','super_admin'],
-            'approve_expense'=> ['treasurer','super_admin'],
-            'edit_payment'   => ['treasurer','super_admin'],
-            'view_all'       => ['treasurer','head_it','advisor','auditor','super_admin'],
-            'super'          => ['super_admin'],
+            'create_expense'  => ['activity_staff','academic_staff','super_admin'],
+            'approve_expense' => ['treasurer','super_admin'],
+            'edit_payment'    => ['treasurer','super_admin'],
+            'view_all'        => ['treasurer','head_it','advisor','auditor','super_admin'],
+            'manage_settings' => ['super_admin','treasurer'],
+            'super'           => ['super_admin'],
         ];
         return in_array($role, $perms[$action] ?? []);
     }

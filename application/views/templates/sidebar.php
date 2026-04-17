@@ -16,9 +16,15 @@ $menus = [
   ['key'=>'fund',        'label'=>'เงินกลาง',            'icon'=>'🏦',
    'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('fund')],
-  ['key'=>'students',    'label'=>'รายชื่อนิสิต',       'icon'=>'👥',
+  ['key'=>'students',      'label'=>'รายชื่อนิสิต',    'icon'=>'👥',
    'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('students')],
+  ['key'=>'notifications', 'label'=>'การแจ้งเตือน',   'icon'=>'🔔',
+   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
+   'url'=>base_url('notifications')],
+  ['key'=>'settings',      'label'=>'ตั้งค่า',          'icon'=>'⚙️',
+   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
+   'url'=>base_url('settings')],
 ];
 $current_page = uri_string();
 ?>

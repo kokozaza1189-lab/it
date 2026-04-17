@@ -10,8 +10,8 @@ class Students extends MY_Controller {
 
     public function index() {
         $this->require_role(['treasurer','head_it','advisor','auditor','super_admin']);
-        $year     = $this->input->get('year') ?: 2568;
-        $search   = $this->input->get('search') ?: '';
+        $year   = (int)($this->input->get('year') ?: $this->acad_year);
+        $search = $this->input->get('search') ?: '';
         $students = $this->Student_model->get_with_payments($year);
         if ($search) {
             $students = array_filter($students, fn($s) =>
@@ -19,18 +19,16 @@ class Students extends MY_Controller {
                 mb_stripos($s->student_id, $search) !== false
             );
         }
-        $data = [
+        $this->render('students/index', [
             'title'    => 'รายชื่อนิสิต',
             'students' => array_values($students),
             'search'   => $search,
-            'year'     => $year,
-        ];
-        $this->render('students/index', $data);
+        ]);
     }
 
     public function update_payment() {
         $this->require_role(['treasurer','super_admin']);
-        $id     = $this->input->post('id');
+        $id     = (int)$this->input->post('id');
         $status = $this->input->post('status');
         $date   = $this->input->post('paid_date') ?: null;
         $this->Payment_model->update_status($id, $status, $date);

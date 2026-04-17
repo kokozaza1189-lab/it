@@ -12,14 +12,13 @@ class Fund extends MY_Controller {
         $this->require_role(['treasurer','head_it','advisor','auditor','super_admin']);
         $ledger  = $this->Fund_model->get_ledger();
         $balance = $this->Fund_model->get_balance();
-        $monthly = $this->Fund_model->get_monthly_summary(2568);
-        $data = [
+        $monthly = $this->Fund_model->get_monthly_summary($this->acad_year);
+        $this->render('fund/index', [
             'title'   => 'เงินกลาง',
             'ledger'  => $ledger,
             'balance' => $balance,
             'monthly' => $monthly,
-        ];
-        $this->render('fund/index', $data);
+        ]);
     }
 
     public function adjust() {
@@ -29,8 +28,10 @@ class Fund extends MY_Controller {
             $amount  = (float)$this->input->post('amount');
             $balance = $this->Fund_model->get_balance();
             $new_bal = $type === 'income' ? $balance + $amount : $balance - $amount;
+            $th      = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
             $this->Fund_model->add_entry([
-                'entry_date' => date('d M Y'),
+                'entry_date' => date('j') . ' ' . $th[(int)date('n')] . ' ' . (date('Y') + 543),
+                'txn_date'   => date('Y-m-d'),
                 'title'      => $this->input->post('title', TRUE),
                 'type'       => $type,
                 'income'     => $type === 'income' ? $amount : null,
@@ -46,6 +47,8 @@ class Fund extends MY_Controller {
     public function delete($id) {
         $this->require_role(['super_admin']);
         $this->Fund_model->delete_entry($id);
+        // Recalculate all balances after deletion
+        $this->Fund_model->recalc_balances();
         redirect('fund');
     }
 }

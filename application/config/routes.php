@@ -59,16 +59,34 @@ $route['logout']         = 'auth/logout';
 $route['register']       = 'auth/register';
 
 // Main pages
-$route['dashboard']      = 'dashboard/index';
-$route['payment']        = 'payment/index';
-$route['payment/all']    = 'payment/all';
-$route['expense']        = 'expense/index';
-$route['expense/create'] = 'expense/create';
-$route['expense/(:any)'] = 'expense/detail/$1';
-$route['fund']           = 'fund/index';
-$route['students']       = 'students/index';
-$route['notifications']  = 'notifications/index';
-$route['settings']       = 'settings/index';
+$route['dashboard']                = 'dashboard/index';
+$route['payment']                  = 'payment/index';
+$route['payment/all']              = 'payment/all';
+$route['payment/submit']           = 'payment/submit';
+$route['payment/update_status']    = 'payment/update_status';
+
+// Expense — specific routes BEFORE catch-all
+$route['expense']                  = 'expense/index';
+$route['expense/create']           = 'expense/create';
+$route['expense/approve/(:any)']   = 'expense/approve/$1';
+$route['expense/reject/(:any)']    = 'expense/reject/$1';
+$route['expense/complete/(:any)']  = 'expense/complete/$1';
+$route['expense/pending/(:any)']   = 'expense/pending/$1';
+$route['expense/(:any)']           = 'expense/detail/$1';
+
+$route['fund']                     = 'fund/index';
+$route['fund/adjust']              = 'fund/adjust';
+$route['fund/delete/(:num)']       = 'fund/delete/$1';
+
+$route['students']                 = 'students/index';
+$route['students/update_payment']  = 'students/update_payment';
+
+$route['notifications']            = 'notifications/index';
+
+$route['settings']                 = 'settings/index';
+$route['settings/save']            = 'settings/save';
+$route['settings/save_user']       = 'settings/save_user';
+$route['settings/reset_pass']      = 'settings/reset_pass';
 
 // API (AJAX endpoints)
-$route['api/(:any)']     = 'api/$1';
+$route['api/(:any)']               = 'api/$1';
