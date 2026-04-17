@@ -23,13 +23,21 @@ class Payment extends MY_Controller {
         $this->require_role(['treasurer','head_it','advisor','auditor','super_admin']);
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
         $search = $this->input->get('search') ?: '';
-        $students = $this->Student_model->get_with_payments($year);
-        $stats    = $this->Payment_model->get_stats($year);
+        $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,2,3,4'));
+        $students = $this->Student_model->get_with_payments($year, $active);
+        if ($search) {
+            $students = array_filter($students, fn($s) =>
+                mb_stripos($s->name, $search) !== false ||
+                mb_stripos($s->student_id, $search) !== false
+            );
+        }
+        $stats = $this->Payment_model->get_stats($year);
         $this->render('payment/all', [
-            'title'    => 'ภาพรวมการชำระเงิน',
-            'students' => $students,
-            'stats'    => $stats,
-            'search'   => $search,
+            'title'         => 'ภาพรวมการชำระเงิน',
+            'students'      => array_values($students),
+            'stats'         => $stats,
+            'search'        => $search,
+            'active_months' => $active,
         ]);
     }
 
@@ -57,10 +65,12 @@ class Payment extends MY_Controller {
 
     public function update_status() {
         $this->require_role(['treasurer','super_admin']);
-        $id     = (int)$this->input->post('id');
-        $status = $this->input->post('status');
-        $date   = $this->input->post('paid_date') ?: null;
-        $this->Payment_model->update_status($id, $status, $date);
+        $id      = (int)$this->input->post('id');
+        $status  = $this->input->post('status');
+        $date    = $this->input->post('paid_date') ?: null;
+        $penalty = $this->input->post('penalty') !== null && $this->input->post('penalty') !== ''
+                   ? (float)$this->input->post('penalty') : null;
+        $this->Payment_model->update_status($id, $status, $date, $penalty);
         $this->json(['success' => true]);
     }
 }

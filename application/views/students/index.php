@@ -1,11 +1,13 @@
 <?php
-$role = $current_user['role'];
-$can_edit = in_array($role, ['treasurer','super_admin']);
-$th_months = [1=>'ม.ค.',2=>'ก.พ.',3=>'มี.ค.',4=>'เม.ย.'];
-$paid_count    = 0; $overdue_count = 0;
+$role      = $current_user['role'];
+$can_edit  = in_array($role, ['treasurer','super_admin']);
+$th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+// stats: count across active months
+$paid_count = $overdue_count = 0;
 foreach ($students as $s) {
-  foreach ([1,3] as $m) {
-    $p = $s->payments[$m];
+  foreach ($active_months as $m) {
+    $p = $s->payments[$m] ?? null;
+    if (!$p) continue;
     if ($p->status === 'paid')    $paid_count++;
     if ($p->status === 'overdue') $overdue_count++;
   }
@@ -15,12 +17,15 @@ foreach ($students as $s) {
 
 <!-- Stats -->
 <div class="grid grid-cols-3 gap-4 mb-5">
-  <div class="kpi"><p class="text-slate-500 text-xs font-semibold uppercase">นิสิตทั้งหมด</p><p class="text-2xl font-bold text-slate-800 mt-1"><?= count($students) ?></p></div>
-  <div class="kpi"><p class="text-slate-500 text-xs font-semibold uppercase">ชำระแล้ว</p><p class="text-2xl font-bold text-emerald-600 mt-1"><?= $paid_count ?></p></div>
-  <div class="kpi"><p class="text-slate-500 text-xs font-semibold uppercase">ค้างชำระ</p><p class="text-2xl font-bold text-red-500 mt-1"><?= $overdue_count ?></p></div>
+  <div class="kpi"><p class="text-slate-500 text-xs font-semibold uppercase">นิสิตทั้งหมด</p>
+    <p class="text-2xl font-bold text-slate-800 mt-1"><?= count($students) ?></p></div>
+  <div class="kpi"><p class="text-slate-500 text-xs font-semibold uppercase">ชำระแล้ว</p>
+    <p class="text-2xl font-bold text-emerald-600 mt-1"><?= $paid_count ?></p></div>
+  <div class="kpi"><p class="text-slate-500 text-xs font-semibold uppercase">ค้างชำระ</p>
+    <p class="text-2xl font-bold text-red-500 mt-1"><?= $overdue_count ?></p></div>
 </div>
 
-<!-- Search bar -->
+<!-- Search -->
 <form method="GET" action="<?= base_url('students') ?>" class="card mb-5 flex gap-3 items-end">
   <div class="flex-1">
     <label class="lbl">ค้นหา</label>
@@ -28,6 +33,9 @@ foreach ($students as $s) {
   </div>
   <button type="submit" class="btn btn-blue">🔍 ค้นหา</button>
   <a href="<?= base_url('students') ?>" class="btn btn-gray">รีเซ็ต</a>
+  <?php if ($can_edit): ?>
+  <a href="<?= base_url('admin/students') ?>" class="btn btn-gray">⚙️ จัดการนิสิต</a>
+  <?php endif; ?>
 </form>
 
 <!-- Table -->
@@ -38,17 +46,17 @@ foreach ($students as $s) {
         <th>#</th>
         <th>ชื่อ-สกุล</th>
         <th>รหัสนิสิต</th>
-        <?php foreach ($th_months as $m => $mname): ?>
-          <th><?= $mname ?></th>
+        <?php foreach ($active_months as $m): ?>
+          <th><?= $th_months[$m] ?></th>
         <?php endforeach; ?>
         <th>ค้างรวม</th>
       </tr></thead>
       <tbody>
         <?php foreach ($students as $i => $s):
           $total_due = 0;
-          foreach ([1,2,3,4] as $m) {
-            $p = $s->payments[$m];
-            if ($p->status === 'overdue') $total_due += $p->amount + $p->penalty;
+          foreach ($active_months as $m) {
+            $p = $s->payments[$m] ?? null;
+            if ($p && $p->status === 'overdue') $total_due += $p->amount + $p->penalty;
           }
         ?>
         <tr>
@@ -60,8 +68,8 @@ foreach ($students as $s) {
             </button>
           </td>
           <td class="font-mono text-xs text-slate-500"><?= $s->student_id ?></td>
-          <?php foreach ([1,2,3,4] as $m):
-            $p = $s->payments[$m];
+          <?php foreach ($active_months as $m):
+            $p   = $s->payments[$m] ?? (object)['id'=>null,'status'=>'none','amount'=>0,'penalty'=>0];
             $cls = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending','none'=>'b-none'][$p->status] ?? 'b-none';
             $lbl = ['paid'=>'จ่าย','overdue'=>'ค้าง','pending'=>'รอ','none'=>'-'][$p->status] ?? '-';
           ?>
@@ -69,7 +77,7 @@ foreach ($students as $s) {
             <?php if ($can_edit && $p->status !== 'none'): ?>
               <button class="badge <?= $cls ?> cursor-pointer hover:opacity-75"
                       @click="openEdit(<?= json_encode(['id'=>$p->id??null,'month'=>$m,'name'=>$s->name,'status'=>$p->status]) ?>)">
-                <?= $lbl ?><?php if ($p->penalty > 0): ?> +<?= $p->penalty ?>฿<?php endif; ?>
+                <?= $lbl ?><?php if (isset($p->penalty) && $p->penalty > 0): ?> +<?= $p->penalty ?>฿<?php endif; ?>
               </button>
             <?php else: ?>
               <span class="badge <?= $cls ?>"><?= $lbl ?></span>
@@ -87,7 +95,7 @@ foreach ($students as $s) {
   <p class="text-slate-400 text-xs p-4">แสดง <?= count($students) ?> นิสิต</p>
 </div>
 
-<!-- Student detail modal -->
+<!-- Detail modal -->
 <div v-if="detailModal && selectedStudent" class="modal-bg" @click.self="detailModal=false">
   <div class="modal-box">
     <div class="modal-header">
@@ -145,18 +153,19 @@ foreach ($students as $s) {
     </div>
   </div>
 </div>
+
 </div>
 
 <script>
 const { createApp, ref, reactive } = Vue
-const monthLabel = { 1:'ม.ค.', 2:'ก.พ.', 3:'มี.ค.', 4:'เม.ย.' }
+const monthLabel = <?= json_encode(array_combine(range(1,12),['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'])) ?>
 createApp({
   setup() {
-    const detailModal    = ref(false)
-    const editModal      = ref(false)
-    const saving         = ref(false)
+    const detailModal     = ref(false)
+    const editModal       = ref(false)
+    const saving          = ref(false)
     const selectedStudent = ref(null)
-    const editData = reactive({ id:null, month:0, name:'', status:'', paid_date:'' })
+    const editData        = reactive({ id:null, month:0, name:'', status:'', paid_date:'' })
 
     function statusClass(s) {
       return { paid:'mc-paid', overdue:'mc-overdue', pending:'mc-pending', none:'mc-none' }[s] || 'mc-none'

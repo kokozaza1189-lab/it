@@ -12,7 +12,8 @@ class Students extends MY_Controller {
         $this->require_role(['treasurer','head_it','advisor','auditor','super_admin']);
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
         $search = $this->input->get('search') ?: '';
-        $students = $this->Student_model->get_with_payments($year);
+        $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,2,3,4'));
+        $students = $this->Student_model->get_with_payments($year, $active);
         if ($search) {
             $students = array_filter($students, fn($s) =>
                 mb_stripos($s->name, $search) !== false ||
@@ -20,9 +21,10 @@ class Students extends MY_Controller {
             );
         }
         $this->render('students/index', [
-            'title'    => 'รายชื่อนิสิต',
-            'students' => array_values($students),
-            'search'   => $search,
+            'title'         => 'รายชื่อนิสิต',
+            'students'      => array_values($students),
+            'search'        => $search,
+            'active_months' => $active,
         ]);
     }
 

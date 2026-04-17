@@ -1,9 +1,16 @@
 <?php
 $role  = $current_user['role'];
 $menus = [
+  // ─── ภาพรวม ───
+  ['section'=>'ภาพรวม'],
   ['key'=>'dashboard',   'label'=>'Dashboard',         'icon'=>'📊',
    'roles'=>['student','treasurer','head_it','advisor','auditor','super_admin','activity_staff','academic_staff'],
    'url'=>base_url('dashboard')],
+  ['key'=>'notifications','label'=>'การแจ้งเตือน',   'icon'=>'🔔',
+   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
+   'url'=>base_url('notifications')],
+  // ─── การเงิน ───
+  ['section'=>'การเงิน'],
   ['key'=>'payment',     'label'=>'การชำระเงินของฉัน', 'icon'=>'💳',
    'roles'=>['student','activity_staff','academic_staff','treasurer','super_admin'],
    'url'=>base_url('payment')],
@@ -16,15 +23,33 @@ $menus = [
   ['key'=>'fund',        'label'=>'เงินกลาง',            'icon'=>'🏦',
    'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('fund')],
-  ['key'=>'students',      'label'=>'รายชื่อนิสิต',    'icon'=>'👥',
+  // ─── นิสิต ───
+  ['section'=>'นิสิต'],
+  ['key'=>'students',    'label'=>'รายชื่อนิสิต',     'icon'=>'👥',
    'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('students')],
-  ['key'=>'notifications', 'label'=>'การแจ้งเตือน',   'icon'=>'🔔',
-   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
-   'url'=>base_url('notifications')],
-  ['key'=>'settings',      'label'=>'ตั้งค่า',          'icon'=>'⚙️',
-   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
+  // ─── รายงาน & จัดการ ───
+  ['section'=>'รายงาน & จัดการ'],
+  ['key'=>'reports',     'label'=>'รายงานสรุป',        'icon'=>'📈',
+   'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
+   'url'=>base_url('reports')],
+  ['key'=>'admin/students','label'=>'จัดการนิสิต',    'icon'=>'🎓',
+   'roles'=>['treasurer','super_admin'],
+   'url'=>base_url('admin/students')],
+  ['key'=>'admin/payments','label'=>'จัดการการชำระ',  'icon'=>'⚙️',
+   'roles'=>['treasurer','super_admin'],
+   'url'=>base_url('admin/payments')],
+  ['key'=>'settings',    'label'=>'ตั้งค่าระบบ',       'icon'=>'🔧',
+   'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('settings')],
+  // ─── บัญชีผู้ใช้ ───
+  ['section'=>'บัญชีผู้ใช้'],
+  ['key'=>'settings',    'label'=>'ตั้งค่า',            'icon'=>'⚙️',
+   'roles'=>['student','activity_staff','academic_staff'],
+   'url'=>base_url('settings')],
+  ['key'=>'profile',     'label'=>'โปรไฟล์',            'icon'=>'👤',
+   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
+   'url'=>base_url('profile')],
 ];
 $current_page = uri_string();
 ?>
@@ -46,11 +71,23 @@ $current_page = uri_string();
 
   <!-- Nav -->
   <nav class="flex-1 py-3 overflow-y-auto">
-    <p class="nav-section">ภาพรวม</p>
-    <?php foreach ($menus as $m): ?>
-      <?php if (in_array($role, $m['roles'])): ?>
+    <?php
+    // Pre-process: which section indices have ≥1 visible item for this role
+    $sec_visible = []; $cur_sec = null;
+    foreach ($menus as $idx => $m) {
+      if (isset($m['section'])) { $cur_sec = $idx; $sec_visible[$idx] = false; }
+      elseif ($cur_sec !== null && in_array($role, $m['roles'])) { $sec_visible[$cur_sec] = true; }
+    }
+    $cur_sec = null;
+    foreach ($menus as $idx => $m):
+      if (isset($m['section'])):
+        $cur_sec = $idx;
+        if (!empty($sec_visible[$idx])): ?>
+          <p class="nav-section"><?= $m['section'] ?></p>
+        <?php endif;
+      elseif (in_array($role, $m['roles'])): ?>
         <a href="<?= $m['url'] ?>"
-           class="nav-item <?= (strpos($current_page, $m['key']) === 0 || ($m['key']==='dashboard' && $current_page==='dashboard')) ? 'active' : '' ?>">
+           class="nav-item <?= (strpos($current_page, $m['key']) === 0) ? 'active' : '' ?>">
           <span style="font-size:18px;width:22px;text-align:center"><?= $m['icon'] ?></span>
           <span><?= $m['label'] ?></span>
         </a>
@@ -69,6 +106,7 @@ $current_page = uri_string();
         <p class="text-white text-sm font-medium truncate"><?= htmlspecialchars($current_user['name']) ?></p>
         <p class="text-slate-500 text-xs truncate"><?= $current_user['roleLabel'] ?></p>
       </div>
+      <a href="<?= base_url('profile') ?>" class="text-slate-500 hover:text-white text-lg transition-colors" title="โปรไฟล์">👤</a>
       <a href="<?= base_url('logout') ?>" class="text-slate-500 hover:text-white text-lg transition-colors" title="ออกจากระบบ">⏏</a>
     </div>
   </div>

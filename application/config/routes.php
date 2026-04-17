@@ -88,5 +88,25 @@ $route['settings/save']            = 'settings/save';
 $route['settings/save_user']       = 'settings/save_user';
 $route['settings/reset_pass']      = 'settings/reset_pass';
 
+// Admin
+$route['admin/students']             = 'admin/students';
+$route['admin/add_student']          = 'admin/add_student';
+$route['admin/edit_student']         = 'admin/edit_student';
+$route['admin/delete_student']       = 'admin/delete_student';
+$route['admin/import_students']      = 'admin/import_students';
+$route['admin/payments']             = 'admin/payments';
+$route['admin/generate_month']       = 'admin/generate_month';
+$route['admin/mark_overdue']         = 'admin/mark_overdue';
+$route['admin/recalc_penalties']     = 'admin/recalc_penalties';
+$route['admin/clear_transactions']   = 'admin/clear_transactions';
+$route['admin/clear_students']       = 'admin/clear_students';
+
+// Profile
+$route['profile']                    = 'profile/index';
+$route['profile/change_password']    = 'profile/change_password';
+
+// Reports
+$route['reports']                    = 'reports/index';
+
 // API (AJAX endpoints)
 $route['api/(:any)']               = 'api/$1';

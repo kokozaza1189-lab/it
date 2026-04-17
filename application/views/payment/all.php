@@ -1,5 +1,5 @@
 <?php
-$th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+$th_months    = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 $status_labels = ['paid'=>'ชำระแล้ว','overdue'=>'ค้างชำระ','pending'=>'รอ','none'=>'ไม่เก็บ'];
 $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending','none'=>'b-none'];
 ?>
@@ -13,7 +13,7 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
   <div class="kpi"><p class="text-slate-500 text-xs font-semibold uppercase">รอดำเนินการ</p><p class="text-2xl font-bold text-amber-500 mt-1"><?= $stats['pending'] ?></p></div>
 </div>
 
-<!-- Search + filter bar -->
+<!-- Search + filter -->
 <div class="card mb-5">
   <form method="GET" action="<?= base_url('payment/all') ?>" class="flex flex-wrap gap-3 items-end">
     <div class="flex-1 min-w-48">
@@ -22,13 +22,11 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
     </div>
     <div>
       <label class="lbl">ปีการศึกษา</label>
-      <select name="year" class="inp" style="min-width:120px">
-        <option value="2568" <?= $year==2568?'selected':'' ?>>2568</option>
-        <option value="2567" <?= $year==2567?'selected':'' ?>>2567</option>
-      </select>
+      <input name="year" type="number" value="<?= $year ?>" class="inp" style="width:100px"/>
     </div>
     <button type="submit" class="btn btn-blue">🔍 ค้นหา</button>
     <a href="<?= base_url('payment/all') ?>" class="btn btn-gray">รีเซ็ต</a>
+    <a href="<?= base_url('admin/payments') ?>" class="btn btn-gray">⚙️ จัดการ</a>
   </form>
 </div>
 
@@ -40,42 +38,38 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
         <th>#</th>
         <th>ชื่อ-สกุล</th>
         <th>รหัส</th>
-        <?php foreach ([1,2,3,4] as $m): ?>
+        <?php foreach ($active_months as $m): ?>
           <th><?= $th_months[$m] ?></th>
         <?php endforeach; ?>
         <th>ค้างรวม</th>
-        <th></th>
       </tr></thead>
       <tbody>
         <?php foreach ($students as $i => $s):
           $total = 0;
-          foreach ([1,2,3,4] as $m) {
-            $p = $s->payments[$m];
-            if ($p->status === 'overdue') $total += $p->amount + $p->penalty;
+          foreach ($active_months as $m) {
+            $p = $s->payments[$m] ?? null;
+            if ($p && $p->status === 'overdue') $total += $p->amount + $p->penalty;
           }
         ?>
         <tr>
           <td class="text-slate-400 text-xs"><?= $i+1 ?></td>
           <td class="font-medium text-slate-800"><?= htmlspecialchars($s->name) ?></td>
           <td class="font-mono text-xs text-slate-500"><?= $s->student_id ?></td>
-          <?php foreach ([1,2,3,4] as $m):
-            $p = $s->payments[$m];
+          <?php foreach ($active_months as $m):
+            $p   = $s->payments[$m] ?? (object)['id'=>null,'status'=>'none','amount'=>0,'penalty'=>0];
             $cls = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending','none'=>'b-none'][$p->status] ?? 'b-none';
             $lbl = ['paid'=>'จ่าย','overdue'=>'ค้าง','pending'=>'รอ','none'=>'-'][$p->status] ?? '-';
           ?>
           <td>
             <button class="badge <?= $cls ?> cursor-pointer hover:opacity-80"
-                    @click="openStatus(<?= json_encode(['id'=>$p->id??null,'month'=>$m,'student'=>$s->name,'status'=>$p->status,'penalty'=>$p->penalty]) ?>)">
+                    @click="openStatus(<?= json_encode(['id'=>$p->id??null,'month'=>$m,'student'=>$s->name,'status'=>$p->status,'penalty'=>isset($p->penalty)?$p->penalty:0]) ?>)">
               <?= $lbl ?>
-              <?php if ($p->penalty > 0): ?>+<?= $p->penalty ?>฿<?php endif; ?>
+              <?php if (isset($p->penalty) && $p->penalty > 0): ?>+<?= $p->penalty ?>฿<?php endif; ?>
             </button>
           </td>
           <?php endforeach; ?>
           <td class="font-bold <?= $total > 0 ? 'text-red-500' : 'text-slate-400' ?>">
             <?= $total > 0 ? '฿'.number_format($total,2) : '-' ?>
-          </td>
-          <td>
-            <a href="#" class="btn btn-gray btn-xs" @click.prevent="openStudentDetail(<?= json_encode($s) ?>)">ดู</a>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -109,6 +103,10 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
         <label class="lbl">วันที่ชำระ</label>
         <input type="date" v-model="editData.paid_date" class="inp"/>
       </div>
+      <div v-if="editData.status==='overdue' || editData.status==='paid'">
+        <label class="lbl">ค่าปรับ (฿)</label>
+        <input type="number" step="0.01" v-model.number="editData.penalty" class="inp"/>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-gray flex-1" @click="statusModal=false">ยกเลิก</button>
@@ -131,17 +129,20 @@ createApp({
     const editData    = reactive({ id:null, month:0, student:'', status:'', paid_date:'', penalty:0 })
 
     function openStatus(data) {
-      Object.assign(editData, data, { paid_date: '' })
+      Object.assign(editData, data, { paid_date:'' })
       statusModal.value = true
     }
 
     async function saveStatus() {
-      if (!editData.id) return
+      if (!editData.id) { showToast('ไม่พบ ID รายการ', false); return }
       saving.value = true
       try {
-        await axios.post('<?= base_url('api/payment_status') ?>', {
-          id: editData.id, status: editData.status, paid_date: editData.paid_date
-        })
+        const fd = new FormData()
+        fd.append('id',        editData.id)
+        fd.append('status',    editData.status)
+        fd.append('paid_date', editData.paid_date || '')
+        fd.append('penalty',   editData.penalty || 0)
+        await axios.post('<?= base_url('payment/update_status') ?>', fd)
         showToast('บันทึกสถานะแล้ว')
         statusModal.value = false
         setTimeout(() => location.reload(), 800)
@@ -149,11 +150,7 @@ createApp({
       saving.value = false
     }
 
-    function openStudentDetail(s) {
-      // Future: open detail modal
-    }
-
-    return { statusModal, saving, editData, monthNames, openStatus, saveStatus, openStudentDetail }
+    return { statusModal, saving, editData, monthNames, openStatus, saveStatus }
   }
 }).mount('#app')
 </script>
