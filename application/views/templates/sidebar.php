@@ -14,6 +14,9 @@ $menus = [
   ['key'=>'payment',     'label'=>'การชำระเงินของฉัน', 'icon'=>'💳',
    'roles'=>['student','activity_staff','academic_staff','treasurer','super_admin'],
    'url'=>base_url('payment')],
+  ['key'=>'pay',         'label'=>'ฟอร์มชำระเงิน',    'icon'=>'📱',
+   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
+   'url'=>base_url('pay')],
   ['key'=>'payment/all', 'label'=>'ภาพรวมการชำระ',    'icon'=>'📋',
    'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('payment/all')],
@@ -26,7 +29,7 @@ $menus = [
   // ─── นิสิต ───
   ['section'=>'นิสิต'],
   ['key'=>'students',    'label'=>'รายชื่อนิสิต',     'icon'=>'👥',
-   'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
+   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('students')],
   // ─── รายงาน & จัดการ ───
   ['section'=>'รายงาน & จัดการ'],
@@ -70,7 +73,7 @@ $current_page = uri_string();
   </div>
 
   <!-- Nav -->
-  <nav class="flex-1 py-3 overflow-y-auto">
+  <nav class="flex-1 py-3" style="overflow-y:auto;overflow-x:hidden">
     <?php
     // Pre-process: which section indices have ≥1 visible item for this role
     $sec_visible = []; $cur_sec = null;
@@ -88,8 +91,8 @@ $current_page = uri_string();
       elseif (in_array($role, $m['roles'])): ?>
         <a href="<?= $m['url'] ?>"
            class="nav-item <?= (strpos($current_page, $m['key']) === 0) ? 'active' : '' ?>">
-          <span style="font-size:18px;width:22px;text-align:center"><?= $m['icon'] ?></span>
-          <span><?= $m['label'] ?></span>
+          <span class="nav-icon"><?= $m['icon'] ?></span>
+          <span class="nav-label"><?= $m['label'] ?></span>
         </a>
       <?php endif; ?>
     <?php endforeach; ?>

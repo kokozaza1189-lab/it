@@ -133,7 +133,7 @@ createApp({
 }).mount('#app')
 
 // Monthly chart
-const monthly = <?= json_encode(array_values($monthly)) ?>
+const monthly = <?= json_encode(array_values($monthly)) ?>;
 const labels  = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
 const inc = monthly.map(m => m.income)
 const exp = monthly.map(m => m.expense)

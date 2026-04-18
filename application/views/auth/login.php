@@ -97,16 +97,15 @@ body{margin:0}
       <!-- LOGIN FORM -->
       <transition name="slide" mode="out-in">
       <form v-if="tab==='login'" key="login" method="POST" action="<?= base_url('login') ?>" @submit="loading=true" class="space-y-4" novalidate>
-        <?= form_open('login', ['class'=>'hidden']) ?><?= form_close() ?>
 
         <div>
-          <label class="block text-slate-300 text-sm font-medium mb-1.5">อีเมล</label>
+          <label class="block text-slate-300 text-sm font-medium mb-1.5">อีเมล / รหัสนิสิต</label>
           <div class="fwrap">
-            <span class="ficon">✉️</span>
-            <input name="email" v-model="lf.email" class="finp" :class="{ferr:le.email}"
-                   type="email" placeholder="example@ku.th" autocomplete="email"/>
+            <span class="ficon">🪪</span>
+            <input name="identifier" v-model="lf.identifier" class="finp" :class="{ferr:le.identifier}"
+                   type="text" placeholder="example@ku.th หรือ 682165xxxx" autocomplete="username"/>
           </div>
-          <p v-if="le.email" class="ferr-msg">{{ le.email }}</p>
+          <p v-if="le.identifier" class="ferr-msg">{{ le.identifier }}</p>
         </div>
 
         <div>
@@ -240,8 +239,8 @@ createApp({
     const showPass3  = ref(false)
     const successMsg  = ref(<?= isset($success) ? json_encode($success) : 'null' ?>)
 
-    const lf = reactive({ email: '', pass: '' })
-    const le = reactive({ email: '', pass: '' })
+    const lf = reactive({ identifier: '', pass: '' })
+    const le = reactive({ identifier: '', pass: '' })
     const sf = reactive({ name:'', studentId:'', email:'', pass:'', confirm:'', role:'' })
     const se = reactive({ name:'', studentId:'', email:'', pass:'', confirm:'', role:'' })
 
@@ -255,23 +254,22 @@ createApp({
     const pwStrengthLabel = computed(() => ['','อ่อนมาก','อ่อน','ปานกลาง','แข็งแกร่ง'][pwStrength.value])
 
     function validateLogin() {
-      le.email = ''; le.pass = ''
+      le.identifier = ''; le.pass = ''
       let ok = true
-      if (!lf.email.trim()) { le.email = 'กรุณากรอกอีเมล'; ok = false }
-      if (!lf.pass.trim())  { le.pass  = 'กรุณากรอกรหัสผ่าน'; ok = false }
+      if (!lf.identifier.trim()) { le.identifier = 'กรุณากรอกอีเมลหรือรหัสนิสิต'; ok = false }
+      if (!lf.pass.trim())       { le.pass        = 'กรุณากรอกรหัสผ่าน'; ok = false }
       return ok
     }
 
     function submitLogin() {
       if (!validateLogin()) return
       loading.value = true
-      // Build and submit form
       const f = document.createElement('form')
       f.method = 'POST'
       f.action = '<?= base_url('login') ?>'
       const addField = (n, v) => { const i = document.createElement('input'); i.type='hidden'; i.name=n; i.value=v; f.appendChild(i) }
-      addField('email',    lf.email)
-      addField('password', lf.pass)
+      addField('identifier', lf.identifier)
+      addField('password',   lf.pass)
       document.body.appendChild(f)
       f.submit()
     }

@@ -7,6 +7,17 @@ class User_model extends CI_Model {
         return $this->db->where('email', $email)->where('is_active', 1)->get('users')->row();
     }
 
+    public function get_by_identifier($identifier) {
+        // Accept email OR student_id
+        return $this->db
+            ->group_start()
+                ->where('email', $identifier)
+                ->or_where('student_id', $identifier)
+            ->group_end()
+            ->where('is_active', 1)
+            ->get('users')->row();
+    }
+
     public function get_by_id($id) {
         return $this->db->where('id', $id)->get('users')->row();
     }

@@ -9,7 +9,7 @@ class Students extends MY_Controller {
     }
 
     public function index() {
-        $this->require_role(['treasurer','head_it','advisor','auditor','super_admin']);
+        $this->require_login();
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
         $search = $this->input->get('search') ?: '';
         $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,2,3,4'));

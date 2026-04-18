@@ -62,7 +62,7 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
           ?>
           <td>
             <button class="badge <?= $cls ?> cursor-pointer hover:opacity-80"
-                    @click="openStatus(<?= json_encode(['id'=>$p->id??null,'month'=>$m,'student'=>$s->name,'status'=>$p->status,'penalty'=>isset($p->penalty)?$p->penalty:0]) ?>)">
+                    @click="openStatus(<?= htmlspecialchars(json_encode(['id'=>$p->id??null,'month'=>$m,'student'=>$s->name,'status'=>$p->status,'penalty'=>isset($p->penalty)?(float)$p->penalty:0]), ENT_QUOTES) ?>)">
               <?= $lbl ?>
               <?php if (isset($p->penalty) && $p->penalty > 0): ?>+<?= $p->penalty ?>฿<?php endif; ?>
             </button>

@@ -7,7 +7,7 @@
   $role = $current_user['role'];
   $bnav = [
     ['label'=>'หน้าหลัก','icon'=>'📊','url'=>base_url('dashboard'),'key'=>'dashboard'],
-    ['label'=>'ชำระ',    'icon'=>'💳','url'=>base_url('payment'),  'key'=>'payment'],
+    ['label'=>'ชำระเงิน','icon'=>'📱','url'=>base_url('pay'),      'key'=>'pay'],
     ['label'=>'เบิก',    'icon'=>'💸','url'=>base_url('expense'),  'key'=>'expense'],
     ['label'=>'เงินกลาง','icon'=>'🏦','url'=>base_url('fund'),     'key'=>'fund'],
     ['label'=>'นิสิต',   'icon'=>'👥','url'=>base_url('students'), 'key'=>'students'],
@@ -16,7 +16,7 @@
   $current_page = uri_string();
   foreach ($bnav as $m):
     if ($m['key']==='payment' && !in_array($role,['student','activity_staff','academic_staff','treasurer','super_admin'])) continue;
-    if (in_array($m['key'],['fund','students']) && !in_array($role,$treasurer_roles)) continue;
+    if ($m['key']==='fund' && !in_array($role,$treasurer_roles)) continue;
   ?>
     <a href="<?= $m['url'] ?>" class="bnav-item <?= strpos($current_page,$m['key'])===0?'active':'' ?>">
       <span style="font-size:20px;line-height:1"><?= $m['icon'] ?></span>

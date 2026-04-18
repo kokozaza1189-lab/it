@@ -68,6 +68,7 @@ $route['payment/update_status']    = 'payment/update_status';
 // Expense — specific routes BEFORE catch-all
 $route['expense']                  = 'expense/index';
 $route['expense/create']           = 'expense/create';
+$route['expense/edit/(:any)']      = 'expense/edit/$1';
 $route['expense/approve/(:any)']   = 'expense/approve/$1';
 $route['expense/reject/(:any)']    = 'expense/reject/$1';
 $route['expense/complete/(:any)']  = 'expense/complete/$1';
@@ -107,6 +108,11 @@ $route['profile/change_password']    = 'profile/change_password';
 
 // Reports
 $route['reports']                    = 'reports/index';
+
+// Standalone public payment form (no login)
+$route['pay']                      = 'pay/index';
+$route['pay/lookup']               = 'pay/lookup';
+$route['pay/submit']               = 'pay/submit';
 
 // API (AJAX endpoints)
 $route['api/(:any)']               = 'api/$1';

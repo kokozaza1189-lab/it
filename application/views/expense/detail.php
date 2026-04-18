@@ -102,7 +102,11 @@ $cur_idx  = array_search($expense->status, $flow);
       <button class="btn btn-violet" @click="doComplete">✓ ทำเครื่องหมายเสร็จสิ้น</button>
     <?php endif; ?>
 
-    <?php if (in_array($expense->status,['draft','submitted']) && $expense->requester_id === $current_user['student_id']): ?>
+    <?php if ($expense->status === 'draft' && ($expense->requester_id === $current_user['student_id'] || $current_user['role'] === 'super_admin')): ?>
+      <a href="<?= base_url('expense/edit/'.$expense->id) ?>" class="btn btn-blue">✏️ แก้ไขคำร้อง</a>
+    <?php endif; ?>
+
+    <?php if (in_array($expense->status,['draft','submitted']) && ($expense->requester_id === $current_user['student_id'] || $current_user['role'] === 'super_admin')): ?>
       <form method="POST" action="<?= base_url('expense/reject/'.$expense->id) ?>">
         <input type="hidden" name="note" value="ยกเลิกโดยผู้เบิก"/>
         <button type="submit" class="btn btn-red" onclick="return confirm('ยืนยันยกเลิกคำขอ?')">ยกเลิกคำขอ</button>

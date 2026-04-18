@@ -76,7 +76,7 @@ foreach ($students as $s) {
           <td>
             <?php if ($can_edit && $p->status !== 'none'): ?>
               <button class="badge <?= $cls ?> cursor-pointer hover:opacity-75"
-                      @click="openEdit(<?= json_encode(['id'=>$p->id??null,'month'=>$m,'name'=>$s->name,'status'=>$p->status]) ?>)">
+                      @click="openEdit(<?= htmlspecialchars(json_encode(['id'=>$p->id??null,'month'=>$m,'name'=>$s->name,'status'=>$p->status]), ENT_QUOTES) ?>)">
                 <?= $lbl ?><?php if (isset($p->penalty) && $p->penalty > 0): ?> +<?= $p->penalty ?>฿<?php endif; ?>
               </button>
             <?php else: ?>
@@ -158,7 +158,7 @@ foreach ($students as $s) {
 
 <script>
 const { createApp, ref, reactive } = Vue
-const monthLabel = <?= json_encode(array_combine(range(1,12),['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'])) ?>
+const monthLabel = <?= json_encode(array_combine(range(1,12),['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'])) ?>;
 createApp({
   setup() {
     const detailModal     = ref(false)

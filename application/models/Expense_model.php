@@ -47,6 +47,18 @@ class Expense_model extends CI_Model {
         return $data['id'];
     }
 
+    public function update_expense($id, $data, $items = []) {
+        $data['updated_at'] = date('Y-m-d H:i:s');
+        $this->db->where('id', $id)->update('expenses', $data);
+        if (!empty($items)) {
+            $this->db->where('expense_id', $id)->delete('expense_items');
+            foreach ($items as $item) {
+                $item['expense_id'] = $id;
+                $this->db->insert('expense_items', $item);
+            }
+        }
+    }
+
     public function update_status($id, $status, $note = '', $approved_by = null) {
         $upd = ['status' => $status, 'updated_at' => date('Y-m-d H:i:s')];
         if ($note)        $upd['reject_note']  = $note;

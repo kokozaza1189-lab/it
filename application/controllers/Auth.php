@@ -18,10 +18,11 @@ class Auth extends MY_Controller {
             redirect('dashboard');
         }
         if ($this->input->post()) {
-            $this->form_validation->set_rules('email',    'Email',    'required|trim');
-            $this->form_validation->set_rules('password', 'Password', 'required|min_length[4]');
+            $this->form_validation->set_rules('identifier', 'อีเมล/รหัสนิสิต', 'required|trim');
+            $this->form_validation->set_rules('password',   'Password',          'required|min_length[4]');
             if ($this->form_validation->run()) {
-                $user = $this->User_model->get_by_email($this->input->post('email', TRUE));
+                $identifier = $this->input->post('identifier', TRUE);
+                $user = $this->User_model->get_by_identifier($identifier);
                 if ($user && $this->User_model->verify_password($this->input->post('password'), $user->password)) {
                     if (!$user->is_active) {
                         $data['error'] = 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
@@ -37,7 +38,7 @@ class Auth extends MY_Controller {
                         redirect('dashboard');
                     }
                 } else {
-                    $data['error'] = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+                    $data['error'] = 'อีเมล/รหัสนิสิต หรือรหัสผ่านไม่ถูกต้อง';
                 }
             } else {
                 $data['errors'] = $this->form_validation->error_array();

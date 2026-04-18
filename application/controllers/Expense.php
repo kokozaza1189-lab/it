@@ -71,6 +71,50 @@ class Expense extends MY_Controller {
         $this->render('expense/create', ['title' => 'สร้างคำขอเบิกเงิน']);
     }
 
+    public function edit($id) {
+        $this->require_login();
+        $expense = $this->Expense_model->get_by_id($id);
+        if (!$expense) show_404();
+        $user = $this->get_user();
+        // Only requester or super_admin can edit draft
+        if ($expense->status !== 'draft') {
+            show_error('แก้ไขได้เฉพาะคำขอที่เป็นร่างเท่านั้น', 403);
+        }
+        if ($expense->requester_id !== $user['student_id'] && $user['role'] !== 'super_admin') {
+            show_error('คุณไม่มีสิทธิ์แก้ไขคำขอนี้', 403);
+        }
+        if ($this->input->post()) {
+            $names  = $this->input->post('item_name')  ?: [];
+            $prices = $this->input->post('item_price') ?: [];
+            $qtys   = $this->input->post('item_qty')   ?: [];
+            $items  = [];
+            foreach ($names as $i => $name) {
+                if (!empty(trim($name))) {
+                    $items[] = [
+                        'item_name' => trim($name),
+                        'price'     => (float)($prices[$i] ?? 0),
+                        'quantity'  => (int)($qtys[$i] ?? 1),
+                    ];
+                }
+            }
+            $total  = array_sum(array_map(fn($it) => $it['price'] * $it['quantity'], $items));
+            $status = $this->input->post('submit_type') === 'submit' ? 'submitted' : 'draft';
+            $this->Expense_model->update_expense($id, [
+                'title'      => $this->input->post('title', TRUE),
+                'department' => $this->input->post('department', TRUE),
+                'category'   => $this->input->post('category', TRUE),
+                'reason'     => $this->input->post('reason', TRUE),
+                'amount'     => $total,
+                'status'     => $status,
+            ], $items);
+            redirect('expense/' . $id);
+        }
+        $this->render('expense/edit', [
+            'title'   => 'แก้ไขคำขอเบิกเงิน',
+            'expense' => $expense,
+        ]);
+    }
+
     // Treasurer picks up submitted request → pending (under review)
     public function pending($id) {
         $this->require_role(['treasurer','super_admin']);
