@@ -341,7 +341,7 @@ body { background: #f0f2f5; margin: 0; }
 </div><!-- #app -->
 
 <!-- Scripts at bottom — non-blocking, page renders before these load -->
-<script src="https://cdn.tailwindcss.com"></script>
+<script async src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
