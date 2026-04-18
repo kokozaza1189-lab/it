@@ -3,7 +3,7 @@ $th_months    = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.'
 $status_labels = ['paid'=>'ชำระแล้ว','overdue'=>'ค้างชำระ','pending'=>'รอ','none'=>'ไม่เก็บ'];
 $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending','none'=>'b-none'];
 ?>
-<div id="app" v-cloak>
+<div id="app">
 
 <!-- Stats row -->
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
@@ -121,6 +121,7 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const paymentAllData = <?= json_encode(
   array_map(fn($s) => [
     'name'       => mb_convert_encoding($s->name, 'UTF-8', 'UTF-8'),
@@ -189,4 +190,5 @@ createApp({
     return { statusModal, saving, editData, monthNames, openStatus, saveStatus, exportExcel }
   }
 }).mount('#app')
+})
 </script>

@@ -47,9 +47,17 @@ function showToast(msg, ok = true) {
   t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 3000);
 }
+</script>
 
-// Axios CSRF (CI3 uses POST with form_key if needed; here simplified)
+<!-- CDN libraries loaded at end of body — HTML renders first, no blocking -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Configure axios
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+// Run all Vue app initializers queued by view scripts
+(window.__vue_inits || []).forEach(function(fn) { try { fn(); } catch(e) { console.error(e); } });
 </script>
 </body>
 </html>

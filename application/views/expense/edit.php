@@ -1,5 +1,5 @@
 <?php $role = $current_user['role']; ?>
-<div id="app" v-cloak>
+<div id="app">
 <div class="max-w-2xl mx-auto">
 <div class="card">
   <div class="flex items-center justify-between mb-6">
@@ -75,6 +75,7 @@
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const { createApp, ref, computed } = Vue
 const initialItems = <?= json_encode(array_map(fn($it) => [
     'name'  => $it->item_name,
@@ -90,4 +91,5 @@ createApp({
     return { items, total, addItem, removeItem }
   }
 }).mount('#app')
+})
 </script>

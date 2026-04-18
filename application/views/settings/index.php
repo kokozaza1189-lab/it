@@ -15,7 +15,7 @@ $role_colors = [
   'auditor'=>'#ef4444','super_admin'=>'#f97316',
 ];
 ?>
-<div id="app" v-cloak>
+<div id="app">
 
 <?php if ($flash): ?>
 <div class="mb-4 px-4 py-3 rounded-xl text-emerald-700 text-sm font-medium" style="background:#d1fae5;border:1px solid #a7f3d0">
@@ -171,6 +171,7 @@ $role_colors = [
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const { createApp, ref, reactive } = Vue
 createApp({
   setup() {
@@ -222,4 +223,5 @@ createApp({
              openResetPass, saveRole, toggleActive, doResetPass }
   }
 }).mount('#app')
+})
 </script>

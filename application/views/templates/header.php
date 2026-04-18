@@ -18,13 +18,9 @@
     }
   }
 </script>
-<!-- Vue + Axios: must be in head so view inline scripts can use them synchronously -->
-<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<!-- Chart.js: loaded in head but only used on dashboard -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<!-- SheetJS: defer so it never blocks page render (only needed on button click) -->
+<!-- SheetJS: only needed on button click -->
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Vue, Axios, Chart.js are loaded at end of body in footer.php so they never block page render -->
 <style>
 *{ font-family:'Sarabun',sans-serif; box-sizing:border-box }
 body{ margin:0; background:#f0f2f8 }

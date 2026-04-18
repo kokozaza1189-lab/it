@@ -3,7 +3,7 @@ $th_months_full = ['','มกราคม','กุมภาพันธ์','ม
 $role     = $current_user['role'];
 $is_super = $role === 'super_admin';
 ?>
-<div id="app" v-cloak>
+<div id="app">
 
 <!-- Top bar -->
 <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
@@ -112,6 +112,7 @@ $is_super = $role === 'super_admin';
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const { createApp, ref } = Vue
 createApp({
   setup() {
@@ -172,4 +173,5 @@ createApp({
     return { loading, clearTxnModal, clearConfirm, doGenerate, doOverdue, doPenalty, doClearTxn }
   }
 }).mount('#app')
+})
 </script>

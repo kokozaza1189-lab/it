@@ -10,7 +10,7 @@ $role_labels = [
   'super_admin'    => 'ผู้ดูแลระบบ',
 ];
 ?>
-<div id="app" v-cloak>
+<div id="app">
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
@@ -80,6 +80,7 @@ $role_labels = [
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const { createApp, ref, reactive, computed } = Vue
 createApp({
   setup() {
@@ -137,4 +138,5 @@ createApp({
     return { saving, error, success, form, strength, strengthColor, strengthLabel, submit }
   }
 }).mount('#app')
+})
 </script>

@@ -3,7 +3,7 @@ $role        = $current_user['role'];
 $can_adjust  = in_array($role, ['super_admin','treasurer']);
 $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 ?>
-<div id="app" v-cloak>
+<div id="app">
 
 <!-- Balance KPI -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -132,6 +132,7 @@ $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const ledgerData = <?= json_encode(array_map(fn($e) => [
   'entry_date' => $e->entry_date,
   'title'      => $e->title,
@@ -190,5 +191,6 @@ new Chart(document.getElementById('fundChart'), {
       x:{ grid:{ display:false } }
     }
   }
+})
 })
 </script>

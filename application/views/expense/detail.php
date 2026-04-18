@@ -6,7 +6,7 @@ $status_badge = ['draft'=>'b-draft','submitted'=>'b-submitted','pending'=>'b-pen
 $flow     = ['draft','submitted','pending','approved','completed'];
 $cur_idx  = array_search($expense->status, $flow);
 ?>
-<div id="app" v-cloak>
+<div id="app">
 <div class="max-w-2xl mx-auto space-y-5">
 
   <!-- Header card -->
@@ -137,6 +137,7 @@ $cur_idx  = array_search($expense->status, $flow);
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const { createApp, ref } = Vue
 createApp({
   setup() {
@@ -185,4 +186,5 @@ createApp({
     return { showReject, rejectNote, saving, doPending, doApprove, doReject, doComplete }
   }
 }).mount('#app')
+})
 </script>

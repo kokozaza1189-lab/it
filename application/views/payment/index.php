@@ -18,7 +18,7 @@ $monthly_fee  = (float)($settings['monthly_fee'] ?? 50);
 $role         = $current_user['role'];
 $has_student  = !empty($current_user['student_id']);
 ?>
-<div id="app" v-cloak>
+<div id="app">
 
 <?php if ($has_student): ?>
 <!-- ── Student view ──────────────────────────────────────────── -->
@@ -351,6 +351,7 @@ $has_student  = !empty($current_user['student_id']);
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const { createApp, ref, computed } = Vue;
 const monthNames = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 createApp({
@@ -398,4 +399,5 @@ createApp({
              monthLabel, openPayModal, onSlip, submitPayment }
   }
 }).mount('#app')
+})
 </script>

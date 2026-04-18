@@ -1,5 +1,5 @@
 <?php $role = $current_user['role']; ?>
-<div id="app" v-cloak>
+<div id="app">
 <div class="max-w-2xl mx-auto">
 <div class="card">
   <h2 class="font-bold text-slate-800 text-lg mb-6">สร้างคำขอเบิกเงิน</h2>
@@ -79,6 +79,7 @@
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const fundBalance = <?= (float)($fund_balance ?? 0) ?>;
 const { createApp, ref, computed, reactive } = Vue
 createApp({
@@ -90,4 +91,5 @@ createApp({
     return { items, total, addItem, removeItem, fundBalance }
   }
 }).mount('#app')
+})
 </script>

@@ -13,7 +13,7 @@ foreach ($students as $s) {
   }
 }
 ?>
-<div id="app" v-cloak>
+<div id="app">
 
 <!-- Stats -->
 <div class="grid grid-cols-3 gap-4 mb-5">
@@ -158,6 +158,7 @@ foreach ($students as $s) {
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const studentsData = <?= json_encode(array_map(fn($s) => [
   'name'       => $s->name,
   'student_id' => $s->student_id,
@@ -225,6 +226,7 @@ createApp({
              statusClass, statusLabel, openDetail, openEdit, saveEdit, exportStudentsExcel }
   }
 }).mount('#app')
+})
 </script>
 <style>
 .mc-paid{background:#d1fae5;color:#065f46}

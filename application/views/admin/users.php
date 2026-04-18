@@ -22,7 +22,7 @@ $role_colors = [
   'super_admin'     => 'bg-red-50 text-red-700',
 ];
 ?>
-<div id="app" v-cloak>
+<div id="app">
 
 <!-- Stats + Search bar -->
 <div class="flex flex-col sm:flex-row sm:items-end gap-4 mb-5">
@@ -215,6 +215,7 @@ $role_colors = [
 </div>
 
 <script>
+(window.__vue_inits = window.__vue_inits || []).push(function() {
 const { createApp, ref, reactive } = Vue
 createApp({
   setup() {
@@ -306,4 +307,5 @@ createApp({
              openAdd, openEdit, submitAdd, submitEdit, toggleUser, deleteUser }
   }
 }).mount('#app')
+})
 </script>
