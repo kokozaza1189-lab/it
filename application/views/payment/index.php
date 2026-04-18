@@ -18,7 +18,7 @@ $monthly_fee  = (float)($settings['monthly_fee'] ?? 50);
 $role         = $current_user['role'];
 $has_student  = !empty($current_user['student_id']);
 ?>
-<div id="app">
+<div id="app" v-cloak>
 
 <?php if ($has_student): ?>
 <!-- ── Student view ──────────────────────────────────────────── -->
@@ -203,56 +203,19 @@ $has_student  = !empty($current_user['student_id']);
                style="background:#1a237e;font-size:11px">PromptPay</div>
           <div class="flex justify-center mb-3">
             <div class="rounded-xl border border-gray-100 p-2 bg-white inline-block">
-              <svg width="130" height="130" viewBox="0 0 150 150">
-                <rect x="5" y="5" width="40" height="40" rx="5" fill="#111"/>
-                <rect x="10" y="10" width="30" height="30" rx="3" fill="white"/>
-                <rect x="15" y="15" width="20" height="20" rx="2" fill="#111"/>
-                <rect x="105" y="5" width="40" height="40" rx="5" fill="#111"/>
-                <rect x="110" y="10" width="30" height="30" rx="3" fill="white"/>
-                <rect x="115" y="15" width="20" height="20" rx="2" fill="#111"/>
-                <rect x="5" y="105" width="40" height="40" rx="5" fill="#111"/>
-                <rect x="10" y="110" width="30" height="30" rx="3" fill="white"/>
-                <rect x="15" y="115" width="20" height="20" rx="2" fill="#111"/>
-                <circle cx="75" cy="75" r="18" fill="white" stroke="#e0e0e0" stroke-width="1.5"/>
-                <text x="75" y="80" text-anchor="middle" font-size="13" fill="#673ab7" font-weight="bold">QR</text>
-                <rect x="55" y="7" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                <rect x="65" y="7" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                <rect x="75" y="7" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                <rect x="85" y="7" width="7" height="7" rx="1" fill="#111" opacity=".3"/>
-                <rect x="95" y="7" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                <rect x="55" y="17" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                <rect x="75" y="17" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                <rect x="95" y="17" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                <rect x="55" y="27" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                <rect x="65" y="27" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                <rect x="85" y="27" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                <rect x="7" y="55" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                <rect x="7" y="65" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                <rect x="7" y="85" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                <rect x="7" y="95" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                <rect x="17" y="55" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                <rect x="27" y="65" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                <rect x="17" y="85" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                <rect x="27" y="95" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                <rect x="136" y="55" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                <rect x="136" y="65" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                <rect x="136" y="75" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                <rect x="136" y="85" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                <rect x="126" y="55" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                <rect x="116" y="65" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                <rect x="126" y="85" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                <rect x="55" y="136" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                <rect x="65" y="136" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                <rect x="75" y="136" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                <rect x="85" y="136" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                <rect x="55" y="126" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                <rect x="75" y="126" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                <rect x="95" y="126" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                <rect x="55" y="55" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                <rect x="95" y="55" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                <rect x="55" y="95" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                <rect x="95" y="95" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-              </svg>
+              <?php
+              $qr_path = FCPATH . ($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
+              $qr_url  = base_url($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
+              ?>
+              <?php if (file_exists($qr_path)): ?>
+                <img src="<?= $qr_url ?>" alt="QR PromptPay" width="170" height="170"
+                     style="display:block;border-radius:8px"/>
+              <?php else: ?>
+                <div style="width:170px;height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border-radius:8px;border:1.5px dashed #cbd5e1">
+                  <span style="font-size:36px">🔲</span>
+                  <p style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center">กรุณาวาง<br>qr_payment.jpg<br>ในโฟลเดอร์<br>assets/img/</p>
+                </div>
+              <?php endif; ?>
             </div>
           </div>
           <p class="text-xs font-medium mb-0.5" style="color:#00897b">สแกน QR เพื่อโอนเข้าบัญชี</p>

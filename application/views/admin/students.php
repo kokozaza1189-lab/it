@@ -2,7 +2,7 @@
 $role    = $current_user['role'];
 $is_super = $role === 'super_admin';
 ?>
-<div id="app">
+<div id="app" v-cloak>
 
 <!-- Top bar -->
 <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
@@ -126,27 +126,26 @@ $is_super = $role === 'super_admin';
   </div>
 </div>
 
-<!-- CSV import modal -->
+<!-- CSV / Excel import modal -->
 <div v-if="importModal" class="modal-bg" @click.self="importModal=false">
   <div class="modal-box" style="max-width:460px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
-        <h2 class="font-bold text-slate-800">นำเข้านิสิตจาก CSV</h2>
+        <h2 class="font-bold text-slate-800">นำเข้านิสิตจาก CSV / Excel</h2>
         <button @click="importModal=false" class="btn-icon">✕</button>
       </div>
     </div>
     <div class="modal-body space-y-4">
       <div class="p-4 rounded-xl text-sm" style="background:#f8fafc;border:1px solid #e2e8f0">
-        <p class="font-semibold text-slate-700 mb-2">รูปแบบไฟล์ CSV (UTF-8)</p>
-        <code class="text-xs text-blue-700">รหัสนิสิต,ชื่อ-สกุล,อีเมล<br/>
-6600000001,นายสมชาย ใจดี,student@email.com<br/>
-6600000002,นางสาวสมหญิง ดีมาก,</code>
-        <p class="text-slate-400 text-xs mt-2">* แถวแรกต้องเป็น header | อีเมลไม่บังคับ | ข้ามรายการที่รหัสซ้ำ</p>
+        <p class="font-semibold text-slate-700 mb-2">รูปแบบคอลัมน์ (CSV หรือ Excel)</p>
+        <code class="text-xs text-blue-700">รหัสนิสิต | ชื่อ-สกุล | อีเมล (ไม่บังคับ)</code>
+        <p class="text-slate-400 text-xs mt-2">* แถวแรกต้องเป็น header | ข้ามรายการที่รหัสซ้ำ</p>
       </div>
       <div>
-        <label class="lbl">เลือกไฟล์ CSV</label>
-        <input type="file" ref="csvInput" accept=".csv" class="inp" @change="onCsvChange"/>
+        <label class="lbl">เลือกไฟล์ CSV หรือ Excel (.xlsx, .xls)</label>
+        <input type="file" ref="csvInput" accept=".csv,.xlsx,.xls" class="inp" @change="onCsvChange"/>
         <p v-if="csvName" class="text-slate-500 text-xs mt-1">{{ csvName }}</p>
+        <p v-if="importRows.length > 0" class="text-blue-600 text-xs mt-1">พบข้อมูล {{ importRows.length }} แถว พร้อมนำเข้า</p>
       </div>
       <div v-if="importResult" class="p-3 rounded-xl" :style="importResult.added>0?'background:#f0fdf4;border:1px solid #bbf7d0':'background:#fff7ed;border:1px solid #fed7aa'">
         <p class="font-semibold text-sm">✅ เพิ่มแล้ว {{ importResult.added }} คน
@@ -156,7 +155,7 @@ $is_super = $role === 'super_admin';
     </div>
     <div class="modal-footer">
       <button class="btn btn-gray flex-1" @click="importModal=false">ปิด</button>
-      <button class="btn btn-blue flex-1" @click="submitImport" :disabled="saving||!csvFile">
+      <button class="btn btn-blue flex-1" @click="submitImport" :disabled="saving||(!csvFile&&importRows.length===0)">
         <span v-if="saving" class="spin">⏳</span> นำเข้า
       </button>
     </div>
@@ -219,6 +218,7 @@ createApp({
     const importResult = ref(null)
     const csvFile      = ref(null)
     const csvName      = ref('')
+    const importRows   = ref([])
     const form         = reactive({ student_id:'', name:'', email:'' })
     const editForm     = reactive({ student_id:'', name:'', email:'' })
     const deleteTarget = reactive({ id:'', name:'' })
@@ -271,15 +271,37 @@ createApp({
 
     function onCsvChange(e) {
       const f = e.target.files[0]
-      if (f) { csvFile.value=f; csvName.value=f.name; importResult.value=null }
+      if (!f) return
+      csvFile.value = f; csvName.value = f.name; importResult.value = null; importRows.value = []
+      const isExcel = f.name.match(/\.(xlsx|xls)$/i)
+      if (isExcel) {
+        // Parse Excel client-side with SheetJS
+        const reader = new FileReader()
+        reader.onload = ev => {
+          const wb  = XLSX.read(ev.target.result, { type:'array' })
+          const ws  = wb.Sheets[wb.SheetNames[0]]
+          const arr = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' })
+          // skip header row, map to [student_id, name, email]
+          importRows.value = arr.slice(1).filter(r => r[0]).map(r => [
+            String(r[0]).trim(), String(r[1] || '').trim(), String(r[2] || '').trim()
+          ])
+        }
+        reader.readAsArrayBuffer(f)
+      }
     }
 
     async function submitImport() {
-      if (!csvFile.value) return
       saving.value = true
       try {
-        const fd = new FormData(); fd.append('csv', csvFile.value)
-        const res = await axios.post('<?= base_url('admin/import_students') ?>', fd)
+        let res
+        if (importRows.value.length > 0) {
+          // Excel: send parsed rows as JSON
+          res = await axios.post('<?= base_url('admin/import_students_json') ?>', { rows: importRows.value })
+        } else if (csvFile.value) {
+          // CSV: send file directly
+          const fd = new FormData(); fd.append('csv', csvFile.value)
+          res = await axios.post('<?= base_url('admin/import_students') ?>', fd)
+        } else { saving.value = false; return }
         importResult.value = res.data
         showToast(`นำเข้าสำเร็จ เพิ่ม ${res.data.added} คน`)
         setTimeout(() => location.reload(), 2000)
@@ -300,7 +322,7 @@ createApp({
     }
 
     return { saving, formError, addModal, editModal, importModal, clearModal, deleteModal,
-             clearConfirm, importResult, csvFile, csvName, form, editForm, deleteTarget,
+             clearConfirm, importResult, csvFile, csvName, importRows, form, editForm, deleteTarget,
              openAdd, openEdit, confirmDelete, submitAdd, submitEdit, submitDelete,
              onCsvChange, submitImport, doClearStudents }
   }

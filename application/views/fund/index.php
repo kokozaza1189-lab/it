@@ -3,7 +3,7 @@ $role        = $current_user['role'];
 $can_adjust  = in_array($role, ['super_admin','treasurer']);
 $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 ?>
-<div id="app">
+<div id="app" v-cloak>
 
 <!-- Balance KPI -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -35,9 +35,12 @@ $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
   <div class="card lg:col-span-2 overflow-hidden">
     <div class="flex items-center justify-between mb-4">
       <h2 class="font-bold text-slate-800">รายการบัญชี</h2>
-      <?php if ($can_adjust): ?>
-        <button class="btn btn-blue btn-sm" @click="showAdjust=true">+ เพิ่มรายการ</button>
-      <?php endif; ?>
+      <div class="flex gap-2">
+        <button class="btn btn-gray btn-sm" @click="exportExcel">📊 Export</button>
+        <?php if ($can_adjust): ?>
+          <button class="btn btn-blue btn-sm" @click="showAdjust=true">+ เพิ่มรายการ</button>
+        <?php endif; ?>
+      </div>
     </div>
     <div class="overflow-x-auto">
       <table class="tbl">
@@ -93,20 +96,26 @@ $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
       </div>
     </div>
     <form method="POST" action="<?= base_url('fund/adjust') ?>" class="modal-body space-y-4">
-      <div>
-        <label class="lbl">ประเภท</label>
-        <select name="type" v-model="form.type" class="inp">
-          <option value="income">💚 รายรับ (เพิ่มเงิน)</option>
-          <option value="expense">🔴 รายจ่าย (ลดเงิน)</option>
-        </select>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">ประเภท</label>
+          <select name="type" v-model="form.type" class="inp">
+            <option value="income">💚 รายรับ</option>
+            <option value="expense">🔴 รายจ่าย</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">วันที่</label>
+          <input name="txn_date" v-model="form.txn_date" type="date" class="inp" required/>
+        </div>
       </div>
       <div>
-        <label class="lbl">ชื่อรายการ</label>
+        <label class="lbl">ชื่อรายการ <span class="text-red-500">*</span></label>
         <input name="title" v-model="form.title" class="inp" placeholder="เช่น เก็บเงินห้อง มิ.ย. 68" required/>
       </div>
       <div>
-        <label class="lbl">จำนวนเงิน (฿)</label>
-        <input name="amount" v-model="form.amount" type="number" step="0.01" min="0" class="inp" placeholder="0.00" required/>
+        <label class="lbl">จำนวนเงิน (฿) <span class="text-red-500">*</span></label>
+        <input name="amount" v-model="form.amount" type="number" step="0.01" min="0.01" class="inp" placeholder="0.00" required/>
       </div>
       <div>
         <label class="lbl">หมายเหตุ</label>
@@ -123,12 +132,39 @@ $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
 </div>
 
 <script>
+const ledgerData = <?= json_encode(array_map(fn($e) => [
+  'entry_date' => $e->entry_date,
+  'title'      => $e->title,
+  'income'     => $e->type === 'income' ? $e->income : 0,
+  'expense'    => $e->type === 'expense' ? $e->expense : 0,
+  'balance'    => $e->balance,
+  'note'       => $e->note ?? '',
+], $ledger)) ?>;
+
 const { createApp, ref, reactive } = Vue
 createApp({
   setup() {
     const showAdjust = ref(false)
-    const form = reactive({ type:'income', title:'', amount:'', note:'' })
-    return { showAdjust, form }
+    const today = new Date().toISOString().slice(0,10)
+    const form = reactive({ type:'income', title:'', amount:'', note:'', txn_date: today })
+
+    function exportExcel() {
+      if (!window.XLSX) return alert('โหลด SheetJS ไม่สำเร็จ')
+      const rows = ledgerData.map(r => ({
+        'วันที่': r.entry_date,
+        'รายการ': r.title,
+        'รายรับ (฿)': r.income || '',
+        'รายจ่าย (฿)': r.expense || '',
+        'คงเหลือ (฿)': r.balance,
+        'หมายเหตุ': r.note,
+      }))
+      const ws = XLSX.utils.json_to_sheet(rows)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Ledger')
+      XLSX.writeFile(wb, 'fund_ledger_' + new Date().toISOString().slice(0,10) + '.xlsx')
+    }
+
+    return { showAdjust, form, exportExcel }
   }
 }).mount('#app')
 

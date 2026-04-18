@@ -23,7 +23,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'http://localhost/it-ci3/';
+// Auto-detect base URL
+if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'devdeecloud.com') !== false) {
+    $config['base_url'] = 'https://ku-it.devdeecloud.com/';
+} else {
+    $config['base_url'] = 'http://localhost/it-ci3/';
+}
 
 /*
 |--------------------------------------------------------------------------

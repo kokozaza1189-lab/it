@@ -73,25 +73,53 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $active_group = 'default';
 $query_builder = TRUE;
 
-$db['default'] = array(
-	'dsn'      => '',
-	'hostname' => '127.0.0.1',
-	'port'     => 3306,
-	'username' => 'paisan',
-	'password' => '08032550',
-	'database' => 'it',
-	'dbdriver' => 'mysqli',
-	'dbprefix' => '',
-	'pconnect' => FALSE,
-	'db_debug' => (ENVIRONMENT !== 'production'),
-	'cache_on'  => FALSE,
-	'cachedir' => '',
-	'char_set' => 'utf8mb4',
-	'dbcollat' => 'utf8mb4_unicode_ci',
-	'swap_pre' => '',
-	'encrypt'  => FALSE,
-	'compress' => FALSE,
-	'stricton'  => FALSE,
-	'failover'  => array(),
-	'save_queries' => TRUE
-);
+// Auto-detect environment: production = ku-it.devdeecloud.com, otherwise local
+$is_production = (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'devdeecloud.com') !== false);
+
+if ($is_production) {
+    $db['default'] = array(
+        'dsn'      => '',
+        'hostname' => 'srv2094.hstgr.io',
+        'port'     => 3306,
+        'username' => 'u527918014_bossdba',
+        'password' => 'Boss@0851330199',
+        'database' => 'u527918014_boss',
+        'dbdriver' => 'mysqli',
+        'dbprefix' => '',
+        'pconnect' => FALSE,
+        'db_debug' => FALSE,
+        'cache_on'  => FALSE,
+        'cachedir' => '',
+        'char_set' => 'utf8mb4',
+        'dbcollat' => 'utf8mb4_unicode_ci',
+        'swap_pre' => '',
+        'encrypt'  => FALSE,
+        'compress' => FALSE,
+        'stricton'  => FALSE,
+        'failover'  => array(),
+        'save_queries' => FALSE
+    );
+} else {
+    $db['default'] = array(
+        'dsn'      => '',
+        'hostname' => '127.0.0.1',
+        'port'     => 3306,
+        'username' => 'paisan',
+        'password' => '08032550',
+        'database' => 'it',
+        'dbdriver' => 'mysqli',
+        'dbprefix' => '',
+        'pconnect' => FALSE,
+        'db_debug' => TRUE,
+        'cache_on'  => FALSE,
+        'cachedir' => '',
+        'char_set' => 'utf8mb4',
+        'dbcollat' => 'utf8mb4_unicode_ci',
+        'swap_pre' => '',
+        'encrypt'  => FALSE,
+        'compress' => FALSE,
+        'stricton'  => FALSE,
+        'failover'  => array(),
+        'save_queries' => TRUE
+    );
+}

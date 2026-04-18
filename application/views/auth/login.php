@@ -131,6 +131,7 @@ body{margin:0}
           ยังไม่มีบัญชี?
           <button type="button" class="text-blue-400 font-medium" @click="tab='signup'">สมัครสมาชิก</button>
         </p>
+
       </form>
       </transition>
 

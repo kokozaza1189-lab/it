@@ -28,10 +28,13 @@ class Fund extends MY_Controller {
             $amount  = (float)$this->input->post('amount');
             $balance = $this->Fund_model->get_balance();
             $new_bal = $type === 'income' ? $balance + $amount : $balance - $amount;
-            $th      = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+            $th        = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+            $raw_date  = $this->input->post('txn_date') ?: date('Y-m-d');
+            $ts        = strtotime($raw_date) ?: time();
+            $entry_date = date('j', $ts) . ' ' . $th[(int)date('n', $ts)] . ' ' . (date('Y', $ts) + 543);
             $this->Fund_model->add_entry([
-                'entry_date' => date('j') . ' ' . $th[(int)date('n')] . ' ' . (date('Y') + 543),
-                'txn_date'   => date('Y-m-d'),
+                'entry_date' => $entry_date,
+                'txn_date'   => date('Y-m-d', $ts),
                 'title'      => $this->input->post('title', TRUE),
                 'type'       => $type,
                 'income'     => $type === 'income' ? $amount : null,

@@ -95,12 +95,18 @@ $route['admin/add_student']          = 'admin/add_student';
 $route['admin/edit_student']         = 'admin/edit_student';
 $route['admin/delete_student']       = 'admin/delete_student';
 $route['admin/import_students']      = 'admin/import_students';
+$route['admin/import_students_json'] = 'admin/import_students_json';
 $route['admin/payments']             = 'admin/payments';
 $route['admin/generate_month']       = 'admin/generate_month';
 $route['admin/mark_overdue']         = 'admin/mark_overdue';
 $route['admin/recalc_penalties']     = 'admin/recalc_penalties';
 $route['admin/clear_transactions']   = 'admin/clear_transactions';
 $route['admin/clear_students']       = 'admin/clear_students';
+$route['admin/users']                = 'admin/users';
+$route['admin/add_user']             = 'admin/add_user';
+$route['admin/edit_user']            = 'admin/edit_user';
+$route['admin/toggle_user']          = 'admin/toggle_user';
+$route['admin/delete_user']          = 'admin/delete_user';
 
 // Profile
 $route['profile']                    = 'profile/index';

@@ -6,7 +6,7 @@ $status_badge = ['draft'=>'b-draft','submitted'=>'b-submitted','pending'=>'b-pen
 $flow     = ['draft','submitted','pending','approved','completed'];
 $cur_idx  = array_search($expense->status, $flow);
 ?>
-<div id="app">
+<div id="app" v-cloak>
 <div class="max-w-2xl mx-auto space-y-5">
 
   <!-- Header card -->

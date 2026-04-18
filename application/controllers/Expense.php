@@ -68,7 +68,8 @@ class Expense extends MY_Controller {
             ], $items);
             redirect('expense/' . $id);
         }
-        $this->render('expense/create', ['title' => 'สร้างคำขอเบิกเงิน']);
+        $balance = $this->Fund_model->get_balance();
+        $this->render('expense/create', ['title' => 'สร้างคำขอเบิกเงิน', 'fund_balance' => $balance]);
     }
 
     public function edit($id) {

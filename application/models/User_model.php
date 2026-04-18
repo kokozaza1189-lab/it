@@ -32,8 +32,27 @@ class User_model extends CI_Model {
         return password_verify($plain, $hash);
     }
 
-    public function get_all() {
-        return $this->db->order_by('role')->get('users')->result();
+    public function get_all($search = '') {
+        if ($search !== '') {
+            $this->db->group_start()
+                ->like('name', $search)
+                ->or_like('email', $search)
+                ->or_like('student_id', $search)
+                ->group_end();
+        }
+        return $this->db->order_by('role')->order_by('name')->get('users')->result();
+    }
+
+    public function count_all() {
+        return $this->db->count_all('users');
+    }
+
+    public function update($id, $data) {
+        $this->db->where('id', $id)->update('users', $data);
+    }
+
+    public function email_exists_for_other($email, $exclude_id) {
+        return $this->db->where('email', $email)->where('id !=', $exclude_id)->count_all_results('users') > 0;
     }
 
     public function toggle_active($id) {

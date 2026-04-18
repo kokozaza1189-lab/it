@@ -67,6 +67,7 @@ class MY_Controller extends CI_Controller {
         $this->output->set_status_header($status)
             ->set_content_type('application/json')
             ->set_output(json_encode($data));
+        exit;
     }
 
     protected function can($action) {

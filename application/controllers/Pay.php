@@ -17,7 +17,8 @@ class Pay extends CI_Controller {
     public function index() {
         $settings   = $this->Setting_model->get_all();
         $month      = (int)($this->input->get('month') ?: date('n'));
-        $year       = (int)($this->input->get('year')  ?: ((int)date('Y') + 543));
+        // Default year to the configured academic year, not raw CE+543 (which may not have records)
+        $year       = (int)($this->input->get('year')  ?: ($settings['academic_year'] ?? (int)date('Y') + 543));
         $monthly_fee = (float)($settings['monthly_fee'] ?? 50);
         $due_day     = (int)($settings['due_day'] ?? 8);
         $penalty_per_day = (float)($settings['penalty_per_day'] ?? 5);
@@ -35,6 +36,11 @@ class Pay extends CI_Controller {
             $penalty = round($days_overdue * $penalty_per_day, 2);
         }
 
+        $active_months = array_map('intval', explode(',', $settings['active_months'] ?? '1,2,3,4'));
+        // Clamp month to one of the active months
+        if (!in_array($month, $active_months)) {
+            $month = $active_months[0];
+        }
         $month_names = [1=>'มกราคม',2=>'กุมภาพันธ์',3=>'มีนาคม',4=>'เมษายน',5=>'พฤษภาคม',6=>'มิถุนายน',
                         7=>'กรกฎาคม',8=>'สิงหาคม',9=>'กันยายน',10=>'ตุลาคม',11=>'พฤศจิกายน',12=>'ธันวาคม'];
         $this->load->view('pay/index', [
@@ -49,6 +55,7 @@ class Pay extends CI_Controller {
             'penalty'         => $penalty,
             'total'           => $monthly_fee + $penalty,
             'month_names'     => $month_names,
+            'active_months'   => $active_months,
         ]);
     }
 
@@ -93,7 +100,9 @@ class Pay extends CI_Controller {
             }
         }
 
-        $this->Payment_model->submit_payment($sid, $year, $month, $file);
+        $settings    = $this->Setting_model->get_all();
+        $monthly_fee = (float)($settings['monthly_fee'] ?? 50);
+        $this->Payment_model->submit_payment($sid, $year, $month, $file, $monthly_fee);
         $this->_json(['success' => true, 'name' => $s->name]);
     }
 
@@ -101,5 +110,6 @@ class Pay extends CI_Controller {
         http_response_code($code);
         header('Content-Type: application/json');
         echo json_encode($data);
+        exit;
     }
 }

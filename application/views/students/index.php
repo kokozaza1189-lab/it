@@ -13,7 +13,7 @@ foreach ($students as $s) {
   }
 }
 ?>
-<div id="app">
+<div id="app" v-cloak>
 
 <!-- Stats -->
 <div class="grid grid-cols-3 gap-4 mb-5">
@@ -26,13 +26,14 @@ foreach ($students as $s) {
 </div>
 
 <!-- Search -->
-<form method="GET" action="<?= base_url('students') ?>" class="card mb-5 flex gap-3 items-end">
-  <div class="flex-1">
+<form method="GET" action="<?= base_url('students') ?>" class="card mb-5 flex flex-wrap gap-3 items-end">
+  <div class="flex-1 min-w-0" style="min-width:180px">
     <label class="lbl">ค้นหา</label>
     <input name="search" value="<?= htmlspecialchars($search) ?>" class="inp" placeholder="ชื่อหรือรหัสนิสิต"/>
   </div>
   <button type="submit" class="btn btn-blue">🔍 ค้นหา</button>
   <a href="<?= base_url('students') ?>" class="btn btn-gray">รีเซ็ต</a>
+  <button type="button" class="btn btn-gray" @click="exportStudentsExcel">📊 Export Excel</button>
   <?php if ($can_edit): ?>
   <a href="<?= base_url('admin/students') ?>" class="btn btn-gray">⚙️ จัดการนิสิต</a>
   <?php endif; ?>
@@ -157,6 +158,18 @@ foreach ($students as $s) {
 </div>
 
 <script>
+const studentsData = <?= json_encode(array_map(fn($s) => [
+  'name'       => $s->name,
+  'student_id' => $s->student_id,
+  'payments'   => array_map(fn($p) => [
+    'month'   => $p->month,
+    'status'  => $p->status,
+    'amount'  => $p->amount,
+    'penalty' => $p->penalty,
+  ], $s->payments),
+], $students)) ?>;
+const activeMonths = <?= json_encode($active_months) ?>;
+
 const { createApp, ref, reactive } = Vue
 const monthLabel = <?= json_encode(array_combine(range(1,12),['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'])) ?>;
 createApp({
@@ -166,6 +179,24 @@ createApp({
     const saving          = ref(false)
     const selectedStudent = ref(null)
     const editData        = reactive({ id:null, month:0, name:'', status:'', paid_date:'' })
+
+    function exportStudentsExcel() {
+      if (!window.XLSX) return alert('โหลด SheetJS ไม่สำเร็จ')
+      const statusTH = { paid:'ชำระแล้ว', overdue:'ค้างชำระ', pending:'รอดำเนินการ', none:'-' }
+      const rows = studentsData.map(s => {
+        const row = { 'ชื่อ-สกุล': s.name, 'รหัสนิสิต': s.student_id }
+        activeMonths.forEach(m => {
+          const p = s.payments[m]
+          row[monthLabel[m]] = p ? statusTH[p.status] || p.status : '-'
+          if (p && p.penalty > 0) row[monthLabel[m] + ' (ค่าปรับ)'] = p.penalty
+        })
+        return row
+      })
+      const ws = XLSX.utils.json_to_sheet(rows)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Students')
+      XLSX.writeFile(wb, 'students_' + new Date().toISOString().slice(0,10) + '.xlsx')
+    }
 
     function statusClass(s) {
       return { paid:'mc-paid', overdue:'mc-overdue', pending:'mc-pending', none:'mc-none' }[s] || 'mc-none'
@@ -191,7 +222,7 @@ createApp({
     }
 
     return { detailModal, editModal, saving, selectedStudent, editData, monthLabel,
-             statusClass, statusLabel, openDetail, openEdit, saveEdit }
+             statusClass, statusLabel, openDetail, openEdit, saveEdit, exportStudentsExcel }
   }
 }).mount('#app')
 </script>

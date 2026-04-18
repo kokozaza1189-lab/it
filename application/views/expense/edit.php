@@ -1,5 +1,5 @@
 <?php $role = $current_user['role']; ?>
-<div id="app">
+<div id="app" v-cloak>
 <div class="max-w-2xl mx-auto">
 <div class="card">
   <div class="flex items-center justify-between mb-6">

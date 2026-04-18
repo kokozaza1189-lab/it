@@ -5,7 +5,7 @@ class Admin extends MY_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->load->model(['Student_model','Payment_model','Fund_model']);
+        $this->load->model(['Student_model','Payment_model','Fund_model','User_model']);
     }
 
     // ──────────────────────────── STUDENT MANAGEMENT ────────────────────────────
@@ -72,6 +72,16 @@ class Admin extends MY_Controller {
         $this->json(['success' => true, 'added' => $result['added'], 'skipped' => $result['skipped']]);
     }
 
+    // Excel import: POST JSON rows [[student_id, name, email], ...]
+    public function import_students_json() {
+        $this->require_role(['treasurer','super_admin']);
+        $body = json_decode(file_get_contents('php://input'), true);
+        $rows = $body['rows'] ?? [];
+        if (empty($rows)) { $this->json(['error' => 'ไม่พบข้อมูล'], 400); return; }
+        $result = $this->Student_model->import_csv($rows, (float)($this->settings['monthly_fee'] ?? 50));
+        $this->json(['success' => true, 'added' => $result['added'], 'skipped' => $result['skipped']]);
+    }
+
     // ──────────────────────────── PAYMENT GENERATION ────────────────────────────
 
     public function payments() {
@@ -121,6 +131,93 @@ class Admin extends MY_Controller {
         $due_day = (int)($this->settings['due_day'] ?? 8);
         $days = $this->Payment_model->recalc_penalties($year, $month, $penalty, $due_day);
         $this->json(['success' => true, 'days_overdue' => $days]);
+    }
+
+    // ──────────────────────────── USER MANAGEMENT ────────────────────────────
+
+    public function users() {
+        $this->require_role(['treasurer','super_admin']);
+        $search = $this->input->get('search') ?: '';
+        $users  = $this->User_model->get_all($search);
+        $this->render('admin/users', [
+            'title'  => 'จัดการผู้ใช้งาน',
+            'users'  => $users,
+            'search' => $search,
+            'total'  => $this->User_model->count_all(),
+        ]);
+    }
+
+    public function add_user() {
+        $this->require_role(['treasurer','super_admin']);
+        $name       = trim($this->input->post('name', TRUE));
+        $email      = trim($this->input->post('email', TRUE));
+        $student_id = trim($this->input->post('student_id', TRUE)) ?: null;
+        $role       = $this->input->post('role');
+        $password   = $this->input->post('password');
+        $valid_roles = ['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'];
+        if (!$name || !$email || !$password || !in_array($role, $valid_roles)) {
+            $this->json(['error' => 'กรุณากรอกข้อมูลให้ครบ'], 400); return;
+        }
+        if ($this->db->where('email', $email)->count_all_results('users') > 0) {
+            $this->json(['error' => 'อีเมลนี้มีในระบบแล้ว'], 400); return;
+        }
+        $id = $this->User_model->create([
+            'name'       => $name,
+            'email'      => $email,
+            'student_id' => $student_id,
+            'role'       => $role,
+            'password'   => $password,
+            'is_active'  => 1,
+        ]);
+        $this->json(['success' => true, 'id' => $id]);
+    }
+
+    public function edit_user() {
+        $this->require_role(['treasurer','super_admin']);
+        $id         = (int)$this->input->post('id');
+        $name       = trim($this->input->post('name', TRUE));
+        $email      = trim($this->input->post('email', TRUE));
+        $student_id = trim($this->input->post('student_id', TRUE)) ?: null;
+        $role       = $this->input->post('role');
+        $password   = $this->input->post('password');
+        $valid_roles = ['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'];
+        if (!$id || !$name || !$email || !in_array($role, $valid_roles)) {
+            $this->json(['error' => 'ข้อมูลไม่ครบ'], 400); return;
+        }
+        if ($this->User_model->email_exists_for_other($email, $id)) {
+            $this->json(['error' => 'อีเมลนี้ถูกใช้โดยผู้ใช้อื่นแล้ว'], 400); return;
+        }
+        $data = ['name' => $name, 'email' => $email, 'student_id' => $student_id, 'role' => $role];
+        if ($password) {
+            $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+        }
+        $this->User_model->update($id, $data);
+        $this->json(['success' => true]);
+    }
+
+    public function toggle_user() {
+        $this->require_role(['super_admin']);
+        $id = (int)$this->input->post('id');
+        $this->User_model->toggle_active($id);
+        $this->json(['success' => true]);
+    }
+
+    public function delete_user() {
+        $this->require_role(['super_admin']);
+        $id         = (int)$this->input->post('id');
+        $current_id = (int)$this->session->userdata('user_id');
+        if ($id === $current_id) {
+            $this->json(['error' => 'ไม่สามารถลบบัญชีของตัวเองได้'], 400); return;
+        }
+        $target = $this->User_model->get_by_id($id);
+        if ($target && $target->role === 'super_admin') {
+            $super_count = $this->db->where('role', 'super_admin')->where('is_active', 1)->count_all_results('users');
+            if ($super_count <= 1) {
+                $this->json(['error' => 'ไม่สามารถลบ Super Admin คนสุดท้ายได้'], 400); return;
+            }
+        }
+        $this->User_model->delete($id);
+        $this->json(['success' => true]);
     }
 
     // ──────────────────────────── DATA MANAGEMENT ────────────────────────────

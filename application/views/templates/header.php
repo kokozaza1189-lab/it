@@ -18,9 +18,13 @@
     }
   }
 </script>
+<!-- Vue + Axios: must be in head so view inline scripts can use them synchronously -->
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<!-- Chart.js: loaded in head but only used on dashboard -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- SheetJS: defer so it never blocks page render (only needed on button click) -->
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{ font-family:'Sarabun',sans-serif; box-sizing:border-box }
 body{ margin:0; background:#f0f2f8 }
@@ -111,6 +115,9 @@ select.inp{background:white;cursor:pointer}
 .mc-pending{background:#fef3c7;border-color:#fcd34d;color:#92400e}
 .mc-advance{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
 .mc-none{background:#f8fafc;border-color:#e2e8f0;color:#94a3b8}
+
+/* Hide Vue app until mounted — prevents raw {{ }} and phantom modals when CDN is slow */
+[v-cloak]{display:none!important}
 
 /* Toast */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:none;padding:12px 24px;border-radius:16px;color:white;font-weight:600;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.2);white-space:nowrap}

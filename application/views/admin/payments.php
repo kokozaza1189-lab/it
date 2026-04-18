@@ -3,7 +3,7 @@ $th_months_full = ['','มกราคม','กุมภาพันธ์','ม
 $role     = $current_user['role'];
 $is_super = $role === 'super_admin';
 ?>
-<div id="app">
+<div id="app" v-cloak>
 
 <!-- Top bar -->
 <div class="flex flex-wrap items-center justify-between gap-3 mb-5">

@@ -1,5 +1,5 @@
 <?php $role = $current_user['role']; ?>
-<div id="app">
+<div id="app" v-cloak>
 <div class="max-w-2xl mx-auto">
 <div class="card">
   <h2 class="font-bold text-slate-800 text-lg mb-6">สร้างคำขอเบิกเงิน</h2>
@@ -54,6 +54,20 @@
       </div>
     </div>
 
+    <!-- Budget availability check -->
+    <div v-if="total > 0" class="rounded-xl p-3 text-sm font-medium flex items-center gap-2"
+         :style="total <= fundBalance
+           ? 'background:#d1fae5;color:#065f46'
+           : 'background:#fee2e2;color:#b91c1c'">
+      <span>{{ total <= fundBalance ? '✅' : '⚠️' }}</span>
+      <span>
+        งบคงเหลือ ฿{{ fundBalance.toLocaleString() }} —
+        {{ total <= fundBalance
+          ? 'เพียงพอสำหรับคำขอนี้'
+          : 'ไม่เพียงพอ! ขาด ฿' + (total - fundBalance).toLocaleString() }}
+      </span>
+    </div>
+
     <div class="flex gap-3 pt-2">
       <a href="<?= base_url('expense') ?>" class="btn btn-gray flex-1">ยกเลิก</a>
       <button type="submit" name="submit_type" value="draft" class="btn btn-gray flex-1">บันทึกร่าง</button>
@@ -65,6 +79,7 @@
 </div>
 
 <script>
+const fundBalance = <?= (float)($fund_balance ?? 0) ?>;
 const { createApp, ref, computed, reactive } = Vue
 createApp({
   setup() {
@@ -72,7 +87,7 @@ createApp({
     const total = computed(() => items.value.reduce((s,i) => s + (i.price * i.qty), 0))
     function addItem()    { items.value.push({ name:'', price:0, qty:1 }) }
     function removeItem(i) { items.value.splice(i, 1) }
-    return { items, total, addItem, removeItem }
+    return { items, total, addItem, removeItem, fundBalance }
   }
 }).mount('#app')
 </script>

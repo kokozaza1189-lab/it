@@ -8,13 +8,14 @@ $month_names = [1=>'มกราคม',2=>'กุมภาพันธ์',3=>'
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>ฟอร์มชำระเงินสาขา IT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <style>
 * { font-family: 'Sarabun', sans-serif; box-sizing: border-box; }
 body { background: #f0f2f5; margin: 0; }
+
+/* Hide Vue app until mounted (v-cloak trick — no more JS loading div) */
+[v-cloak] { display: none !important; }
 
 .gf-card {
   background: #fff;
@@ -65,13 +66,21 @@ body { background: #f0f2f5; margin: 0; }
 .qr-bg { background: linear-gradient(145deg, #e8f5e9, #e3f2fd, #ede7f6); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin .8s linear infinite; display: inline-block; }
+/* flex & gap utilities (Tailwind loads after DOM — these ensure layout is instant) */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.flex-wrap { flex-wrap: wrap; }
 </style>
 </head>
 <body class="min-h-screen py-8 px-3">
 
-<div id="loading" style="text-align:center;padding:60px;color:#9aa0a6">กำลังโหลด...</div>
-
-<div id="app" style="display:none">
+<div id="app" v-cloak>
 
   <!-- SUCCESS -->
   <div v-if="submitted" class="max-w-xl mx-auto text-center py-20">
@@ -87,6 +96,24 @@ body { background: #f0f2f5; margin: 0; }
   <!-- FORM -->
   <div v-else class="max-w-xl mx-auto" style="display:flex;flex-direction:column;gap:12px">
 
+    <!-- Month selector -->
+    <?php if (count($active_months) > 1): ?>
+    <div class="gf-card">
+      <p class="text-xs font-medium text-gray-500 mb-2">เลือกเดือนที่ต้องการชำระ</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <?php foreach ($active_months as $m): ?>
+          <a href="<?= base_url('pay') ?>?month=<?= $m ?>&year=<?= $year ?>"
+             style="padding:8px 16px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;border:1.5px solid;transition:all .2s;
+                    <?= $m == $month
+                      ? 'background:#673ab7;color:#fff;border-color:#673ab7'
+                      : 'background:#f8f9fa;color:#5f6368;border-color:#dadce0' ?>">
+            <?= $month_names[$m] ?>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Header card -->
     <div class="gf-card" style="border-top:10px solid #673ab7">
       <h1 class="text-2xl font-semibold text-gray-800">
@@ -96,14 +123,14 @@ body { background: #f0f2f5; margin: 0; }
 
       <!-- Bank info -->
       <div class="mt-4 rounded-xl p-4" style="background:#f8f9fa">
-        <div class="flex items-center gap-3 mb-3">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
           <span style="font-size:28px">🏦</span>
           <div>
             <p class="font-semibold text-gray-800">ธนาคารกสิกรไทย</p>
             <p class="text-gray-500 text-xs">฿<?= number_format($monthly_fee, 0) ?> / เดือน</p>
           </div>
         </div>
-        <div class="flex gap-8 pl-1 flex-wrap">
+        <div style="display:flex;gap:32px;flex-wrap:wrap;padding-left:4px">
           <div>
             <p class="text-xs text-gray-400">เลขบัญชี</p>
             <p class="font-semibold text-gray-800" style="letter-spacing:1px"><?= htmlspecialchars($settings['bank_account'] ?? '202-3-90895-9') ?></p>
@@ -116,8 +143,7 @@ body { background: #f0f2f5; margin: 0; }
       </div>
 
       <!-- Deadline -->
-      <div class="mt-3 flex items-center gap-3 rounded-r-xl px-4 py-3"
-           style="background:#fff3e0;border-left:4px solid #ff6d00">
+      <div class="mt-3" style="display:flex;align-items:center;gap:12px;background:#fff3e0;border-left:4px solid #ff6d00;border-radius:0 12px 12px 0;padding:12px 16px">
         <span style="font-size:20px">⏰</span>
         <div class="flex-1">
           <p class="text-xs font-semibold" style="color:#e65100">กำหนดชำระ</p>
@@ -146,16 +172,16 @@ body { background: #f0f2f5; margin: 0; }
       <label class="block text-sm font-medium text-gray-700 mb-3">
         รหัสนิสิต <span style="color:#d93025">*</span>
       </label>
-      <div class="relative">
+      <div style="position:relative">
         <input v-model="studentId" type="text"
                :class="['gf-input', errSid ? 'error' : '']"
                placeholder="กรอกรหัสนิสิต 10 หลัก"
                maxlength="10"
                @input="onSidInput"
                @blur="validateSid" />
-        <span v-if="lookupState==='found'" class="absolute right-0 top-1 text-sm font-medium" style="color:#2e7d32">✓ {{ foundName }}</span>
-        <span v-if="lookupState==='miss'" class="absolute right-0 top-1 text-xs" style="color:#c62828">ไม่พบรหัสนี้</span>
-        <span v-if="lookupState==='loading'" class="absolute right-0 top-1 text-xs text-gray-400">ค้นหา...</span>
+        <span v-if="lookupState==='found'" style="position:absolute;right:0;top:4px;font-size:14px;font-weight:600;color:#2e7d32">✓ {{ foundName }}</span>
+        <span v-if="lookupState==='miss'"  style="position:absolute;right:0;top:4px;font-size:12px;color:#c62828">ไม่พบรหัสนี้</span>
+        <span v-if="lookupState==='loading'" style="position:absolute;right:0;top:4px;font-size:12px;color:#9aa0a6">ค้นหา...</span>
       </div>
       <p v-if="errSid" class="text-xs mt-1" style="color:#d93025">{{ errSid }}</p>
     </div>
@@ -164,21 +190,19 @@ body { background: #f0f2f5; margin: 0; }
     <div class="gf-card" style="background:#ede7f6;border:1px solid #d1c4e9">
       <p class="text-sm font-medium text-gray-700 mb-3">สรุปยอดที่ต้องชำระ</p>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="flex justify-between text-sm">
+        <div style="display:flex;justify-content:space-between" class="text-sm">
           <span class="text-gray-600">ค่าธรรมเนียมเดือน <?= $month_names[$month] ?? '' ?></span>
           <span class="font-medium text-gray-800">฿<?= number_format($monthly_fee, 2) ?></span>
         </div>
         <?php if ($penalty > 0): ?>
-        <div class="flex justify-between text-sm">
+        <div style="display:flex;justify-content:space-between" class="text-sm">
           <span style="color:#c62828">ค่าปรับ (<?= $days_overdue ?> วัน × ฿<?= $penalty_per_day ?>)</span>
           <span class="font-medium" style="color:#c62828">฿<?= number_format($penalty, 2) ?></span>
         </div>
         <?php endif; ?>
-        <div class="flex justify-between pt-2" style="border-top:1px solid #d1c4e9">
+        <div style="display:flex;justify-content:space-between;border-top:1px solid #d1c4e9;padding-top:8px">
           <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
-          <span class="text-xl font-bold" style="color:#673ab7">
-            ฿<?= number_format($total, 2) ?>
-          </span>
+          <span class="text-xl font-bold" style="color:#673ab7">฿<?= number_format($total, 2) ?></span>
         </div>
       </div>
       <span class="inline-block mt-3 text-xs font-medium px-3 py-1 rounded-full"
@@ -193,90 +217,46 @@ body { background: #f0f2f5; margin: 0; }
 
       <div class="qr-bg rounded-2xl p-4">
         <!-- KBank Make Header -->
-        <div class="rounded-xl px-4 py-2 flex items-center justify-between mb-3"
-             style="background:linear-gradient(135deg,#1a3a2a,#1b5e20)">
+        <div style="border-radius:12px;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;background:linear-gradient(135deg,#1a3a2a,#1b5e20)">
           <div>
-            <p class="font-bold text-lg text-white leading-none">make</p>
+            <p class="font-bold text-lg text-white" style="line-height:1">make</p>
             <p class="text-xs" style="color:#a5d6a7">by KBank</p>
           </div>
-          <div class="w-7 h-7 rounded-full flex items-center justify-center"
-               style="background:rgba(255,255,255,.15)">
+          <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15)">
             <span class="text-white text-xs font-bold">K</span>
           </div>
         </div>
 
         <!-- QR frame -->
         <div class="bg-white rounded-2xl overflow-hidden" style="box-shadow:0 2px 12px rgba(0,0,0,.12)">
-          <div class="flex items-center gap-3 px-4 py-3" style="background:#1a237e">
-            <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background:#00bcd4">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#1a237e">
+            <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#00bcd4">
               <span class="text-white text-sm font-bold">+</span>
             </div>
             <div>
-              <p class="text-white font-bold text-sm tracking-widest">THAI QR</p>
-              <p class="text-xs tracking-widest" style="color:#90caf9">PAYMENT</p>
+              <p class="text-white font-bold text-sm" style="letter-spacing:3px">THAI QR</p>
+              <p class="text-xs" style="color:#90caf9;letter-spacing:3px">PAYMENT</p>
             </div>
           </div>
 
           <div class="px-5 py-5 text-center">
-            <div class="inline-block text-white text-xs font-bold px-5 py-1 rounded mb-4 tracking-wider"
-                 style="background:#1a237e">PromptPay</div>
+            <div class="inline-block text-white text-xs font-bold px-5 py-1 rounded mb-4" style="background:#1a237e;letter-spacing:2px">PromptPay</div>
 
-            <div class="flex justify-center mb-4">
-              <div class="rounded-xl border-2 border-gray-100 p-3 bg-white inline-block">
-                <svg width="150" height="150" viewBox="0 0 150 150">
-                  <rect x="5" y="5" width="40" height="40" rx="5" fill="#111"/>
-                  <rect x="10" y="10" width="30" height="30" rx="3" fill="white"/>
-                  <rect x="15" y="15" width="20" height="20" rx="2" fill="#111"/>
-                  <rect x="105" y="5" width="40" height="40" rx="5" fill="#111"/>
-                  <rect x="110" y="10" width="30" height="30" rx="3" fill="white"/>
-                  <rect x="115" y="15" width="20" height="20" rx="2" fill="#111"/>
-                  <rect x="5" y="105" width="40" height="40" rx="5" fill="#111"/>
-                  <rect x="10" y="110" width="30" height="30" rx="3" fill="white"/>
-                  <rect x="15" y="115" width="20" height="20" rx="2" fill="#111"/>
-                  <circle cx="75" cy="75" r="18" fill="white" stroke="#e0e0e0" stroke-width="1.5"/>
-                  <text x="75" y="80" text-anchor="middle" font-size="13" fill="#673ab7" font-weight="bold">QR</text>
-                  <rect x="55" y="7" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                  <rect x="65" y="7" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                  <rect x="75" y="7" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                  <rect x="85" y="7" width="7" height="7" rx="1" fill="#111" opacity=".3"/>
-                  <rect x="95" y="7" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                  <rect x="55" y="17" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                  <rect x="75" y="17" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                  <rect x="95" y="17" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                  <rect x="55" y="27" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                  <rect x="65" y="27" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                  <rect x="85" y="27" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                  <rect x="7" y="55" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                  <rect x="7" y="65" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                  <rect x="7" y="85" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                  <rect x="7" y="95" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                  <rect x="17" y="55" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                  <rect x="27" y="65" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                  <rect x="17" y="85" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                  <rect x="27" y="95" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                  <rect x="136" y="55" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                  <rect x="136" y="65" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                  <rect x="136" y="75" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                  <rect x="136" y="85" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                  <rect x="126" y="55" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                  <rect x="116" y="65" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                  <rect x="126" y="85" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                  <rect x="55" y="136" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                  <rect x="65" y="136" width="7" height="7" rx="1" fill="#111" opacity=".9"/>
-                  <rect x="75" y="136" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                  <rect x="85" y="136" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                  <rect x="55" y="126" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                  <rect x="75" y="126" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                  <rect x="95" y="126" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                  <rect x="55" y="55" width="7" height="7" rx="1" fill="#111" opacity=".4"/>
-                  <rect x="95" y="55" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                  <rect x="55" y="95" width="7" height="7" rx="1" fill="#111" opacity=".8"/>
-                  <rect x="95" y="95" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                  <rect x="105" y="65" width="7" height="7" rx="1" fill="#111" opacity=".6"/>
-                  <rect x="105" y="85" width="7" height="7" rx="1" fill="#111" opacity=".3"/>
-                  <rect x="38" y="65" width="7" height="7" rx="1" fill="#111" opacity=".7"/>
-                  <rect x="38" y="85" width="7" height="7" rx="1" fill="#111" opacity=".5"/>
-                </svg>
+            <div style="display:flex;justify-content:center;margin-bottom:16px">
+              <div style="border-radius:12px;border:2px solid #f3f4f6;padding:12px;background:white;display:inline-block">
+                <?php
+                $qr_path = FCPATH . ($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
+                $qr_url  = base_url($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
+                ?>
+                <?php if (file_exists($qr_path)): ?>
+                  <img src="<?= $qr_url ?>" alt="QR PromptPay" width="180" height="180"
+                       style="display:block;border-radius:8px"/>
+                <?php else: ?>
+                  <div style="width:180px;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border-radius:8px;border:1.5px dashed #cbd5e1">
+                    <span style="font-size:40px">🔲</span>
+                    <p style="font-size:11px;color:#94a3b8;margin-top:8px;text-align:center">วาง qr_payment.jpg<br>ในโฟลเดอร์<br>assets/img/</p>
+                  </div>
+                <?php endif; ?>
               </div>
             </div>
 
@@ -288,18 +268,17 @@ body { background: #f0f2f5; margin: 0; }
               💬 บัญชีออมทรัพย์ IT สาขาวิชาเทคโนโลยีสารสนเทศ
             </div>
 
-            <div class="flex items-center justify-between mt-3 pt-3" style="border-top:1px solid #f0f0f0">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0">
               <p class="text-left text-gray-400" style="font-size:10px;line-height:1.4">
                 Accepts all banks<br/>รับเงินได้จากทุกธนาคาร
               </p>
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                   style="background:#00897b">m</div>
+              <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#00897b;color:white;font-size:12px;font-weight:700">m</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-gray-500" style="background:#f8f9fa">
+      <div class="mt-3" style="display:flex;align-items:center;gap:8px;background:#f8f9fa;border-radius:8px;padding:8px 12px;font-size:12px;color:#5f6368">
         💡 กรอกจำนวน <strong style="color:#673ab7">฿<?= number_format($total, 2) ?></strong> ตอนโอน
       </div>
     </div>
@@ -311,39 +290,39 @@ body { background: #f0f2f5; margin: 0; }
       </label>
 
       <!-- Preview -->
-      <div v-if="slipPreview" class="mb-3 relative">
+      <div v-if="slipPreview" class="mb-3" style="position:relative">
         <img :src="slipPreview"
              class="w-full rounded-xl border border-gray-200"
              style="max-height:260px;object-fit:contain"/>
         <button @click="clearSlip"
-                class="absolute top-2 right-2 rounded-full w-7 h-7 text-white text-xs flex items-center justify-center"
-                style="background:#e53935">✕</button>
+                style="position:absolute;top:8px;right:8px;border-radius:50%;width:28px;height:28px;background:#e53935;color:white;font-size:12px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">✕</button>
         <p class="text-xs text-center mt-1" style="color:#2e7d32">✅ เลือกสลิปแล้ว</p>
       </div>
 
       <!-- Drop zone -->
       <label v-if="!slipPreview" for="slipInput"
-             :class="['drop-zone flex flex-col items-center justify-center py-8 gap-2 text-center', dragging ? 'dragging' : '']"
+             :class="['drop-zone', dragging ? 'dragging' : '']"
+             style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:8px;text-align:center"
              @dragover.prevent="dragging=true"
              @dragleave="dragging=false"
              @drop.prevent="onDrop">
         <span style="font-size:36px">📎</span>
         <p class="text-sm font-medium text-gray-600">แตะหรือลากไฟล์มาวางที่นี่</p>
         <p class="text-xs text-gray-400">PNG, JPG, PDF ไม่เกิน 5MB</p>
-        <input id="slipInput" type="file" accept="image/*,.pdf" class="hidden" @change="onFile"/>
+        <input id="slipInput" type="file" accept="image/*,.pdf" style="display:none" @change="onFile"/>
       </label>
 
       <p v-if="errSlip" class="text-xs mt-1.5" style="color:#d93025">{{ errSlip }}</p>
     </div>
 
     <!-- Submit -->
-    <div class="gf-card flex items-center justify-between">
-      <button class="btn-primary flex items-center gap-2"
+    <div class="gf-card" style="display:flex;align-items:center;justify-content:space-between">
+      <button class="btn-primary" style="display:flex;align-items:center;gap:8px"
               :disabled="submitting" @click="submit">
         <span v-if="submitting" class="spin">⏳</span>
         {{ submitting ? 'กำลังส่ง...' : 'ส่งแบบฟอร์ม' }}
       </button>
-      <button @click="reset" class="text-sm" style="color:#673ab7">ล้างแบบฟอร์ม</button>
+      <button @click="reset" class="text-sm" style="color:#673ab7;background:none;border:none;cursor:pointer">ล้างแบบฟอร์ม</button>
     </div>
 
     <p class="text-center text-xs text-gray-400 pb-6">
@@ -355,30 +334,29 @@ body { background: #f0f2f5; margin: 0; }
   <!-- Toast -->
   <div v-if="toastShow"
        :style="toastOk ? 'background:#2e7d32' : 'background:#c62828'"
-       class="fixed text-white text-sm font-medium rounded-xl px-5 py-3 flex items-center gap-2"
-       style="bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2)">
+       style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2);color:white;font-size:14px;font-weight:600;border-radius:12px;padding:12px 20px;display:flex;align-items:center;gap:8px">
     {{ toastOk ? '✅' : '❌' }} {{ toastMsg }}
   </div>
 
 </div><!-- #app -->
 
+<!-- Scripts at bottom — non-blocking, page renders before these load -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 const { createApp, ref } = Vue
 
 createApp({
   setup() {
-    document.getElementById('loading').style.display = 'none'
-    document.getElementById('app').style.display = 'block'
-
     const LOOKUP_URL = '<?= base_url('pay/lookup') ?>'
     const SUBMIT_URL = '<?= base_url('pay/submit') ?>'
     const MONTH      = <?= (int)$month ?>
-
     const YEAR       = <?= (int)$year ?>
 
     const studentId   = ref('')
     const foundName   = ref('')
-    const lookupState = ref('') // '', 'loading', 'found', 'miss'
+    const lookupState = ref('')
     const errSid      = ref('')
 
     const slipFile    = ref(null)
@@ -446,7 +424,8 @@ createApp({
     }
     function clearSlip() {
       slipFile.value = null; slipPreview.value = null
-      document.getElementById('slipInput') && (document.getElementById('slipInput').value = '')
+      const inp = document.getElementById('slipInput')
+      if (inp) inp.value = ''
     }
 
     async function submit() {

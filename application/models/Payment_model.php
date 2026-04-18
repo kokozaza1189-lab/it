@@ -26,12 +26,25 @@ class Payment_model extends CI_Model {
         $this->db->where('id', $id)->update('payment_records', $data);
     }
 
-    public function submit_payment($student_id, $year, $month, $slip_file = '') {
+    public function submit_payment($student_id, $year, $month, $slip_file = '', $amount = 50) {
         $existing = $this->get_month($student_id, $year, $month);
         if ($existing) {
+            // Do not reset a record that has already been confirmed paid
+            if ($existing->status === 'paid') return;
             $upd = ['status' => 'pending', 'updated_at' => date('Y-m-d H:i:s')];
             if ($slip_file) $upd['slip_file'] = $slip_file;
             $this->db->where('id', $existing->id)->update('payment_records', $upd);
+        } else {
+            // No record yet — create one so the slip is actually saved
+            $this->db->insert('payment_records', [
+                'student_id' => $student_id,
+                'year'       => $year,
+                'month'      => $month,
+                'status'     => 'pending',
+                'amount'     => $amount,
+                'penalty'    => 0,
+                'slip_file'  => $slip_file ?: null,
+            ]);
         }
     }
 
