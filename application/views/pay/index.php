@@ -12,10 +12,7 @@ $month_names = [1=>'มกราคม',2=>'กุมภาพันธ์',3=>'
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 * { font-family: 'Sarabun', sans-serif; box-sizing: border-box; }
-body { background: #f0f2f5; margin: 0; }
-
-/* Hide Vue app until mounted (v-cloak trick — no more JS loading div) */
-[v-cloak] { display: none !important; }
+body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
 
 .gf-card {
   background: #fff;
@@ -38,37 +35,77 @@ body { background: #f0f2f5; margin: 0; }
 .gf-input:focus { border-bottom: 2px solid #673ab7; }
 .gf-input.error { border-bottom: 2px solid #d93025; }
 .gf-input::placeholder { color: #9aa0a6; font-size: 13px; }
-
 .drop-zone {
   border: 2px dashed #c7c7c7;
   border-radius: 12px;
   cursor: pointer;
   transition: all .2s;
 }
-.drop-zone:hover, .drop-zone.dragging {
-  border-color: #673ab7;
-  background: #f3e5f5;
-}
+.drop-zone:hover, .drop-zone.dragging { border-color: #673ab7; background: #f3e5f5; }
 .btn-primary {
-  background: #673ab7;
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 10px 28px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: background .2s;
-  font-family: 'Sarabun', sans-serif;
+  background: #673ab7; color: white; font-weight: 600; font-size: 14px;
+  padding: 10px 28px; border-radius: 8px; border: none; cursor: pointer;
+  transition: background .2s; font-family: 'Sarabun', sans-serif;
+  display: inline-flex; align-items: center; gap: 8px;
 }
 .btn-primary:hover { background: #5e35b1; }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
 .qr-bg { background: linear-gradient(145deg, #e8f5e9, #e3f2fd, #ede7f6); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin .8s linear infinite; display: inline-block; }
-/* flex & gap utilities (Tailwind loads after DOM — these ensure layout is instant) */
+
+/* Layout utilities — no Tailwind CDN needed */
+.wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-xs  { font-size: 12px; }
+.text-sm  { font-size: 13px; }
+.text-lg  { font-size: 18px; }
+.text-xl  { font-size: 20px; }
+.text-2xl { font-size: 24px; }
+.font-medium   { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold     { font-weight: 700; }
+.block { display: block; }
+.inline-block { display: inline-block; }
+.relative { position: relative; }
+.w-full { width: 100%; }
+.overflow-hidden { overflow: hidden; }
+.rounded-xl  { border-radius: 12px; }
+.rounded-2xl { border-radius: 16px; }
+.rounded-full { border-radius: 9999px; }
+.bg-white { background: #fff; }
+.text-white { color: #fff; }
+.text-gray-400 { color: #9ca3af; }
+.text-gray-500 { color: #6b7280; }
+.text-gray-600 { color: #4b5563; }
+.text-gray-700 { color: #374151; }
+.text-gray-800 { color: #1f2937; }
+.text-purple-700 { color: #7c3aed; }
+.mt-0\.5 { margin-top: 2px; }
+.mt-1 { margin-top: 4px; }
+.mt-1\.5 { margin-top: 6px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.px-3 { padding-left: 12px; padding-right: 12px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.px-5 { padding-left: 20px; padding-right: 20px; }
+.py-1 { padding-top: 4px; padding-bottom: 4px; }
+.py-2 { padding-top: 8px; padding-bottom: 8px; }
+.py-5 { padding-top: 20px; padding-bottom: 20px; }
+.py-20 { padding-top: 80px; padding-bottom: 80px; }
+.p-4 { padding: 16px; }
+.pb-6 { padding-bottom: 24px; }
+.border { border: 1px solid #e5e7eb; }
+.border-gray-200 { border-color: #e5e7eb; }
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
+.flex-1 { flex: 1; }
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
 .justify-center { justify-content: center; }
@@ -76,11 +113,13 @@ body { background: #f0f2f5; margin: 0; }
 .gap-3 { gap: 12px; }
 .gap-4 { gap: 16px; }
 .flex-wrap { flex-wrap: wrap; }
+.max-w-xl { max-width: 560px; }
+.mx-auto { margin-left: auto; margin-right: auto; }
 </style>
 </head>
-<body class="min-h-screen py-8 px-3">
+<body>
 
-<div id="app" v-cloak>
+<div id="app">
 
   <!-- SUCCESS -->
   <div v-if="submitted" class="max-w-xl mx-auto text-center py-20">
@@ -340,8 +379,7 @@ body { background: #f0f2f5; margin: 0; }
 
 </div><!-- #app -->
 
-<!-- Scripts at bottom — non-blocking, page renders before these load -->
-<script async src="https://cdn.tailwindcss.com"></script>
+<!-- Vue + Axios only — no Tailwind CDN (all styles are inline above) -->
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
