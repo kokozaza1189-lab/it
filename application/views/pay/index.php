@@ -121,19 +121,19 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
 
 <div id="app">
 
-  <!-- SUCCESS -->
-  <div v-if="submitted" class="max-w-xl mx-auto text-center py-20">
+  <!-- SUCCESS — hidden by default; Vue shows it when submitted=true -->
+  <div v-show="submitted" style="display:none" class="max-w-xl mx-auto text-center py-20">
     <div class="gf-card">
       <div style="font-size:64px">✅</div>
       <h2 class="text-2xl font-semibold text-gray-800 mt-3 mb-2">ส่งแบบฟอร์มเรียบร้อย</h2>
-      <p class="text-gray-500 text-sm">ขอบคุณ <span class="font-semibold text-purple-700">{{ foundName }}</span> ที่ชำระเงิน</p>
+      <p class="text-gray-500 text-sm">ขอบคุณ <span class="font-semibold text-purple-700" v-text="foundName"></span> ที่ชำระเงิน</p>
       <p class="text-gray-400 text-xs mt-1 mb-6">ระบบจะตรวจสอบสลิปภายใน 24 ชั่วโมง</p>
       <button class="btn-primary" @click="reset">ส่งอีกครั้ง</button>
     </div>
   </div>
 
-  <!-- FORM -->
-  <div v-else class="max-w-xl mx-auto" style="display:flex;flex-direction:column;gap:12px">
+  <!-- FORM — visible by default -->
+  <div v-show="!submitted" class="max-w-xl mx-auto" style="display:flex;flex-direction:column;gap:12px">
 
     <!-- Month selector -->
     <?php if (count($active_months) > 1): ?>
@@ -218,11 +218,11 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
                maxlength="10"
                @input="onSidInput"
                @blur="validateSid" />
-        <span v-if="lookupState==='found'" style="position:absolute;right:0;top:4px;font-size:14px;font-weight:600;color:#2e7d32">✓ {{ foundName }}</span>
-        <span v-if="lookupState==='miss'"  style="position:absolute;right:0;top:4px;font-size:12px;color:#c62828">ไม่พบรหัสนี้</span>
-        <span v-if="lookupState==='loading'" style="position:absolute;right:0;top:4px;font-size:12px;color:#9aa0a6">ค้นหา...</span>
+        <span v-show="lookupState==='found'" style="display:none;position:absolute;right:0;top:4px;font-size:14px;font-weight:600;color:#2e7d32" v-text="'✓ '+foundName"></span>
+        <span v-show="lookupState==='miss'"  style="display:none;position:absolute;right:0;top:4px;font-size:12px;color:#c62828">ไม่พบรหัสนี้</span>
+        <span v-show="lookupState==='loading'" style="display:none;position:absolute;right:0;top:4px;font-size:12px;color:#9aa0a6">ค้นหา...</span>
       </div>
-      <p v-if="errSid" class="text-xs mt-1" style="color:#d93025">{{ errSid }}</p>
+      <p v-show="errSid" style="display:none;margin-top:4px;color:#d93025;font-size:12px" v-text="errSid"></p>
     </div>
 
     <!-- Amount summary -->
@@ -329,17 +329,16 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
       </label>
 
       <!-- Preview -->
-      <div v-if="slipPreview" class="mb-3" style="position:relative">
+      <div v-show="slipPreview" style="display:none;margin-bottom:12px;position:relative">
         <img :src="slipPreview"
-             class="w-full rounded-xl border border-gray-200"
-             style="max-height:260px;object-fit:contain"/>
+             style="width:100%;border-radius:12px;border:1px solid #e5e7eb;max-height:260px;object-fit:contain;display:block"/>
         <button @click="clearSlip"
                 style="position:absolute;top:8px;right:8px;border-radius:50%;width:28px;height:28px;background:#e53935;color:white;font-size:12px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer">✕</button>
         <p class="text-xs text-center mt-1" style="color:#2e7d32">✅ เลือกสลิปแล้ว</p>
       </div>
 
       <!-- Drop zone -->
-      <label v-if="!slipPreview" for="slipInput"
+      <label v-show="!slipPreview" for="slipInput"
              :class="['drop-zone', dragging ? 'dragging' : '']"
              style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:8px;text-align:center"
              @dragover.prevent="dragging=true"
@@ -351,15 +350,14 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         <input id="slipInput" type="file" accept="image/*,.pdf" style="display:none" @change="onFile"/>
       </label>
 
-      <p v-if="errSlip" class="text-xs mt-1.5" style="color:#d93025">{{ errSlip }}</p>
+      <p v-show="errSlip" style="display:none;margin-top:6px;color:#d93025;font-size:12px" v-text="errSlip"></p>
     </div>
 
     <!-- Submit -->
     <div class="gf-card" style="display:flex;align-items:center;justify-content:space-between">
-      <button class="btn-primary" style="display:flex;align-items:center;gap:8px"
-              :disabled="submitting" @click="submit">
-        <span v-if="submitting" class="spin">⏳</span>
-        {{ submitting ? 'กำลังส่ง...' : 'ส่งแบบฟอร์ม' }}
+      <button class="btn-primary" :disabled="submitting" @click="submit">
+        <span v-show="submitting" style="display:none" class="spin">⏳</span>
+        <span v-text="submitting ? 'กำลังส่ง...' : 'ส่งแบบฟอร์ม'">ส่งแบบฟอร์ม</span>
       </button>
       <button @click="reset" class="text-sm" style="color:#673ab7;background:none;border:none;cursor:pointer">ล้างแบบฟอร์ม</button>
     </div>
@@ -368,13 +366,13 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
       ระบบการเงิน · สาขาวิชาเทคโนโลยีสารสนเทศ · <?= $year ?>
     </p>
 
-  </div><!-- /v-else -->
+  </div><!-- /form -->
 
   <!-- Toast -->
-  <div v-if="toastShow"
+  <div v-show="toastShow" style="display:none"
        :style="toastOk ? 'background:#2e7d32' : 'background:#c62828'"
        style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2);color:white;font-size:14px;font-weight:600;border-radius:12px;padding:12px 20px;display:flex;align-items:center;gap:8px">
-    {{ toastOk ? '✅' : '❌' }} {{ toastMsg }}
+    <span v-text="(toastOk ? '✅ ' : '❌ ') + toastMsg"></span>
   </div>
 
 </div><!-- #app -->
