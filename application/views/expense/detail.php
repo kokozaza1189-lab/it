@@ -115,7 +115,7 @@ $cur_idx  = array_search($expense->status, $flow);
   </div>
 
   <!-- Reject modal -->
-  <div v-if="showReject" class="modal-bg" @click.self="showReject=false">
+  <div v-if="showReject" class="modal-bg" @click.self="showReject=false" style="display:none">
     <div class="modal-box" style="max-width:400px">
       <div class="modal-header">
         <h2 class="font-bold text-slate-800">ระบุเหตุผลที่ปฏิเสธ</h2>

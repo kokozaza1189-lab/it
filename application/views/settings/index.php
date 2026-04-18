@@ -140,7 +140,7 @@ $role_colors = [
 </div>
 
 <!-- Reset password modal -->
-<div v-if="resetModal" class="modal-bg" @click.self="resetModal=false">
+<div v-if="resetModal" class="modal-bg" @click.self="resetModal=false" style="display:none">
   <div class="modal-box" style="max-width:380px">
     <div class="modal-header">
       <div class="flex items-center justify-between">

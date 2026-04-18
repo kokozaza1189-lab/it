@@ -293,7 +293,7 @@ $has_student  = !empty($current_user['student_id']);
 </div>
 
 <!-- QR Payment modal (for payable months) -->
-<div v-if="payModal" class="modal-bg" @click.self="payModal=false">
+<div v-if="payModal" class="modal-bg" @click.self="payModal=false" style="display:none">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
       <div class="flex items-center justify-between">

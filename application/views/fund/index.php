@@ -87,7 +87,7 @@ $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
 </div>
 
 <!-- Adjust modal -->
-<div v-if="showAdjust" class="modal-bg" @click.self="showAdjust=false">
+<div v-if="showAdjust" class="modal-bg" @click.self="showAdjust=false" style="display:none">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
       <div class="flex items-center justify-between">

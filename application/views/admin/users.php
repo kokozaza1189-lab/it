@@ -109,7 +109,7 @@ $role_colors = [
 </div>
 
 <!-- Add User Modal -->
-<div v-if="addModal" class="modal-bg" @click.self="addModal=false">
+<div v-if="addModal" class="modal-bg" @click.self="addModal=false" style="display:none">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
@@ -161,7 +161,7 @@ $role_colors = [
 </div>
 
 <!-- Edit User Modal -->
-<div v-if="editModal" class="modal-bg" @click.self="editModal=false">
+<div v-if="editModal" class="modal-bg" @click.self="editModal=false" style="display:none">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
       <div class="flex items-center justify-between">

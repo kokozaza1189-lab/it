@@ -89,7 +89,7 @@ $is_super = $role === 'super_admin';
 
 <!-- Clear transactions modal -->
 <?php if ($is_super): ?>
-<div v-if="clearTxnModal" class="modal-bg" @click.self="clearTxnModal=false">
+<div v-if="clearTxnModal" class="modal-bg" @click.self="clearTxnModal=false" style="display:none">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <h2 class="font-bold text-red-600">⚠️ ล้างข้อมูลธุรกรรม</h2>

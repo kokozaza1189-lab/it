@@ -2,7 +2,6 @@
 $role      = $current_user['role'];
 $can_edit  = in_array($role, ['treasurer','super_admin']);
 $th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-// stats: count across active months
 $paid_count = $overdue_count = 0;
 foreach ($students as $s) {
   foreach ($active_months as $m) {
@@ -62,27 +61,17 @@ foreach ($students as $s) {
         ?>
         <tr>
           <td class="text-slate-400 text-xs"><?= $i+1 ?></td>
-          <td>
-            <button class="text-left hover:text-blue-600 font-medium text-slate-800 transition-colors"
-                    @click="openDetail(<?= htmlspecialchars(json_encode($s), ENT_QUOTES) ?>)">
-              <?= htmlspecialchars($s->name) ?>
-            </button>
-          </td>
+          <td class="font-medium text-slate-800"><?= htmlspecialchars($s->name) ?></td>
           <td class="font-mono text-xs text-slate-500"><?= $s->student_id ?></td>
           <?php foreach ($active_months as $m):
-            $p   = $s->payments[$m] ?? (object)['id'=>null,'status'=>'none','amount'=>0,'penalty'=>0];
+            $p   = $s->payments[$m] ?? (object)['status'=>'none','amount'=>0,'penalty'=>0];
             $cls = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending','none'=>'b-none'][$p->status] ?? 'b-none';
             $lbl = ['paid'=>'จ่าย','overdue'=>'ค้าง','pending'=>'รอ','none'=>'-'][$p->status] ?? '-';
           ?>
           <td>
-            <?php if ($can_edit && $p->status !== 'none'): ?>
-              <button class="badge <?= $cls ?> cursor-pointer hover:opacity-75"
-                      @click="openEdit(<?= htmlspecialchars(json_encode(['id'=>$p->id??null,'month'=>$m,'name'=>$s->name,'status'=>$p->status]), ENT_QUOTES) ?>)">
-                <?= $lbl ?><?php if (isset($p->penalty) && $p->penalty > 0): ?> +<?= $p->penalty ?>฿<?php endif; ?>
-              </button>
-            <?php else: ?>
-              <span class="badge <?= $cls ?>"><?= $lbl ?></span>
-            <?php endif; ?>
+            <span class="badge <?= $cls ?>">
+              <?= $lbl ?><?php if (isset($p->penalty) && $p->penalty > 0): ?> +<?= $p->penalty ?>฿<?php endif; ?>
+            </span>
           </td>
           <?php endforeach; ?>
           <td class="font-bold <?= $total_due > 0 ? 'text-red-500' : 'text-slate-300' ?>">
@@ -96,65 +85,6 @@ foreach ($students as $s) {
   <p class="text-slate-400 text-xs p-4">แสดง <?= count($students) ?> นิสิต</p>
 </div>
 
-<!-- Detail modal -->
-<div v-if="detailModal && selectedStudent" class="modal-bg" @click.self="detailModal=false">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="font-bold text-slate-800">{{ selectedStudent.name }}</h2>
-          <p class="text-slate-500 text-sm font-mono">{{ selectedStudent.student_id }}</p>
-        </div>
-        <button @click="detailModal=false" class="btn-icon">✕</button>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div v-for="(pay, m) in selectedStudent.payments" :key="m"
-             class="rounded-xl p-3 text-center text-sm"
-             :class="statusClass(pay.status)">
-          <p class="font-semibold text-xs">{{ monthLabel[m] }}</p>
-          <p class="font-bold mt-1">{{ statusLabel(pay.status) }}</p>
-          <p v-if="pay.penalty > 0" class="text-red-500 text-xs">+฿{{ pay.penalty }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="detailModal=false">ปิด</button>
-    </div>
-  </div>
-</div>
-
-<!-- Edit status modal -->
-<div v-if="editModal" class="modal-bg" @click.self="editModal=false">
-  <div class="modal-box" style="max-width:380px">
-    <div class="modal-header">
-      <h2 class="font-bold text-slate-800">แก้ไขสถานะ</h2>
-      <p class="text-slate-500 text-sm">{{ editData.name }} — เดือน {{ monthLabel[editData.month] }}</p>
-    </div>
-    <div class="modal-body space-y-4">
-      <div>
-        <label class="lbl">สถานะ</label>
-        <select v-model="editData.status" class="inp">
-          <option value="paid">ชำระแล้ว</option>
-          <option value="overdue">ค้างชำระ</option>
-          <option value="pending">รอดำเนินการ</option>
-        </select>
-      </div>
-      <div v-if="editData.status==='paid'">
-        <label class="lbl">วันที่ชำระ</label>
-        <input type="date" v-model="editData.paid_date" class="inp"/>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="editModal=false">ยกเลิก</button>
-      <button class="btn btn-blue flex-1" @click="saveEdit" :disabled="saving">
-        <span v-if="saving" class="spin">⏳</span> บันทึก
-      </button>
-    </div>
-  </div>
-</div>
-
 </div>
 
 <script>
@@ -166,21 +96,15 @@ const studentsData = <?= json_encode(array_map(fn($s) => [
     'month'   => $p->month,
     'status'  => $p->status,
     'amount'  => $p->amount,
-    'penalty' => $p->penalty,
+    'penalty' => $p->penalty ?? 0,
   ], $s->payments),
-], $students)) ?>;
+], $students), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: '[]' ?>;
 const activeMonths = <?= json_encode($active_months) ?>;
+const monthLabel   = <?= json_encode(array_combine(range(1,12),['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'])) ?>;
 
-const { createApp, ref, reactive } = Vue
-const monthLabel = <?= json_encode(array_combine(range(1,12),['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'])) ?>;
+const { createApp } = Vue
 createApp({
   setup() {
-    const detailModal     = ref(false)
-    const editModal       = ref(false)
-    const saving          = ref(false)
-    const selectedStudent = ref(null)
-    const editData        = reactive({ id:null, month:0, name:'', status:'', paid_date:'' })
-
     function exportStudentsExcel() {
       if (!window.XLSX) return alert('โหลด SheetJS ไม่สำเร็จ')
       const statusTH = { paid:'ชำระแล้ว', overdue:'ค้างชำระ', pending:'รอดำเนินการ', none:'-' }
@@ -198,32 +122,7 @@ createApp({
       XLSX.utils.book_append_sheet(wb, ws, 'Students')
       XLSX.writeFile(wb, 'students_' + new Date().toISOString().slice(0,10) + '.xlsx')
     }
-
-    function statusClass(s) {
-      return { paid:'mc-paid', overdue:'mc-overdue', pending:'mc-pending', none:'mc-none' }[s] || 'mc-none'
-    }
-    function statusLabel(s) {
-      return { paid:'ชำระแล้ว', overdue:'ค้างชำระ', pending:'รอ', none:'ไม่เก็บ' }[s] || s
-    }
-    function openDetail(s) { selectedStudent.value = s; detailModal.value = true }
-    function openEdit(d)   { Object.assign(editData, d, {paid_date:''}); editModal.value = true }
-
-    async function saveEdit() {
-      if (!editData.id) return
-      saving.value = true
-      try {
-        await axios.post('<?= base_url('students/update_payment') ?>', {
-          id: editData.id, status: editData.status, paid_date: editData.paid_date
-        })
-        showToast('บันทึกแล้ว')
-        editModal.value = false
-        setTimeout(() => location.reload(), 800)
-      } catch(e) { showToast('เกิดข้อผิดพลาด', false) }
-      saving.value = false
-    }
-
-    return { detailModal, editModal, saving, selectedStudent, editData, monthLabel,
-             statusClass, statusLabel, openDetail, openEdit, saveEdit, exportStudentsExcel }
+    return { exportStudentsExcel }
   }
 }).mount('#app')
 })

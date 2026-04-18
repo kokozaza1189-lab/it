@@ -65,7 +65,7 @@ $is_super = $role === 'super_admin';
 </div>
 
 <!-- Add modal -->
-<div v-if="addModal" class="modal-bg" @click.self="addModal=false">
+<div v-if="addModal" class="modal-bg" @click.self="addModal=false" style="display:none">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
@@ -98,7 +98,7 @@ $is_super = $role === 'super_admin';
 </div>
 
 <!-- Edit modal -->
-<div v-if="editModal" class="modal-bg" @click.self="editModal=false">
+<div v-if="editModal" class="modal-bg" @click.self="editModal=false" style="display:none">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
@@ -127,7 +127,7 @@ $is_super = $role === 'super_admin';
 </div>
 
 <!-- CSV / Excel import modal -->
-<div v-if="importModal" class="modal-bg" @click.self="importModal=false">
+<div v-if="importModal" class="modal-bg" @click.self="importModal=false" style="display:none">
   <div class="modal-box" style="max-width:460px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
@@ -164,7 +164,7 @@ $is_super = $role === 'super_admin';
 
 <!-- Clear data modal -->
 <?php if ($is_super): ?>
-<div v-if="clearModal" class="modal-bg" @click.self="clearModal=false">
+<div v-if="clearModal" class="modal-bg" @click.self="clearModal=false" style="display:none">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <h2 class="font-bold text-red-600">⚠️ ล้างข้อมูลนิสิต</h2>
@@ -185,7 +185,7 @@ $is_super = $role === 'super_admin';
 <?php endif; ?>
 
 <!-- Delete confirm modal -->
-<div v-if="deleteModal" class="modal-bg" @click.self="deleteModal=false">
+<div v-if="deleteModal" class="modal-bg" @click.self="deleteModal=false" style="display:none">
   <div class="modal-box" style="max-width:380px">
     <div class="modal-header">
       <h2 class="font-bold text-slate-800">ยืนยันการลบ</h2>
