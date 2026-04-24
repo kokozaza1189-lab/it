@@ -38,7 +38,7 @@ $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
       <div class="flex gap-2">
         <button class="btn btn-gray btn-sm" @click="exportExcel">📊 Export</button>
         <?php if ($can_adjust): ?>
-          <button class="btn btn-blue btn-sm" @click="showAdjust=true">+ เพิ่มรายการ</button>
+          <button class="btn btn-blue btn-sm" onclick="document.getElementById('adjustModal').style.display='flex'">+ เพิ่มรายการ</button>
         <?php endif; ?>
       </div>
     </div>
@@ -86,43 +86,43 @@ $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
 
 </div>
 
-<!-- Adjust modal -->
-<div v-if="showAdjust" class="modal-bg" @click.self="showAdjust=false" style="display:none">
+<!-- Adjust modal — vanilla JS only, no Vue dependency -->
+<div id="adjustModal" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
         <h2 class="font-bold text-slate-800">เพิ่มรายการบัญชี</h2>
-        <button @click="showAdjust=false" class="btn-icon">✕</button>
+        <button type="button" class="btn-icon" onclick="document.getElementById('adjustModal').style.display='none'">✕</button>
       </div>
     </div>
     <form method="POST" action="<?= base_url('fund/adjust') ?>" class="modal-body space-y-4">
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="lbl">ประเภท</label>
-          <select name="type" v-model="form.type" class="inp">
+          <select name="type" class="inp">
             <option value="income">💚 รายรับ</option>
             <option value="expense">🔴 รายจ่าย</option>
           </select>
         </div>
         <div>
           <label class="lbl">วันที่</label>
-          <input name="txn_date" v-model="form.txn_date" type="date" class="inp" required/>
+          <input name="txn_date" type="date" class="inp" value="<?= date('Y-m-d') ?>" required/>
         </div>
       </div>
       <div>
         <label class="lbl">ชื่อรายการ <span class="text-red-500">*</span></label>
-        <input name="title" v-model="form.title" class="inp" placeholder="เช่น เก็บเงินห้อง มิ.ย. 68" required/>
+        <input name="title" class="inp" placeholder="เช่น เก็บเงินห้อง มิ.ย. 68" required/>
       </div>
       <div>
         <label class="lbl">จำนวนเงิน (฿) <span class="text-red-500">*</span></label>
-        <input name="amount" v-model="form.amount" type="number" step="0.01" min="0.01" class="inp" placeholder="0.00" required/>
+        <input name="amount" type="number" step="0.01" min="0.01" class="inp" placeholder="0.00" required/>
       </div>
       <div>
         <label class="lbl">หมายเหตุ</label>
-        <input name="note" v-model="form.note" class="inp" placeholder="(ไม่บังคับ)"/>
+        <input name="note" class="inp" placeholder="(ไม่บังคับ)"/>
       </div>
       <div class="modal-footer px-0 pb-0">
-        <button type="button" class="btn btn-gray flex-1" @click="showAdjust=false">ยกเลิก</button>
+        <button type="button" class="btn btn-gray flex-1" onclick="document.getElementById('adjustModal').style.display='none'">ยกเลิก</button>
         <button type="submit" class="btn btn-blue flex-1">บันทึก</button>
       </div>
     </form>
@@ -142,13 +142,9 @@ const ledgerData = <?= json_encode(array_map(fn($e) => [
   'note'       => $e->note ?? '',
 ], $ledger)) ?>;
 
-const { createApp, ref, reactive } = Vue
+const { createApp } = Vue
 createApp({
   setup() {
-    const showAdjust = ref(false)
-    const today = new Date().toISOString().slice(0,10)
-    const form = reactive({ type:'income', title:'', amount:'', note:'', txn_date: today })
-
     function exportExcel() {
       if (!window.XLSX) return alert('โหลด SheetJS ไม่สำเร็จ')
       const rows = ledgerData.map(r => ({
@@ -164,8 +160,7 @@ createApp({
       XLSX.utils.book_append_sheet(wb, ws, 'Ledger')
       XLSX.writeFile(wb, 'fund_ledger_' + new Date().toISOString().slice(0,10) + '.xlsx')
     }
-
-    return { showAdjust, form, exportExcel }
+    return { exportExcel }
   }
 }).mount('#app')
 
