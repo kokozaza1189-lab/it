@@ -11,10 +11,10 @@ $is_super = $role === 'super_admin';
   </div>
   <div class="flex gap-2 flex-wrap">
     <?php if ($is_super): ?>
-    <button class="btn btn-gray btn-sm" @click="importModal=true">📂 นำเข้า CSV</button>
-    <button class="btn btn-gray btn-sm text-red-500" @click="clearModal=true">🗑 ล้างข้อมูลทั้งหมด</button>
+    <button class="btn btn-gray btn-sm" @click="importModal=true" data-modal-open="importModal">📂 นำเข้า CSV</button>
+    <button class="btn btn-gray btn-sm text-red-500" @click="clearModal=true" data-modal-open="clearModal">🗑 ล้างข้อมูลทั้งหมด</button>
     <?php endif; ?>
-    <button class="btn btn-blue" @click="openAdd">+ เพิ่มนิสิต</button>
+    <button class="btn btn-blue" @click="openAdd" data-modal-open="addModal">+ เพิ่มนิสิต</button>
   </div>
 </div>
 
@@ -65,12 +65,12 @@ $is_super = $role === 'super_admin';
 </div>
 
 <!-- Add modal -->
-<div v-if="addModal" class="modal-bg" @click.self="addModal=false" style="display:none">
+<div v-show="addModal" id="addModal" class="modal-bg" @click.self="addModal=false" style="display:none">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
         <h2 class="font-bold text-slate-800">เพิ่มนิสิต</h2>
-        <button @click="addModal=false" class="btn-icon">✕</button>
+        <button @click="addModal=false" class="btn-icon" data-modal-close="addModal">✕</button>
       </div>
     </div>
     <div class="modal-body space-y-4">
@@ -89,7 +89,7 @@ $is_super = $role === 'super_admin';
       <p v-if="formError" class="text-red-500 text-sm">{{ formError }}</p>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="addModal=false">ยกเลิก</button>
+      <button class="btn btn-gray flex-1" @click="addModal=false" data-modal-close="addModal">ยกเลิก</button>
       <button class="btn btn-blue flex-1" @click="submitAdd" :disabled="saving">
         <span v-if="saving" class="spin">⏳</span> เพิ่ม
       </button>
@@ -98,12 +98,12 @@ $is_super = $role === 'super_admin';
 </div>
 
 <!-- Edit modal -->
-<div v-if="editModal" class="modal-bg" @click.self="editModal=false" style="display:none">
+<div v-show="editModal" id="editModal" class="modal-bg" @click.self="editModal=false" style="display:none">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
         <h2 class="font-bold text-slate-800">แก้ไขข้อมูลนิสิต</h2>
-        <button @click="editModal=false" class="btn-icon">✕</button>
+        <button @click="editModal=false" class="btn-icon" data-modal-close="editModal">✕</button>
       </div>
       <p class="text-slate-500 text-sm font-mono mt-1">{{ editForm.student_id }}</p>
     </div>
@@ -118,7 +118,7 @@ $is_super = $role === 'super_admin';
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="editModal=false">ยกเลิก</button>
+      <button class="btn btn-gray flex-1" @click="editModal=false" data-modal-close="editModal">ยกเลิก</button>
       <button class="btn btn-blue flex-1" @click="submitEdit" :disabled="saving">
         <span v-if="saving" class="spin">⏳</span> บันทึก
       </button>
@@ -127,12 +127,12 @@ $is_super = $role === 'super_admin';
 </div>
 
 <!-- CSV / Excel import modal -->
-<div v-if="importModal" class="modal-bg" @click.self="importModal=false" style="display:none">
+<div v-show="importModal" id="importModal" class="modal-bg" @click.self="importModal=false" style="display:none">
   <div class="modal-box" style="max-width:460px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
         <h2 class="font-bold text-slate-800">นำเข้านิสิตจาก CSV / Excel</h2>
-        <button @click="importModal=false" class="btn-icon">✕</button>
+        <button @click="importModal=false" class="btn-icon" data-modal-close="importModal">✕</button>
       </div>
     </div>
     <div class="modal-body space-y-4">
@@ -154,7 +154,7 @@ $is_super = $role === 'super_admin';
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="importModal=false">ปิด</button>
+      <button class="btn btn-gray flex-1" @click="importModal=false" data-modal-close="importModal">ปิด</button>
       <button class="btn btn-blue flex-1" @click="submitImport" :disabled="saving||(!csvFile&&importRows.length===0)">
         <span v-if="saving" class="spin">⏳</span> นำเข้า
       </button>
@@ -164,7 +164,7 @@ $is_super = $role === 'super_admin';
 
 <!-- Clear data modal -->
 <?php if ($is_super): ?>
-<div v-if="clearModal" class="modal-bg" @click.self="clearModal=false" style="display:none">
+<div v-show="clearModal" id="clearModal" class="modal-bg" @click.self="clearModal=false" style="display:none">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <h2 class="font-bold text-red-600">⚠️ ล้างข้อมูลนิสิต</h2>
@@ -172,20 +172,38 @@ $is_super = $role === 'super_admin';
     <div class="modal-body">
       <p class="text-slate-700 mb-3">การดำเนินการนี้จะ<strong class="text-red-600">ลบนิสิตทั้งหมด</strong>และประวัติการชำระเงินทั้งหมดอย่างถาวร</p>
       <p class="text-slate-500 text-sm">พิมพ์ <strong>DELETE</strong> เพื่อยืนยัน</p>
-      <input v-model="clearConfirm" class="inp mt-2" placeholder="DELETE"/>
+      <input id="clearStudentsInput" v-model="clearConfirm" class="inp mt-2" placeholder="DELETE"
+             oninput="document.getElementById('clearStudentsBtn').disabled=this.value!=='DELETE'"/>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="clearModal=false">ยกเลิก</button>
-      <button class="btn btn-red flex-1" @click="doClearStudents" :disabled="clearConfirm!=='DELETE'||saving">
+      <button class="btn btn-gray flex-1" @click="clearModal=false" data-modal-close="clearModal">ยกเลิก</button>
+      <button id="clearStudentsBtn" class="btn btn-red flex-1" @click="doClearStudents"
+              :disabled="clearConfirm!=='DELETE'||saving" disabled
+              onclick="if(this.disabled)return; doClearStudentsVanilla()">
         ลบทั้งหมด
       </button>
     </div>
   </div>
 </div>
+<script>
+function doClearStudentsVanilla() {
+  var fd = new FormData();
+  fetch('<?= base_url('admin/clear_students') ?>', { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      document.getElementById('clearModal').style.display='none';
+      document.getElementById('clearStudentsInput').value='';
+      document.getElementById('clearStudentsBtn').disabled=true;
+      alert(d.success ? '✅ ล้างข้อมูลแล้ว — กำลังโหลดใหม่...' : '❌ ' + (d.error||'เกิดข้อผิดพลาด'));
+      if (d.success) setTimeout(function(){ location.reload(); }, 500);
+    })
+    .catch(function(){ alert('❌ เกิดข้อผิดพลาด'); });
+}
+</script>
 <?php endif; ?>
 
 <!-- Delete confirm modal -->
-<div v-if="deleteModal" class="modal-bg" @click.self="deleteModal=false" style="display:none">
+<div v-show="deleteModal" id="deleteModal" class="modal-bg" @click.self="deleteModal=false" style="display:none">
   <div class="modal-box" style="max-width:380px">
     <div class="modal-header">
       <h2 class="font-bold text-slate-800">ยืนยันการลบ</h2>
@@ -195,7 +213,7 @@ $is_super = $role === 'super_admin';
       <p class="text-red-500 text-sm mt-2">ประวัติการชำระเงินของนิสิตคนนี้จะถูกลบด้วย</p>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="deleteModal=false">ยกเลิก</button>
+      <button class="btn btn-gray flex-1" @click="deleteModal=false" data-modal-close="deleteModal">ยกเลิก</button>
       <button class="btn btn-red flex-1" @click="submitDelete" :disabled="saving">ลบ</button>
     </div>
   </div>

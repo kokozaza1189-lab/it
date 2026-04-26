@@ -17,7 +17,7 @@ $is_super = $role === 'super_admin';
       <button type="submit" class="btn btn-blue btn-sm">ค้นหา</button>
     </form>
     <?php if ($is_super): ?>
-    <button class="btn btn-gray btn-sm text-red-500" @click="clearTxnModal=true">🗑 ล้างธุรกรรม</button>
+    <button class="btn btn-gray btn-sm text-red-500" data-modal-open="clearTxnModal">🗑 ล้างธุรกรรม</button>
     <?php endif; ?>
   </div>
 </div>
@@ -87,9 +87,9 @@ $is_super = $role === 'super_admin';
   <?php endforeach; ?>
 </div>
 
-<!-- Clear transactions modal -->
+<!-- Clear transactions modal — vanilla JS -->
 <?php if ($is_super): ?>
-<div v-if="clearTxnModal" class="modal-bg" @click.self="clearTxnModal=false" style="display:none">
+<div id="clearTxnModal" class="modal-bg" style="display:none">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <h2 class="font-bold text-red-600">⚠️ ล้างข้อมูลธุรกรรม</h2>
@@ -97,16 +97,30 @@ $is_super = $role === 'super_admin';
     <div class="modal-body">
       <p class="text-slate-700 mb-3">การดำเนินการนี้จะลบ<strong class="text-red-600">ข้อมูลการชำระเงิน การเบิกเงิน และเงินกลางทั้งหมด</strong>อย่างถาวร (ข้อมูลนิสิตและผู้ใช้จะยังคงอยู่)</p>
       <p class="text-slate-500 text-sm">พิมพ์ <strong>DELETE</strong> เพื่อยืนยัน</p>
-      <input v-model="clearConfirm" class="inp mt-2" placeholder="DELETE"/>
+      <input id="clearConfirmInput" class="inp mt-2" placeholder="DELETE" oninput="document.getElementById('clearTxnBtn').disabled=this.value!=='DELETE'"/>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="clearTxnModal=false">ยกเลิก</button>
-      <button class="btn btn-red flex-1" @click="doClearTxn" :disabled="clearConfirm!=='DELETE'||loading">
-        ลบทั้งหมด
-      </button>
+      <button class="btn btn-gray flex-1" data-modal-close="clearTxnModal">ยกเลิก</button>
+      <button id="clearTxnBtn" class="btn btn-red flex-1" disabled
+              onclick="doClearTxnVanilla()">ลบทั้งหมด</button>
     </div>
   </div>
 </div>
+<script>
+function doClearTxnVanilla() {
+  var fd = new FormData();
+  fetch('<?= base_url('admin/clear_transactions') ?>', { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      document.getElementById('clearTxnModal').style.display='none';
+      document.getElementById('clearConfirmInput').value='';
+      document.getElementById('clearTxnBtn').disabled=true;
+      alert(d.success ? '✅ ล้างข้อมูลแล้ว — กำลังโหลดใหม่...' : '❌ ' + (d.error||'เกิดข้อผิดพลาด'));
+      if (d.success) setTimeout(function(){ location.reload(); }, 500);
+    })
+    .catch(function(){ alert('❌ เกิดข้อผิดพลาด'); });
+}
+</script>
 <?php endif; ?>
 
 </div>

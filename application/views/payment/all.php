@@ -81,7 +81,7 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
 </div>
 
 <!-- Update status modal -->
-<div v-if="statusModal" class="modal-bg" @click.self="statusModal=false" style="display:none">
+<div v-show="statusModal" id="statusModal" class="modal-bg" @click.self="statusModal=false" style="display:none">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
       <div class="flex items-center justify-between">

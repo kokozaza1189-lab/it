@@ -47,6 +47,35 @@ function showToast(msg, ok = true) {
   t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 3000);
 }
+
+// Universal modal handler — works without Vue
+// Usage: data-modal-open="modalId" / data-modal-close / click backdrop
+document.addEventListener('click', function(e) {
+  var opener = e.target.closest('[data-modal-open]');
+  if (opener) {
+    var id = opener.getAttribute('data-modal-open');
+    var m  = document.getElementById(id);
+    if (m) { m.style.display = 'flex'; e.stopPropagation(); }
+    // Populate form fields from data-* attributes if present
+    var fields = opener.dataset;
+    Object.keys(fields).forEach(function(k) {
+      if (k === 'modalOpen') return;
+      var inp = m && m.querySelector('[name="' + k + '"], [data-field="' + k + '"]');
+      if (inp) inp.value = fields[k];
+    });
+    return;
+  }
+  var closer = e.target.closest('[data-modal-close]');
+  if (closer) {
+    var target = closer.getAttribute('data-modal-close');
+    var m = target ? document.getElementById(target) : closer.closest('.modal-bg');
+    if (m) m.style.display = 'none';
+    return;
+  }
+  if (e.target.classList.contains('modal-bg')) {
+    e.target.style.display = 'none';
+  }
+});
 </script>
 
 <!-- CDN libraries loaded at end of body — HTML renders first, no blocking -->

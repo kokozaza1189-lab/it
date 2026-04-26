@@ -85,21 +85,27 @@ $cur_idx  = array_search($expense->status, $flow);
     </table>
   </div>
 
-  <!-- Actions -->
+  <!-- Actions — plain form POSTs, no Vue needed -->
   <div class="flex flex-wrap gap-3">
     <a href="<?= base_url('expense') ?>" class="btn btn-gray">← กลับ</a>
 
     <?php if ($can_approve && $expense->status === 'submitted'): ?>
-      <button class="btn btn-blue" @click="doPending">📥 รับเรื่อง</button>
+      <form method="POST" action="<?= base_url('expense/pending/'.$expense->id) ?>">
+        <button type="submit" class="btn btn-blue">📥 รับเรื่อง</button>
+      </form>
     <?php endif; ?>
 
     <?php if ($can_approve && $expense->status === 'pending'): ?>
-      <button class="btn btn-green" @click="doApprove">✓ อนุมัติ</button>
-      <button class="btn btn-red"   @click="showReject=true">✕ ปฏิเสธ</button>
+      <form method="POST" action="<?= base_url('expense/approve/'.$expense->id) ?>">
+        <button type="submit" class="btn btn-green" onclick="return confirm('ยืนยันอนุมัติ?')">✓ อนุมัติ</button>
+      </form>
+      <button class="btn btn-red" data-modal-open="rejectModal">✕ ปฏิเสธ</button>
     <?php endif; ?>
 
     <?php if ($can_approve && $expense->status === 'approved'): ?>
-      <button class="btn btn-violet" @click="doComplete">✓ ทำเครื่องหมายเสร็จสิ้น</button>
+      <form method="POST" action="<?= base_url('expense/complete/'.$expense->id) ?>">
+        <button type="submit" class="btn btn-violet" onclick="return confirm('ยืนยันทำเครื่องหมายเสร็จสิ้น?')">✓ เสร็จสิ้น</button>
+      </form>
     <?php endif; ?>
 
     <?php if ($expense->status === 'draft' && ($expense->requester_id === $current_user['student_id'] || $current_user['role'] === 'super_admin')): ?>
@@ -114,77 +120,28 @@ $cur_idx  = array_search($expense->status, $flow);
     <?php endif; ?>
   </div>
 
-  <!-- Reject modal -->
-  <div v-if="showReject" class="modal-bg" @click.self="showReject=false" style="display:none">
+  <!-- Reject modal — vanilla JS, plain form POST -->
+  <div id="rejectModal" class="modal-bg" style="display:none">
     <div class="modal-box" style="max-width:400px">
       <div class="modal-header">
-        <h2 class="font-bold text-slate-800">ระบุเหตุผลที่ปฏิเสธ</h2>
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-slate-800">ระบุเหตุผลที่ปฏิเสธ</h2>
+          <button type="button" class="btn-icon" data-modal-close="rejectModal">✕</button>
+        </div>
       </div>
-      <div class="modal-body">
-        <label class="lbl">เหตุผล</label>
-        <textarea v-model="rejectNote" class="inp" rows="3" placeholder="กรอกเหตุผล..."></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-gray flex-1" @click="showReject=false">ยกเลิก</button>
-        <button class="btn btn-red flex-1" @click="doReject" :disabled="saving">
-          <span v-if="saving" class="spin">⏳</span> ปฏิเสธ
-        </button>
-      </div>
+      <form method="POST" action="<?= base_url('expense/reject/'.$expense->id) ?>">
+        <div class="modal-body">
+          <label class="lbl">เหตุผล <span class="text-red-500">*</span></label>
+          <textarea name="note" class="inp" rows="3" placeholder="กรอกเหตุผล..." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-gray flex-1" data-modal-close="rejectModal">ยกเลิก</button>
+          <button type="submit" class="btn btn-red flex-1">ปฏิเสธ</button>
+        </div>
+      </form>
     </div>
   </div>
 
 </div>
 </div>
 
-<script>
-(window.__vue_inits = window.__vue_inits || []).push(function() {
-const { createApp, ref } = Vue
-createApp({
-  setup() {
-    const showReject = ref(false)
-    const rejectNote = ref('')
-    const saving     = ref(false)
-
-    async function doPending() {
-      saving.value = true
-      try {
-        await axios.post('<?= base_url('expense/pending/'.$expense->id) ?>')
-        showToast('รับเรื่องแล้ว')
-        setTimeout(() => location.reload(), 800)
-      } catch(e) { showToast('เกิดข้อผิดพลาด', false) }
-      saving.value = false
-    }
-    async function doApprove() {
-      saving.value = true
-      try {
-        await axios.post('<?= base_url('expense/approve/'.$expense->id) ?>')
-        showToast('อนุมัติแล้ว')
-        setTimeout(() => location.reload(), 800)
-      } catch(e) { showToast('เกิดข้อผิดพลาด', false) }
-      saving.value = false
-    }
-    async function doReject() {
-      if (!rejectNote.value.trim()) { showToast('กรุณาระบุเหตุผล', false); return }
-      saving.value = true
-      try {
-        const fd = new FormData(); fd.append('note', rejectNote.value)
-        await axios.post('<?= base_url('expense/reject/'.$expense->id) ?>', fd)
-        showToast('ปฏิเสธแล้ว')
-        setTimeout(() => location.reload(), 800)
-      } catch(e) { showToast('เกิดข้อผิดพลาด', false) }
-      saving.value = false
-    }
-    async function doComplete() {
-      saving.value = true
-      try {
-        await axios.post('<?= base_url('expense/complete/'.$expense->id) ?>')
-        showToast('เสร็จสิ้น')
-        setTimeout(() => location.reload(), 800)
-      } catch(e) { showToast('เกิดข้อผิดพลาด', false) }
-      saving.value = false
-    }
-    return { showReject, rejectNote, saving, doPending, doApprove, doReject, doComplete }
-  }
-}).mount('#app')
-})
-</script>

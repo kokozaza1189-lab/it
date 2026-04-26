@@ -44,7 +44,7 @@ $role_colors = [
       <a href="<?= base_url('admin/users') ?>" class="btn btn-gray">รีเซ็ต</a>
     <?php endif; ?>
   </form>
-  <button class="btn btn-blue whitespace-nowrap" @click="openAdd">+ เพิ่มผู้ใช้</button>
+  <button class="btn btn-blue whitespace-nowrap" @click="openAdd" data-modal-open="addUserModal">+ เพิ่มผู้ใช้</button>
 </div>
 
 <!-- User Table -->
@@ -109,7 +109,7 @@ $role_colors = [
 </div>
 
 <!-- Add User Modal -->
-<div v-if="addModal" class="modal-bg" @click.self="addModal=false" style="display:none">
+<div v-show="addModal" id="addUserModal" class="modal-bg" @click.self="addModal=false" style="display:none">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
@@ -161,7 +161,7 @@ $role_colors = [
 </div>
 
 <!-- Edit User Modal -->
-<div v-if="editModal" class="modal-bg" @click.self="editModal=false" style="display:none">
+<div v-show="editModal" id="editUserModal" class="modal-bg" @click.self="editModal=false" style="display:none">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
       <div class="flex items-center justify-between">

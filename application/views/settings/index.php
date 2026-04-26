@@ -140,12 +140,12 @@ $role_colors = [
 </div>
 
 <!-- Reset password modal -->
-<div v-if="resetModal" class="modal-bg" @click.self="resetModal=false" style="display:none">
+<div v-show="resetModal" id="resetModal" class="modal-bg" @click.self="resetModal=false" style="display:none">
   <div class="modal-box" style="max-width:380px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
         <h2 class="font-bold text-slate-800">รีเซ็ตรหัสผ่าน</h2>
-        <button @click="resetModal=false" class="btn-icon">✕</button>
+        <button @click="resetModal=false" class="btn-icon" data-modal-close="resetModal">✕</button>
       </div>
       <p class="text-slate-500 text-sm mt-1">{{ resetTarget.name }}</p>
     </div>
@@ -160,7 +160,7 @@ $role_colors = [
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="resetModal=false">ปิด</button>
+      <button class="btn btn-gray flex-1" @click="resetModal=false" data-modal-close="resetModal">ปิด</button>
       <button class="btn btn-blue flex-1" @click="doResetPass" :disabled="saving">
         <span v-if="saving" class="spin">⏳</span> ยืนยัน
       </button>
