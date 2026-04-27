@@ -112,9 +112,6 @@ select.inp{background:white;cursor:pointer}
 .mc-advance{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
 .mc-none{background:#f8fafc;border-color:#e2e8f0;color:#94a3b8}
 
-/* Hide Vue app until mounted — prevents raw {{ }} and phantom modals when CDN is slow */
-[v-cloak]{display:none!important}
-
 /* Toast */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:none;padding:12px 24px;border-radius:16px;color:white;font-weight:600;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.2);white-space:nowrap}
 @media(max-width:768px){#toast{bottom:88px}}

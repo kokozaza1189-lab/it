@@ -114,7 +114,7 @@ $role_colors = [
     <div class="modal-header">
       <div class="flex items-center justify-between">
         <h2 class="font-bold text-slate-800">เพิ่มผู้ใช้งาน</h2>
-        <button @click="addModal=false" class="btn-icon">✕</button>
+        <button @click="addModal=false" class="btn-icon" data-modal-close="addUserModal">✕</button>
       </div>
     </div>
     <div class="modal-body space-y-4">
@@ -149,10 +149,10 @@ $role_colors = [
           <input v-model="addForm.password" type="password" class="inp" placeholder="อย่างน้อย 6 ตัวอักษร" required/>
         </div>
       </div>
-      <p v-if="addError" class="text-red-500 text-sm">{{ addError }}</p>
+      <p v-show="addError" style="display:none" class="text-red-500 text-sm" v-text="addError"></p>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="addModal=false">ยกเลิก</button>
+      <button class="btn btn-gray flex-1" @click="addModal=false" data-modal-close="addUserModal">ยกเลิก</button>
       <button class="btn btn-blue flex-1" @click="submitAdd" :disabled="saving">
         <span v-if="saving">⏳</span> บันทึก
       </button>
@@ -166,7 +166,7 @@ $role_colors = [
     <div class="modal-header">
       <div class="flex items-center justify-between">
         <h2 class="font-bold text-slate-800">แก้ไขผู้ใช้งาน</h2>
-        <button @click="editModal=false" class="btn-icon">✕</button>
+        <button @click="editModal=false" class="btn-icon" data-modal-close="editUserModal">✕</button>
       </div>
     </div>
     <div class="modal-body space-y-4">
@@ -201,10 +201,10 @@ $role_colors = [
           <input v-model="editForm.password" type="password" class="inp" placeholder="เว้นว่างถ้าไม่ต้องการเปลี่ยน"/>
         </div>
       </div>
-      <p v-if="editError" class="text-red-500 text-sm">{{ editError }}</p>
+      <p v-show="editError" style="display:none" class="text-red-500 text-sm" v-text="editError"></p>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="editModal=false">ยกเลิก</button>
+      <button class="btn btn-gray flex-1" @click="editModal=false" data-modal-close="editUserModal">ยกเลิก</button>
       <button class="btn btn-blue flex-1" @click="submitEdit" :disabled="saving">
         <span v-if="saving">⏳</span> บันทึก
       </button>

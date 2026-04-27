@@ -297,8 +297,8 @@ $has_student  = !empty($current_user['student_id']);
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
       <div class="flex items-center justify-between">
-        <h2 class="font-bold text-slate-800">ชำระเงิน — {{ monthLabel }}</h2>
-        <button @click="payModal=false" class="btn-icon">✕</button>
+        <h2 class="font-bold text-slate-800">ชำระเงิน — <span v-text="monthLabel"></span></h2>
+        <button @click="payModal=false" class="btn-icon" data-modal-close="payModal">✕</button>
       </div>
     </div>
     <div class="modal-body space-y-4">
@@ -306,43 +306,44 @@ $has_student  = !empty($current_user['student_id']);
         <div class="space-y-1.5 mb-2">
           <div class="flex justify-between text-sm">
             <span class="text-slate-600">ค่าธรรมเนียม</span>
-            <span class="font-medium">฿{{ amount.toFixed(2) }}</span>
+            <span class="font-medium">฿<span v-text="amount.toFixed(2)"></span></span>
           </div>
           <div v-if="penalty > 0" class="flex justify-between text-sm">
             <span class="text-red-500">ค่าปรับ</span>
-            <span class="font-medium text-red-500">+฿{{ penalty.toFixed(2) }}</span>
+            <span class="font-medium text-red-500">+฿<span v-text="penalty.toFixed(2)"></span></span>
           </div>
           <div class="flex justify-between font-bold pt-2" style="border-top:1px solid #d1c4e9">
             <span>รวม</span>
-            <span style="color:#673ab7;font-size:1.2rem">฿{{ total.toFixed(2) }}</span>
+            <span style="color:#673ab7;font-size:1.2rem">฿<span v-text="total.toFixed(2)"></span></span>
           </div>
         </div>
         <div class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-500 mt-2" style="background:rgba(255,255,255,.6)">
-          💡 กรอกยอด <strong style="color:#673ab7">฿{{ total.toFixed(2) }}</strong> เมื่อโอนเงิน
+          💡 กรอกยอด <strong style="color:#673ab7">฿<span v-text="total.toFixed(2)"></span></strong> เมื่อโอนเงิน
         </div>
       </div>
       <div>
         <label class="lbl">แนบสลิปการโอนเงิน <span class="text-red-500">*</span></label>
         <label :class="['block border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors', slipFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-blue-400 hover:bg-blue-50']">
           <input type="file" class="hidden" accept="image/*,.pdf" @change="onSlip"/>
-          <span v-if="!slipFile">
+          <span v-show="!slipFile">
             <span class="text-3xl block mb-2">📎</span>
             <p class="text-sm text-slate-600 font-medium">แตะเพื่อเลือกไฟล์</p>
             <p class="text-xs text-slate-400 mt-1">PNG, JPG, PDF ไม่เกิน 5MB</p>
           </span>
-          <span v-else class="text-emerald-700">
+          <span v-show="slipFile" class="text-emerald-700" style="display:none">
             <span class="text-3xl block mb-1">✅</span>
-            <p class="text-sm font-medium">{{ slipName }}</p>
+            <p class="text-sm font-medium" v-text="slipName"></p>
             <p class="text-xs text-slate-400 mt-1">แตะเพื่อเปลี่ยนไฟล์</p>
           </span>
         </label>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="payModal=false">ยกเลิก</button>
+      <button class="btn btn-gray flex-1" @click="payModal=false" data-modal-close="payModal">ยกเลิก</button>
       <button class="btn btn-blue flex-1" @click="submitPayment" :disabled="submitting || !slipFile">
-        <span v-if="submitting" class="spin">⏳</span>
-        {{ submitting ? 'กำลังส่ง...' : 'ยืนยันชำระ' }}
+        <span v-show="submitting" style="display:none" class="spin">⏳</span>
+        <span v-show="submitting" style="display:none">กำลังส่ง...</span>
+        <span v-show="!submitting">ยืนยันชำระ</span>
       </button>
     </div>
   </div>

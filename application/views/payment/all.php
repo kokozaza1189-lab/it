@@ -86,9 +86,9 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
     <div class="modal-header">
       <div class="flex items-center justify-between">
         <h2 class="font-bold text-slate-800">อัปเดตสถานะการชำระ</h2>
-        <button @click="statusModal=false" class="btn-icon">✕</button>
+        <button @click="statusModal=false" class="btn-icon" data-modal-close="statusModal">✕</button>
       </div>
-      <p class="text-slate-500 text-sm mt-1">{{ editData.student }} — เดือน {{ monthNames[editData.month] }}</p>
+      <p class="text-slate-500 text-sm mt-1"><span v-text="editData.student"></span> — เดือน <span v-text="monthNames[editData.month]"></span></p>
     </div>
     <div class="modal-body space-y-4">
       <div>
@@ -110,7 +110,7 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-gray flex-1" @click="statusModal=false">ยกเลิก</button>
+      <button class="btn btn-gray flex-1" @click="statusModal=false" data-modal-close="statusModal">ยกเลิก</button>
       <button class="btn btn-blue flex-1" @click="saveStatus" :disabled="saving">
         <span v-if="saving" class="spin">⏳</span> บันทึก
       </button>

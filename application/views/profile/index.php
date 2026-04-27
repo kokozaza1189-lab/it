@@ -57,16 +57,14 @@ $role_labels = [
         </div>
 
         <!-- Strength indicator -->
-        <div v-if="form.new_pass" class="flex gap-1">
+        <div v-show="form.new_pass" style="display:none" class="flex gap-1">
           <div v-for="i in 4" :key="i" class="h-1.5 flex-1 rounded-full transition-all"
                :class="strength >= i ? strengthColor : 'bg-slate-200'"></div>
         </div>
-        <p v-if="form.new_pass" class="text-xs" :class="strength < 2 ? 'text-red-500' : strength < 3 ? 'text-amber-500' : 'text-emerald-600'">
-          {{ strengthLabel }}
-        </p>
+        <p v-show="form.new_pass" style="display:none" class="text-xs" :class="strength < 2 ? 'text-red-500' : strength < 3 ? 'text-amber-500' : 'text-emerald-600'" v-text="strengthLabel"></p>
 
-        <p v-if="error" class="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg p-3">{{ error }}</p>
-        <p v-if="success" class="text-emerald-600 text-sm bg-emerald-50 border border-emerald-100 rounded-lg p-3">{{ success }}</p>
+        <p v-show="error" style="display:none" class="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg p-3" v-text="error"></p>
+        <p v-show="success" style="display:none" class="text-emerald-600 text-sm bg-emerald-50 border border-emerald-100 rounded-lg p-3" v-text="success"></p>
 
         <button class="btn btn-blue" @click="submit" :disabled="saving">
           <span v-if="saving" class="spin">⏳</span>

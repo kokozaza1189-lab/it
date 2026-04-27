@@ -147,16 +147,16 @@ $role_colors = [
         <h2 class="font-bold text-slate-800">รีเซ็ตรหัสผ่าน</h2>
         <button @click="resetModal=false" class="btn-icon" data-modal-close="resetModal">✕</button>
       </div>
-      <p class="text-slate-500 text-sm mt-1">{{ resetTarget.name }}</p>
+      <p class="text-slate-500 text-sm mt-1" v-text="resetTarget.name"></p>
     </div>
     <div class="modal-body space-y-4">
       <div>
         <label class="lbl">รหัสผ่านใหม่ (ว่าง = สุ่มอัตโนมัติ)</label>
         <input v-model="newPass" class="inp" placeholder="ปล่อยว่างเพื่อสุ่ม"/>
       </div>
-      <div v-if="generatedPass" class="p-3 rounded-xl" style="background:#f0fdf4;border:1px solid #bbf7d0">
+      <div v-show="generatedPass" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0" class="p-3 rounded-xl">
         <p class="text-xs text-slate-500 mb-1">รหัสผ่านใหม่ — แจ้งผู้ใช้</p>
-        <p class="font-bold font-mono text-emerald-700 text-xl select-all">{{ generatedPass }}</p>
+        <p class="font-bold font-mono text-emerald-700 text-xl select-all" v-text="generatedPass"></p>
       </div>
     </div>
     <div class="modal-footer">

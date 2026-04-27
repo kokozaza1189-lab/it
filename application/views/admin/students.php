@@ -86,7 +86,7 @@ $is_super = $role === 'super_admin';
         <label class="lbl">อีเมล</label>
         <input v-model="form.email" class="inp" type="email" placeholder="(ไม่บังคับ)"/>
       </div>
-      <p v-if="formError" class="text-red-500 text-sm">{{ formError }}</p>
+      <p v-show="formError" style="display:none" class="text-red-500 text-sm" v-text="formError"></p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-gray flex-1" @click="addModal=false" data-modal-close="addModal">ยกเลิก</button>
@@ -105,7 +105,7 @@ $is_super = $role === 'super_admin';
         <h2 class="font-bold text-slate-800">แก้ไขข้อมูลนิสิต</h2>
         <button @click="editModal=false" class="btn-icon" data-modal-close="editModal">✕</button>
       </div>
-      <p class="text-slate-500 text-sm font-mono mt-1">{{ editForm.student_id }}</p>
+      <p class="text-slate-500 text-sm font-mono mt-1" v-text="editForm.student_id"></p>
     </div>
     <div class="modal-body space-y-4">
       <div>
@@ -144,12 +144,12 @@ $is_super = $role === 'super_admin';
       <div>
         <label class="lbl">เลือกไฟล์ CSV หรือ Excel (.xlsx, .xls)</label>
         <input type="file" ref="csvInput" accept=".csv,.xlsx,.xls" class="inp" @change="onCsvChange"/>
-        <p v-if="csvName" class="text-slate-500 text-xs mt-1">{{ csvName }}</p>
-        <p v-if="importRows.length > 0" class="text-blue-600 text-xs mt-1">พบข้อมูล {{ importRows.length }} แถว พร้อมนำเข้า</p>
+        <p v-show="csvName" style="display:none" class="text-slate-500 text-xs mt-1" v-text="csvName"></p>
+        <p v-show="importRows.length > 0" style="display:none" class="text-blue-600 text-xs mt-1">พบข้อมูล <span v-text="importRows.length"></span> แถว พร้อมนำเข้า</p>
       </div>
-      <div v-if="importResult" class="p-3 rounded-xl" :style="importResult.added>0?'background:#f0fdf4;border:1px solid #bbf7d0':'background:#fff7ed;border:1px solid #fed7aa'">
-        <p class="font-semibold text-sm">✅ เพิ่มแล้ว {{ importResult.added }} คน
-          <span v-if="importResult.skipped" class="text-slate-500"> | ข้าม {{ importResult.skipped }} คน (ซ้ำ/ข้อมูลไม่ครบ)</span>
+      <div v-show="importResult" style="display:none" class="p-3 rounded-xl" :style="importResult&&importResult.added>0?'background:#f0fdf4;border:1px solid #bbf7d0':'background:#fff7ed;border:1px solid #fed7aa'">
+        <p class="font-semibold text-sm">✅ เพิ่มแล้ว <span v-text="importResult?importResult.added:0"></span> คน
+          <span v-show="importResult&&importResult.skipped" style="display:none" class="text-slate-500"> | ข้าม <span v-text="importResult?importResult.skipped:0"></span> คน (ซ้ำ/ข้อมูลไม่ครบ)</span>
         </p>
       </div>
     </div>
@@ -209,7 +209,7 @@ function doClearStudentsVanilla() {
       <h2 class="font-bold text-slate-800">ยืนยันการลบ</h2>
     </div>
     <div class="modal-body">
-      <p class="text-slate-700">ลบนิสิต <strong>{{ deleteTarget.name }}</strong> ({{ deleteTarget.id }})?</p>
+      <p class="text-slate-700">ลบนิสิต <strong v-text="deleteTarget.name"></strong> (<span v-text="deleteTarget.id"></span>)?</p>
       <p class="text-red-500 text-sm mt-2">ประวัติการชำระเงินของนิสิตคนนี้จะถูกลบด้วย</p>
     </div>
     <div class="modal-footer">

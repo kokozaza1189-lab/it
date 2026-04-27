@@ -52,14 +52,14 @@
           <input v-model.number="item.qty" :name="'item_qty[]'" type="number"
                  min="1" class="inp" style="width:70px" placeholder="จำนวน"/>
           <span class="text-slate-500 text-sm font-semibold flex-shrink-0" style="min-width:80px">
-            ฿{{ (item.price * item.qty).toLocaleString() }}
+            ฿<span v-text="(item.price * item.qty).toLocaleString()"></span>
           </span>
           <button type="button" class="btn-icon flex-shrink-0" @click="removeItem(i)" v-if="items.length>1">✕</button>
         </div>
       </div>
       <div class="mt-3 flex justify-end">
         <div class="px-4 py-2 rounded-xl" style="background:#eff6ff">
-          <span class="text-blue-700 font-bold text-lg">รวม ฿{{ total.toLocaleString() }}</span>
+          <span class="text-blue-700 font-bold text-lg">รวม ฿<span v-text="total.toLocaleString()"></span></span>
         </div>
       </div>
     </div>

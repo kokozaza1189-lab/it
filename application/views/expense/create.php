@@ -43,28 +43,27 @@
           <input v-model="item.name" :name="'item_name[]'" class="inp flex-1" placeholder="ชื่อสินค้า"/>
           <input v-model.number="item.price" :name="'item_price[]'" type="number" step="0.01" min="0" class="inp" style="width:110px" placeholder="ราคา"/>
           <input v-model.number="item.qty" :name="'item_qty[]'" type="number" min="1" class="inp" style="width:70px" placeholder="จำนวน"/>
-          <span class="text-slate-500 text-sm font-semibold flex-shrink-0" style="min-width:80px">฿{{ (item.price * item.qty).toLocaleString() }}</span>
+          <span class="text-slate-500 text-sm font-semibold flex-shrink-0" style="min-width:80px">฿<span v-text="(item.price * item.qty).toLocaleString()"></span></span>
           <button type="button" class="btn-icon flex-shrink-0" @click="removeItem(i)" v-if="items.length>1">✕</button>
         </div>
       </div>
       <div class="mt-3 flex justify-end">
         <div class="px-4 py-2 rounded-xl" style="background:#eff6ff">
-          <span class="text-blue-700 font-bold text-lg">รวม ฿{{ total.toLocaleString() }}</span>
+          <span class="text-blue-700 font-bold text-lg">รวม ฿<span v-text="total.toLocaleString()"></span></span>
         </div>
       </div>
     </div>
 
     <!-- Budget availability check -->
-    <div v-if="total > 0" class="rounded-xl p-3 text-sm font-medium flex items-center gap-2"
+    <div v-show="total > 0" style="display:none" class="rounded-xl p-3 text-sm font-medium flex items-center gap-2"
          :style="total <= fundBalance
            ? 'background:#d1fae5;color:#065f46'
            : 'background:#fee2e2;color:#b91c1c'">
-      <span>{{ total <= fundBalance ? '✅' : '⚠️' }}</span>
+      <span v-text="total <= fundBalance ? '✅' : '⚠️'"></span>
       <span>
-        งบคงเหลือ ฿{{ fundBalance.toLocaleString() }} —
-        {{ total <= fundBalance
-          ? 'เพียงพอสำหรับคำขอนี้'
-          : 'ไม่เพียงพอ! ขาด ฿' + (total - fundBalance).toLocaleString() }}
+        งบคงเหลือ ฿<span v-text="fundBalance.toLocaleString()"></span> —
+        <span v-show="total <= fundBalance">เพียงพอสำหรับคำขอนี้</span>
+        <span v-show="total > fundBalance" style="display:none">ไม่เพียงพอ! ขาด ฿<span v-text="(total - fundBalance).toLocaleString()"></span></span>
       </span>
     </div>
 
