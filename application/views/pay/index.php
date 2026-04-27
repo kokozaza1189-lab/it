@@ -369,9 +369,9 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
   </div><!-- /form -->
 
   <!-- Toast -->
-  <div v-show="toastShow" style="display:none"
-       :style="toastOk ? 'background:#2e7d32' : 'background:#c62828'"
-       style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2);color:white;font-size:14px;font-weight:600;border-radius:12px;padding:12px 20px;display:flex;align-items:center;gap:8px">
+  <div v-show="toastShow"
+       style="display:none"
+       :style="(toastOk ? 'background:#2e7d32' : 'background:#c62828') + ';position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2);color:white;font-size:14px;font-weight:600;border-radius:12px;padding:12px 20px;display:flex;align-items:center;gap:8px'">
     <span v-text="(toastOk ? '✅ ' : '❌ ') + toastMsg"></span>
   </div>
 
