@@ -19,10 +19,11 @@ class Payment_model extends CI_Model {
             ->get('payment_records')->row();
     }
 
-    public function update_status($id, $status, $paid_date = null, $penalty = null) {
+    public function update_status($id, $status, $paid_date = null, $penalty = null, $amount = null) {
         $data = ['status' => $status, 'updated_at' => date('Y-m-d H:i:s')];
-        if ($paid_date)          $data['paid_date'] = $paid_date;
-        if ($penalty !== null)   $data['penalty']   = (float)$penalty;
+        if ($paid_date)        $data['paid_date'] = $paid_date;
+        if ($penalty !== null) $data['penalty']   = (float)$penalty;
+        if ($amount  !== null) $data['amount']    = (float)$amount;
         $this->db->where('id', $id)->update('payment_records', $data);
     }
 

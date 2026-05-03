@@ -70,7 +70,9 @@ class Payment extends MY_Controller {
         $date    = $this->input->post('paid_date') ?: null;
         $penalty = $this->input->post('penalty') !== null && $this->input->post('penalty') !== ''
                    ? (float)$this->input->post('penalty') : null;
-        $this->Payment_model->update_status($id, $status, $date, $penalty);
+        $amount  = $this->input->post('amount') !== null && $this->input->post('amount') !== ''
+                   ? (float)$this->input->post('amount') : null;
+        $this->Payment_model->update_status($id, $status, $date, $penalty, $amount);
         $this->json(['success' => true]);
     }
 }

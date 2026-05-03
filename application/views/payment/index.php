@@ -21,6 +21,71 @@ $has_student  = !empty($current_user['student_id']);
 <div id="app">
 
 <?php if ($has_student): ?>
+<!-- ── Notification alerts ──────────────────────────────────── -->
+<?php
+$my_overdue  = array_filter($payments, fn($p) => $p->status === 'overdue');
+$my_pending  = array_filter($payments, fn($p) => $p->status === 'pending');
+$my_penalty  = array_filter($payments, fn($p) => $p->penalty > 0);
+$month_names_th = [1=>'มกราคม',2=>'กุมภาพันธ์',3=>'มีนาคม',4=>'เมษายน',5=>'พฤษภาคม',6=>'มิถุนายน',
+                   7=>'กรกฎาคม',8=>'สิงหาคม',9=>'กันยายน',10=>'ตุลาคม',11=>'พฤศจิกายน',12=>'ธันวาคม'];
+?>
+<?php if (!empty($my_overdue)): ?>
+<div class="mb-4 rounded-xl p-4" style="background:#fee2e2;border:1.5px solid #fca5a5">
+  <div class="flex items-start gap-3">
+    <span style="font-size:24px;line-height:1">🔴</span>
+    <div class="flex-1">
+      <p class="font-bold text-red-700 mb-1">มียอดค้างชำระ <?= count($my_overdue) ?> เดือน — กรุณาชำระโดยด่วน</p>
+      <?php foreach ($my_overdue as $p): ?>
+      <div class="flex items-center justify-between text-sm mt-1">
+        <span class="text-red-600">📅 <?= $month_names_th[$p->month] ?> <?= $year ?></span>
+        <span class="font-bold text-red-700">฿<?= number_format($p->amount + $p->penalty, 2) ?>
+          <?php if ($p->penalty > 0): ?>
+            <span class="text-xs font-normal">(รวมค่าปรับ ฿<?= number_format($p->penalty, 2) ?>)</span>
+          <?php endif; ?>
+        </span>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($my_pending)): ?>
+<div class="mb-4 rounded-xl p-4" style="background:#fef3c7;border:1.5px solid #fcd34d">
+  <div class="flex items-start gap-3">
+    <span style="font-size:24px;line-height:1">🟡</span>
+    <div class="flex-1">
+      <p class="font-bold text-amber-700 mb-1">รอการยืนยัน <?= count($my_pending) ?> เดือน — เจ้าหน้าที่กำลังตรวจสอบสลิป</p>
+      <?php foreach ($my_pending as $p): ?>
+      <p class="text-sm text-amber-600 mt-0.5">📅 <?= $month_names_th[$p->month] ?> <?= $year ?> — รอตรวจสอบ</p>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
+<?php
+// Show penalty balance alert (paid but still owes penalty)
+$penalty_only = array_filter($payments, fn($p) => $p->status === 'paid' && $p->penalty > 0);
+if (!empty($penalty_only)):
+?>
+<div class="mb-4 rounded-xl p-4" style="background:#fef9c3;border:1.5px solid #fde047">
+  <div class="flex items-start gap-3">
+    <span style="font-size:24px;line-height:1">⚠️</span>
+    <div class="flex-1">
+      <p class="font-bold mb-1" style="color:#a16207">มีค่าปรับค้างชำระ <?= count($penalty_only) ?> รายการ</p>
+      <?php foreach ($penalty_only as $p): ?>
+      <div class="flex items-center justify-between text-sm mt-1">
+        <span style="color:#92400e">📅 <?= $month_names_th[$p->month] ?> <?= $year ?> — ชำระแล้วแต่ยังค้างค่าปรับ</span>
+        <span class="font-bold" style="color:#b45309">฿<?= number_format($p->penalty, 2) ?></span>
+      </div>
+      <?php endforeach; ?>
+      <p class="text-xs mt-2" style="color:#92400e">กรุณาติดต่อเหรัญญิกเพื่อชำระค่าปรับส่วนที่เหลือ</p>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <!-- ── Student view ──────────────────────────────────────────── -->
 
 <!-- Header card -->
@@ -131,15 +196,23 @@ $has_student  = !empty($current_user['student_id']);
   <div class="overflow-x-auto">
     <table class="tbl">
       <thead><tr>
-        <th>เดือน</th><th>ค่าธรรมเนียม</th><th>ค่าปรับ</th><th>รวม</th><th>สถานะ</th><th>วันที่ชำระ</th>
+        <th>เดือน</th><th>ค่าธรรมเนียม</th><th>ค่าปรับค้าง</th><th>รวม</th><th>สถานะ</th><th>วันที่ชำระ</th>
       </tr></thead>
       <tbody>
         <?php $has_history = false; foreach ($payments as $p): if ($p->status === 'none') continue; $has_history = true; ?>
-        <tr>
+        <tr <?= ($p->status === 'overdue') ? 'style="background:#fff5f5"' : (($p->status === 'paid' && $p->penalty > 0) ? 'style="background:#fffbeb"' : '') ?>>
           <td class="font-medium"><?= $month_names[$p->month] ?? $p->month ?> <?= $year ?></td>
           <td>฿<?= number_format($p->amount, 2) ?></td>
-          <td><?= $p->penalty > 0 ? '฿'.number_format($p->penalty, 2) : '—' ?></td>
-          <td class="font-bold">฿<?= number_format($p->amount + $p->penalty, 2) ?></td>
+          <td>
+            <?php if ($p->penalty > 0): ?>
+              <span class="font-bold" style="color:#b45309">฿<?= number_format($p->penalty, 2) ?></span>
+              <?php if ($p->status === 'paid'): ?>
+                <span class="badge" style="background:#fef3c7;color:#b45309;font-size:10px;margin-left:2px">⚠️ค้าง</span>
+              <?php endif; ?>
+            <?php else: ?>—
+            <?php endif; ?>
+          </td>
+          <td class="font-bold <?= $p->status === 'overdue' ? 'text-red-600' : '' ?>">฿<?= number_format($p->amount + $p->penalty, 2) ?></td>
           <td><span class="badge <?= $status_badge[$p->status] ?? '' ?>">
             <?= ['paid'=>'ชำระแล้ว','overdue'=>'ค้างชำระ','pending'=>'รอดำเนินการ'][$p->status] ?? $p->status ?>
           </span></td>

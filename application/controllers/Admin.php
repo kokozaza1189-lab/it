@@ -133,6 +133,119 @@ class Admin extends MY_Controller {
         $this->json(['success' => true, 'days_overdue' => $days]);
     }
 
+    // AJAX: get all payment records for a month (for detail modal)
+    public function get_month_detail() {
+        $this->require_role(['treasurer','super_admin']);
+        $year  = (int)$this->input->get('year');
+        $month = (int)$this->input->get('month');
+        if (!$year || !$month) { $this->json(['error' => 'invalid params'], 400); return; }
+        $records = $this->db
+            ->select('pr.*, s.name as student_name')
+            ->from('payment_records pr')
+            ->join('students s', 'pr.student_id = s.student_id')
+            ->where('pr.year', $year)
+            ->where('pr.month', $month)
+            ->order_by('s.name')
+            ->get()->result();
+        $this->json(['records' => array_map(fn($r) => [
+            'id'         => (int)$r->id,
+            'student_id' => $r->student_id,
+            'name'       => $r->student_name,
+            'status'     => $r->status,
+            'amount'     => (float)$r->amount,
+            'penalty'    => (float)$r->penalty,
+            'paid_date'  => $r->paid_date ?? '',
+            'slip_file'  => $r->slip_file ?? '',
+        ], $records)]);
+    }
+
+    // AJAX: update a specific payment record (amount + penalty + status)
+    public function update_payment_record() {
+        $this->require_role(['treasurer','super_admin']);
+        $id        = (int)$this->input->post('id');
+        $status    = $this->input->post('status');
+        $amount    = $this->input->post('amount');
+        $penalty   = $this->input->post('penalty');
+        $paid_date = $this->input->post('paid_date') ?: null;
+        if (!$id) { $this->json(['error' => 'invalid id'], 400); return; }
+        $valid = ['none','pending','paid','overdue'];
+        if (!in_array($status, $valid)) { $this->json(['error' => 'invalid status'], 400); return; }
+        $data = ['status' => $status, 'updated_at' => date('Y-m-d H:i:s')];
+        if ($amount  !== null && $amount  !== '') $data['amount']  = (float)$amount;
+        if ($penalty !== null && $penalty !== '') $data['penalty'] = (float)$penalty;
+        if ($paid_date) $data['paid_date'] = $paid_date;
+        $this->db->where('id', $id)->update('payment_records', $data);
+        $this->json(['success' => true]);
+    }
+
+    // Seed January 2569 (year=2568, month=1) data from PDF records
+    public function seed_january() {
+        $this->require_role(['super_admin','treasurer']);
+        $year = 2568; $month = 1;
+        // [student_id, amount, penalty, status]
+        // penalty = OUTSTANDING balance (0 = fully settled)
+        $rows = [
+            ['6821651931',35,0,'paid'],['6821651949',35,0,'paid'],['6821651957',35,0,'paid'],
+            ['6821651965',35,0,'paid'],['6821651973',35,0,'paid'],['6821651981',35,0,'paid'],
+            ['6821651990',35,0,'paid'],['6821652007',35,0,'paid'],['6821652015',35,0,'paid'],
+            ['6821652023',35,0,'paid'],['6821652031',35,0,'paid'],['6821652040',35,0,'paid'],
+            ['6821652058',35,0,'paid'],  // paid 40 (35+5 penalty, settled)
+            ['6821652066',35,0,'paid'],['6821652074',35,0,'paid'],['6821652082',35,0,'paid'],
+            ['6821652112',35,0,'paid'],['6821652139',35,0,'paid'],['6821652147',35,0,'paid'],
+            ['6821652155',35,100,'overdue'], // ยังไม่จ่าย — ค้าง 135
+            ['6821652163',35,0,'paid'],['6821652171',35,0,'paid'],['6821652180',35,0,'paid'],
+            ['6821652198',35,0,'paid'],['6821652201',35,0,'paid'],['6821652210',35,0,'paid'],
+            ['6821652228',35,0,'paid'],['6821652236',35,0,'paid'],['6821652244',35,0,'paid'],
+            ['6821652252',35,0,'paid'],['6821652261',35,0,'paid'],['6821652279',35,0,'paid'],
+            ['6821652287',35,0,'paid'],
+            ['6821652295',35,10,'paid'],   // จ่าย 50 แต่ยังค้างค่าปรับ 10
+            ['6821652309',35,0,'paid'],['6821652317',35,0,'paid'],['6821652325',35,0,'paid'],
+            ['6821652333',35,0,'paid'],['6821652341',35,0,'paid'],['6821652350',35,0,'paid'],
+            ['6821652376',35,0,'paid'],['6821652384',35,0,'paid'],['6821652392',35,0,'paid'],
+            ['6821652406',35,0,'paid'],  // paid 60 (35+25 penalty, settled)
+            ['6821652414',35,0,'paid'],['6821652422',35,0,'paid'],['6821652431',35,0,'paid'],
+            ['6821652449',35,0,'paid'],
+            ['6821652457',35,0,'paid'],  // was red in PDF — paid after PDF
+            ['6821652465',35,0,'paid'],['6821652473',35,0,'paid'],['6821652481',35,0,'paid'],
+            ['6821652490',35,0,'paid'],['6821652503',35,0,'paid'],['6821652511',35,0,'paid'],
+            ['6821652520',35,0,'paid'],['6821652546',35,0,'paid'],
+            ['6821652554',35,0,'paid'],  // paid 70 (35+35 penalty, settled)
+            ['6821652571',35,0,'paid'],['6821652589',35,0,'paid'],['6821652597',35,0,'paid'],
+            ['6821652601',35,0,'paid'],['6821652619',35,0,'paid'],['6821652627',35,0,'paid'],
+            ['6821652635',35,0,'paid'],['6821652643',35,0,'paid'],['6821652651',35,0,'paid'],
+            ['6821652660',35,0,'paid'],['6821652678',35,0,'paid'],['6821652686',35,0,'paid'],
+            ['6821652694',35,0,'paid'],['6821652708',35,0,'paid'],['6821652716',35,0,'paid'],
+            ['6821652724',35,100,'overdue'], // ยังไม่จ่าย — ค้าง 135
+            ['6821652732',35,0,'paid'],['6821652741',35,0,'paid'],['6821652759',35,0,'paid'],
+            ['6821652767',35,0,'paid'],['6821652775',35,0,'paid'],['6821652783',35,0,'paid'],
+            ['6821652791',35,0,'paid'],['6821652805',35,0,'paid'],['6821652813',35,0,'paid'],
+            ['6821652821',35,0,'paid'],['6821656258',35,0,'paid'],['6821656274',35,0,'paid'],
+            ['6821656282',35,0,'paid'],  // paid 70 (35+35 penalty, settled)
+            ['6821656291',35,0,'paid'],
+            ['6821656304',35,0,'paid'],  // paid 45 (35+10 penalty, settled)
+            ['6821656312',35,0,'paid'],['6821656321',35,0,'paid'],
+            ['6821656339',35,25,'paid'], // จ่าย 70 แต่ยังค้างค่าปรับ 25
+            ['6821656347',35,0,'paid'],
+            ['6821656363',35,100,'overdue'], // ยังไม่จ่าย — ค้าง 135
+            ['6821656398',35,0,'paid'],
+        ];
+        $updated = 0; $inserted = 0;
+        foreach ($rows as [$sid, $amount, $penalty, $status]) {
+            $existing = $this->db->where('student_id',$sid)->where('year',$year)->where('month',$month)->get('payment_records')->row();
+            $rec = ['amount'=>$amount,'penalty'=>$penalty,'status'=>$status,'updated_at'=>date('Y-m-d H:i:s')];
+            if ($status === 'paid') $rec['paid_date'] = '2025-01-31';
+            if ($existing) {
+                $this->db->where('id', $existing->id)->update('payment_records', $rec);
+                $updated++;
+            } else {
+                $rec = array_merge($rec, ['student_id'=>$sid,'year'=>$year,'month'=>$month]);
+                $this->db->insert('payment_records', $rec);
+                $inserted++;
+            }
+        }
+        $this->json(['success'=>true,'updated'=>$updated,'inserted'=>$inserted,'total'=>count($rows)]);
+    }
+
     // ──────────────────────────── USER MANAGEMENT ────────────────────────────
 
     public function users() {

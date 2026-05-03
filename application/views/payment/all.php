@@ -2,8 +2,46 @@
 $th_months    = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 $status_labels = ['paid'=>'ชำระแล้ว','overdue'=>'ค้างชำระ','pending'=>'รอ','none'=>'ไม่เก็บ'];
 $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending','none'=>'b-none'];
+
+// Pre-compute overdue and penalty counts for alert bar
+$alert_overdue  = 0;
+$alert_pending  = 0;
+$alert_penalty  = 0;
+foreach ($students as $s) {
+    foreach ($active_months as $m) {
+        $p = $s->payments[$m] ?? null;
+        if (!$p) continue;
+        if ($p->status === 'overdue')  $alert_overdue++;
+        if ($p->status === 'pending')  $alert_pending++;
+        if ($p->penalty > 0)           $alert_penalty++;
+    }
+}
 ?>
 <div id="app">
+
+<!-- ══ Notification alert bar ══ -->
+<?php if ($alert_overdue > 0 || $alert_penalty > 0 || $alert_pending > 0): ?>
+<div class="flex flex-wrap gap-3 mb-4">
+  <?php if ($alert_overdue > 0): ?>
+  <div class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium" style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b">
+    <span>🔴</span>
+    <span>ค้างชำระ <strong><?= $alert_overdue ?></strong> รายการ — ต้องดำเนินการด่วน</span>
+  </div>
+  <?php endif; ?>
+  <?php if ($alert_pending > 0): ?>
+  <div class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium" style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e">
+    <span>🟡</span>
+    <span>รอตรวจสอบ <strong><?= $alert_pending ?></strong> รายการ — มีสลิปรอการยืนยัน</span>
+  </div>
+  <?php endif; ?>
+  <?php if ($alert_penalty > 0): ?>
+  <div class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium" style="background:#fef9c3;border:1px solid #fde047;color:#a16207">
+    <span>⚠️</span>
+    <span>ค้างค่าปรับ <strong><?= $alert_penalty ?></strong> รายการ — ยังไม่ได้ชำระค่าปรับครบ</span>
+  </div>
+  <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <!-- Stats row -->
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
@@ -68,6 +106,7 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
                       'month'     => $m,
                       'student'   => $s->name,
                       'status'    => $p->status,
+                      'amount'    => isset($p->amount)  ? (float)$p->amount  : 35,
                       'penalty'   => isset($p->penalty) ? (float)$p->penalty : 0,
                       'slip_file' => isset($p->slip_file) ? $p->slip_file : null,
                     ]), ENT_QUOTES) ?>)">
@@ -101,7 +140,7 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
     <div class="modal-body space-y-4">
       <!-- Slip preview -->
       <div v-show="editData.slip_file" style="display:none">
-        <label class="lbl mb-2">สลิปที่แนบมา</label>
+        <label class="lbl mb-2">📎 สลิปที่แนบมา</label>
         <div class="rounded-xl overflow-hidden border border-slate-200" style="background:#f8fafc">
           <img :src="slipUrl" alt="slip"
                style="width:100%;max-height:220px;object-fit:contain;display:block;background:#f8fafc"/>
@@ -115,22 +154,35 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
       <div v-show="!editData.slip_file" style="display:none;background:#f8fafc;border:1px dashed #e2e8f0" class="rounded-xl p-3 text-center text-xs text-slate-400">
         ยังไม่มีสลิปที่แนบมา
       </div>
-      <div>
-        <label class="lbl">สถานะ</label>
-        <select v-model="editData.status" class="inp">
-          <option value="paid">ชำระแล้ว</option>
-          <option value="overdue">ค้างชำระ</option>
-          <option value="pending">รอดำเนินการ</option>
-          <option value="none">ไม่เก็บ</option>
-        </select>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">สถานะ</label>
+          <select v-model="editData.status" class="inp">
+            <option value="paid">ชำระแล้ว</option>
+            <option value="overdue">ค้างชำระ</option>
+            <option value="pending">รอดำเนินการ</option>
+            <option value="none">ไม่เก็บ</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">ค่าธรรมเนียม (฿)</label>
+          <input type="number" step="0.01" min="0" v-model.number="editData.amount" class="inp"/>
+        </div>
       </div>
       <div v-if="editData.status==='paid'">
         <label class="lbl">วันที่ชำระ</label>
         <input type="date" v-model="editData.paid_date" class="inp"/>
       </div>
-      <div v-if="editData.status==='overdue' || editData.status==='paid'">
-        <label class="lbl">ค่าปรับ (฿)</label>
-        <input type="number" step="0.01" v-model.number="editData.penalty" class="inp"/>
+      <div>
+        <label class="lbl">
+          ค่าปรับคงค้าง (฿)
+          <span v-show="editData.penalty > 0" style="display:none;background:#fef3c7;color:#b45309;font-size:11px;padding:2px 6px;border-radius:4px;margin-left:4px">⚠️ ยังค้างอยู่</span>
+        </label>
+        <input type="number" step="0.01" min="0" v-model.number="editData.penalty" class="inp"
+               :style="editData.penalty > 0 ? 'border-color:#fcd34d;background:#fffbeb' : ''"/>
+        <p v-show="editData.penalty > 0" style="display:none;color:#b45309" class="text-xs mt-1">
+          รวมที่ต้องชำระ ฿<span v-text="(editData.amount + editData.penalty).toFixed(2)"></span>
+        </p>
       </div>
     </div>
     <div class="modal-footer">
@@ -169,7 +221,7 @@ createApp({
   setup() {
     const statusModal = ref(false)
     const saving      = ref(false)
-    const editData    = reactive({ id:null, month:0, student:'', status:'', paid_date:'', penalty:0, slip_file:null })
+    const editData    = reactive({ id:null, month:0, student:'', status:'', paid_date:'', penalty:0, amount:0, slip_file:null })
     const slipUrl     = computed(() => editData.slip_file ? SLIP_BASE_URL + editData.slip_file : '')
 
     function exportExcel() {
@@ -203,8 +255,9 @@ createApp({
         const fd = new FormData()
         fd.append('id',        editData.id)
         fd.append('status',    editData.status)
-        fd.append('paid_date', editData.paid_date || '')
+        fd.append('amount',    editData.amount)
         fd.append('penalty',   editData.penalty || 0)
+        fd.append('paid_date', editData.paid_date || '')
         await axios.post('<?= base_url('payment/update_status') ?>', fd)
         showToast('บันทึกสถานะแล้ว')
         statusModal.value = false
