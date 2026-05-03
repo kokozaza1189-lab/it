@@ -154,10 +154,11 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
     <?php endif; ?>
 
     <!-- Header card -->
+    <?php $display_year = ($month <= 7) ? ($year + 1) : $year; ?>
     <div class="gf-card" style="border-top:10px solid #673ab7">
       <h1 class="text-2xl font-semibold text-gray-800">
         ฟอร์มชำระเงินสาขา IT<br/>
-        ประจำเดือน <span style="color:#673ab7"><?= $month_names[$month] ?? '' ?> <?= $year ?></span>
+        ประจำเดือน <span style="color:#673ab7"><?= $month_names[$month] ?? '' ?> <?= $display_year ?></span>
       </h1>
 
       <!-- Bank info -->
@@ -193,7 +194,7 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         <div class="flex-1">
           <p class="text-xs font-semibold" style="color:#e65100">กำหนดชำระ</p>
           <p class="text-sm" style="color:#bf360c">
-            <strong>วันที่ <?= $due_day ?> <?= $month_names[$month] ?? '' ?> <?= $year ?></strong>
+            <strong>วันที่ <?= $due_day ?> <?= $month_names[$month] ?? '' ?> <?= $display_year ?></strong>
           </p>
         </div>
         <div class="text-right">
