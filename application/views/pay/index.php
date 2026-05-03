@@ -182,6 +182,12 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
       </div>
 
       <!-- Deadline -->
+      <?php
+        $ce_year_view = ($month <= 7) ? ($year - 543 + 1) : ($year - 543);
+        $due_date_ts  = mktime(0, 0, 0, $month, $due_day, $ce_year_view);
+        $days_left    = max(0, (int)(($due_date_ts - time()) / 86400));
+        $is_past_due  = time() > $due_date_ts;
+      ?>
       <div class="mt-3" style="display:flex;align-items:center;gap:12px;background:#fff3e0;border-left:4px solid #ff6d00;border-radius:0 12px 12px 0;padding:12px 16px">
         <span style="font-size:20px">⏰</span>
         <div class="flex-1">
@@ -190,14 +196,10 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
             <strong>วันที่ <?= $due_day ?> <?= $month_names[$month] ?? '' ?> <?= $year ?></strong>
           </p>
         </div>
-        <?php
-          $due_date_ts = mktime(0, 0, 0, $month, $due_day, $year - 543);
-          $days_left = max(0, (int)(($due_date_ts - time()) / 86400));
-        ?>
         <div class="text-right">
-          <p class="text-xs" style="color:#ff6d00"><?= time() > $due_date_ts ? 'เกินกำหนด' : 'เหลืออีก' ?></p>
+          <p class="text-xs" style="color:#ff6d00"><?= $is_past_due ? 'เกินกำหนด' : 'เหลืออีก' ?></p>
           <p class="text-xl font-bold" style="color:#e65100">
-            <?= $days_overdue > 0 ? $days_overdue : $days_left ?>
+            <?= $is_past_due ? $days_overdue : $days_left ?>
             <span class="text-xs font-normal">วัน</span>
           </p>
         </div>
@@ -225,29 +227,47 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
       <p v-show="errSid" style="display:none;margin-top:4px;color:#d93025;font-size:12px" v-text="errSid"></p>
     </div>
 
-    <!-- Amount summary -->
+    <!-- Amount summary — Vue reactive -->
     <div class="gf-card" style="background:#ede7f6;border:1px solid #d1c4e9">
-      <p class="text-sm font-medium text-gray-700 mb-3">สรุปยอดที่ต้องชำระ</p>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="display:flex;justify-content:space-between" class="text-sm">
-          <span class="text-gray-600">ค่าธรรมเนียมเดือน <?= $month_names[$month] ?? '' ?></span>
-          <span class="font-medium text-gray-800">฿<?= number_format($monthly_fee, 2) ?></span>
-        </div>
-        <?php if ($penalty > 0): ?>
-        <div style="display:flex;justify-content:space-between" class="text-sm">
-          <span style="color:#c62828">ค่าปรับ (<?= $days_overdue ?> วัน × ฿<?= $penalty_per_day ?>)</span>
-          <span class="font-medium" style="color:#c62828">฿<?= number_format($penalty, 2) ?></span>
-        </div>
-        <?php endif; ?>
-        <div style="display:flex;justify-content:space-between;border-top:1px solid #d1c4e9;padding-top:8px">
-          <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
-          <span class="text-xl font-bold" style="color:#673ab7">฿<?= number_format($total, 2) ?></span>
-        </div>
+
+      <!-- Already fully paid -->
+      <div v-show="isFullyPaid" style="display:none;text-align:center;padding:8px 0">
+        <div style="font-size:44px">🎉</div>
+        <p style="font-weight:700;color:#2e7d32;font-size:16px;margin-top:8px">ชำระครบแล้ว</p>
+        <p style="color:#4caf50;font-size:12px;margin-top:4px">ไม่มียอดค้างชำระสำหรับเดือนนี้</p>
       </div>
-      <span class="inline-block mt-3 text-xs font-medium px-3 py-1 rounded-full"
-            style="<?= $penalty > 0 ? 'background:#ffebee;color:#c62828' : 'background:#e8f5e9;color:#2e7d32' ?>">
-        <?= $penalty > 0 ? '🔴 เกินกำหนดชำระแล้ว' : '🟢 ยังไม่เกินกำหนด' ?>
-      </span>
+
+      <!-- Pending — awaiting confirmation -->
+      <div v-show="isPending" style="display:none;text-align:center;padding:8px 0">
+        <div style="font-size:44px">⏳</div>
+        <p style="font-weight:700;color:#e65100;font-size:16px;margin-top:8px">ส่งสลิปแล้ว รอการยืนยัน</p>
+        <p style="color:#fb8c00;font-size:12px;margin-top:4px">เจ้าหน้าที่กำลังตรวจสอบสลิปของคุณ</p>
+      </div>
+
+      <!-- Normal / overdue / penalty-only amount table -->
+      <div v-show="!isFullyPaid && !isPending">
+        <p class="text-sm font-medium text-gray-700 mb-3">สรุปยอดที่ต้องชำระ</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between" class="text-sm" v-show="displayAmt > 0">
+            <span class="text-gray-600">ค่าธรรมเนียมเดือน <?= $month_names[$month] ?? '' ?></span>
+            <span class="font-medium text-gray-800">฿<span v-text="displayAmt.toFixed(2)"><?= number_format($monthly_fee, 2) ?></span></span>
+          </div>
+          <div style="display:none" v-show="displayPen > 0">
+            <div style="display:flex;justify-content:space-between" class="text-sm">
+              <span style="color:#c62828">ค่าปรับค้างชำระ</span>
+              <span class="font-medium" style="color:#c62828">+฿<span v-text="displayPen.toFixed(2)"><?= number_format($penalty, 2) ?></span></span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #d1c4e9;padding-top:8px">
+            <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
+            <span class="text-xl font-bold" style="color:#673ab7">฿<span v-text="displayTotal.toFixed(2)"><?= number_format($total, 2) ?></span></span>
+          </div>
+        </div>
+        <span class="inline-block mt-3 text-xs font-medium px-3 py-1 rounded-full"
+              :style="isOverdue ? 'background:#ffebee;color:#c62828' : 'background:#e8f5e9;color:#2e7d32'">
+          <span v-text="isOverdue ? '🔴 เกินกำหนดชำระแล้ว' : '🟢 ยังไม่เกินกำหนด'"><?= $is_past_due ? '🔴 เกินกำหนดชำระแล้ว' : '🟢 ยังไม่เกินกำหนด' ?></span>
+        </span>
+      </div>
     </div>
 
     <!-- QR Code -->
@@ -318,7 +338,7 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
       </div>
 
       <div class="mt-3" style="display:flex;align-items:center;gap:8px;background:#f8f9fa;border-radius:8px;padding:8px 12px;font-size:12px;color:#5f6368">
-        💡 กรอกจำนวน <strong style="color:#673ab7">฿<?= number_format($total, 2) ?></strong> ตอนโอน
+        💡 กรอกจำนวน <strong style="color:#673ab7">฿<span v-text="displayTotal.toFixed(2)"><?= number_format($total, 2) ?></span></strong> ตอนโอน
       </div>
     </div>
 
@@ -354,11 +374,15 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
     </div>
 
     <!-- Submit -->
-    <div class="gf-card" style="display:flex;align-items:center;justify-content:space-between">
-      <button class="btn-primary" :disabled="submitting" @click="submit">
-        <span v-show="submitting" style="display:none" class="spin">⏳</span>
-        <span v-text="submitting ? 'กำลังส่ง...' : 'ส่งแบบฟอร์ม'">ส่งแบบฟอร์ม</span>
-      </button>
+    <div class="gf-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <p v-show="isFullyPaid" style="display:none;color:#2e7d32;font-size:13px;font-weight:600;margin-bottom:6px">✅ ชำระครบแล้ว ไม่ต้องส่งสลิป</p>
+        <p v-show="isPending" style="display:none;color:#e65100;font-size:13px;font-weight:600;margin-bottom:6px">⏳ ส่งสลิปแล้วแล้ว รอเจ้าหน้าที่ยืนยัน</p>
+        <button class="btn-primary" :disabled="submitting || isFullyPaid || isPending" @click="submit">
+          <span v-show="submitting" style="display:none" class="spin">⏳</span>
+          <span v-text="submitting ? 'กำลังส่ง...' : 'ส่งแบบฟอร์ม'">ส่งแบบฟอร์ม</span>
+        </button>
+      </div>
       <button @click="reset" class="text-sm" style="color:#673ab7;background:none;border:none;cursor:pointer">ล้างแบบฟอร์ม</button>
     </div>
 
@@ -381,7 +405,12 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-const { createApp, ref } = Vue
+const BASE_FEE      = <?= (float)$monthly_fee ?>
+const BASE_PENALTY  = <?= (float)$penalty ?>
+const BASE_TOTAL    = <?= (float)$total ?>
+const IS_OVERDUE_BASE = <?= $is_past_due ? 'true' : 'false' ?>
+
+const { createApp, ref, computed } = Vue
 
 createApp({
   setup() {
@@ -406,6 +435,24 @@ createApp({
     const toastMsg    = ref('')
     const toastOk     = ref(true)
 
+    // Payment record from DB for this student+month
+    const dbPayment = ref(null) // null = no record / not looked up yet
+
+    // Computed: amounts shown in the UI
+    const displayAmt   = computed(() => dbPayment.value !== null ? dbPayment.value.amount  : BASE_FEE)
+    const displayPen   = computed(() => dbPayment.value !== null ? dbPayment.value.penalty : BASE_PENALTY)
+    const displayTotal = computed(() => displayAmt.value + displayPen.value)
+
+    // Status helpers
+    const isFullyPaid = computed(() => dbPayment.value?.status === 'paid' && dbPayment.value?.penalty === 0)
+    const isPending   = computed(() => dbPayment.value?.status === 'pending')
+    const isOverdue   = computed(() => {
+      if (dbPayment.value !== null) {
+        return dbPayment.value.status === 'overdue' || dbPayment.value.penalty > 0
+      }
+      return IS_OVERDUE_BASE
+    })
+
     let lookupTimer = null
 
     function showToast(msg, ok = true) {
@@ -417,15 +464,17 @@ createApp({
       lookupState.value = ''
       foundName.value = ''
       errSid.value = ''
+      dbPayment.value = null
       clearTimeout(lookupTimer)
       if (studentId.value.length < 10) return
       lookupState.value = 'loading'
       lookupTimer = setTimeout(async () => {
         try {
-          const r = await axios.get(LOOKUP_URL, { params: { id: studentId.value } })
+          const r = await axios.get(LOOKUP_URL, { params: { id: studentId.value, month: MONTH, year: YEAR } })
           if (r.data.found) {
             foundName.value = r.data.name
             lookupState.value = 'found'
+            dbPayment.value = r.data.payment || null
           } else {
             lookupState.value = 'miss'
           }
@@ -465,6 +514,8 @@ createApp({
     }
 
     async function submit() {
+      if (isFullyPaid.value) { showToast('ชำระครบแล้วสำหรับเดือนนี้', false); return }
+      if (isPending.value)   { showToast('ส่งสลิปแล้ว รอเจ้าหน้าที่ยืนยัน', false); return }
       const sidOk = validateSid()
       if (!slipFile.value) errSlip.value = 'กรุณาอัปโหลดสลิปการโอนเงิน'
       if (!sidOk || errSlip.value) {
@@ -496,6 +547,7 @@ createApp({
     function reset() {
       studentId.value = ''; foundName.value = ''; lookupState.value = ''
       errSid.value = ''; errSlip.value = ''
+      dbPayment.value = null
       clearSlip(); submitted.value = false
     }
 
@@ -503,6 +555,8 @@ createApp({
       studentId, foundName, lookupState, errSid,
       slipFile, slipPreview, dragging, errSlip,
       submitting, submitted, toastShow, toastMsg, toastOk,
+      dbPayment, displayAmt, displayPen, displayTotal,
+      isFullyPaid, isPending, isOverdue,
       onSidInput, validateSid, onFile, onDrop, clearSlip, submit, reset
     }
   }

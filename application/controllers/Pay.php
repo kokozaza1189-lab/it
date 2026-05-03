@@ -23,14 +23,15 @@ class Pay extends CI_Controller {
         $due_day     = (int)($settings['due_day'] ?? 8);
         $penalty_per_day = (float)($settings['penalty_per_day'] ?? 5);
 
-        // Calculate penalty
+        // Academic year 2568: months 1-7 fall in CE 2026, months 8-12 fall in CE 2025
+        $ce_year = ($month <= 7) ? ($year - 543 + 1) : ($year - 543);
         $now = time();
-        $due_date = mktime(0, 0, 0, $month, $due_day, $year - 543);
+        $due_date = mktime(0, 0, 0, $month, $due_day, $ce_year);
         $days_overdue = 0;
         $penalty = 0;
         if ($now > $due_date) {
             // Cap at end of month
-            $end_of_month = mktime(0, 0, 0, $month + 1, 1, $year - 543) - 86400;
+            $end_of_month = mktime(0, 0, 0, $month + 1, 1, $ce_year) - 86400;
             $cap = min($now, $end_of_month);
             $days_overdue = max(0, (int)(($cap - $due_date) / 86400));
             $penalty = round($days_overdue * $penalty_per_day, 2);
@@ -59,16 +60,26 @@ class Pay extends CI_Controller {
         ]);
     }
 
-    // AJAX: look up student by ID
+    // AJAX: look up student by ID — also returns their payment record for the month
     public function lookup() {
-        $sid = trim($this->input->get('id', TRUE));
+        $sid   = trim($this->input->get('id', TRUE));
+        $month = (int)($this->input->get('month') ?: 0);
+        $year  = (int)($this->input->get('year')  ?: 0);
         if (!$sid) { $this->_json(['found' => false]); return; }
         $s = $this->db->where('student_id', $sid)->get('students')->row();
-        if ($s) {
-            $this->_json(['found' => true, 'name' => $s->name, 'student_id' => $s->student_id]);
-        } else {
-            $this->_json(['found' => false]);
+        if (!$s) { $this->_json(['found' => false]); return; }
+        $payment = null;
+        if ($month && $year) {
+            $rec = $this->Payment_model->get_month($sid, $year, $month);
+            if ($rec && $rec->status !== 'none') {
+                $payment = [
+                    'status'  => $rec->status,
+                    'amount'  => (float)$rec->amount,
+                    'penalty' => (float)$rec->penalty,
+                ];
+            }
         }
+        $this->_json(['found' => true, 'name' => $s->name, 'student_id' => $s->student_id, 'payment' => $payment]);
     }
 
     // POST: submit payment slip
