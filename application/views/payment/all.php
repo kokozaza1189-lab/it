@@ -63,9 +63,17 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
           ?>
           <td>
             <button class="badge <?= $cls ?> cursor-pointer hover:opacity-80"
-                    @click="openStatus(<?= htmlspecialchars(json_encode(['id'=>$p->id??null,'month'=>$m,'student'=>$s->name,'status'=>$p->status,'penalty'=>isset($p->penalty)?(float)$p->penalty:0]), ENT_QUOTES) ?>)">
+                    @click="openStatus(<?= htmlspecialchars(json_encode([
+                      'id'        => $p->id ?? null,
+                      'month'     => $m,
+                      'student'   => $s->name,
+                      'status'    => $p->status,
+                      'penalty'   => isset($p->penalty) ? (float)$p->penalty : 0,
+                      'slip_file' => isset($p->slip_file) ? $p->slip_file : null,
+                    ]), ENT_QUOTES) ?>)">
               <?= $lbl ?>
               <?php if (isset($p->penalty) && $p->penalty > 0): ?>+<?= $p->penalty ?>฿<?php endif; ?>
+              <?php if (!empty($p->slip_file)): ?><span style="font-size:9px">📎</span><?php endif; ?>
             </button>
           </td>
           <?php endforeach; ?>
@@ -91,6 +99,22 @@ $status_badge  = ['paid'=>'b-paid','overdue'=>'b-overdue','pending'=>'b-pending'
       <p class="text-slate-500 text-sm mt-1"><span v-text="editData.student"></span> — เดือน <span v-text="monthNames[editData.month]"></span></p>
     </div>
     <div class="modal-body space-y-4">
+      <!-- Slip preview -->
+      <div v-show="editData.slip_file" style="display:none">
+        <label class="lbl mb-2">สลิปที่แนบมา</label>
+        <div class="rounded-xl overflow-hidden border border-slate-200" style="background:#f8fafc">
+          <img :src="slipUrl" alt="slip"
+               style="width:100%;max-height:220px;object-fit:contain;display:block;background:#f8fafc"/>
+          <div class="px-3 py-2 text-center" style="border-top:1px solid #e2e8f0">
+            <a :href="slipUrl" target="_blank" class="text-xs font-medium" style="color:#3b82f6">
+              เปิดไฟล์ต้นฉบับ ↗
+            </a>
+          </div>
+        </div>
+      </div>
+      <div v-show="!editData.slip_file" style="display:none;background:#f8fafc;border:1px dashed #e2e8f0" class="rounded-xl p-3 text-center text-xs text-slate-400">
+        ยังไม่มีสลิปที่แนบมา
+      </div>
       <div>
         <label class="lbl">สถานะ</label>
         <select v-model="editData.status" class="inp">
@@ -138,13 +162,15 @@ const paymentAllData = <?= json_encode(
 const activeMonthsAll = <?= json_encode($active_months) ?>;
 const thMonths = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
-const { createApp, ref, reactive } = Vue
+const { createApp, ref, reactive, computed } = Vue
 const monthNames = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+const SLIP_BASE_URL = '<?= base_url('assets/uploads/slips/') ?>'
 createApp({
   setup() {
     const statusModal = ref(false)
     const saving      = ref(false)
-    const editData    = reactive({ id:null, month:0, student:'', status:'', paid_date:'', penalty:0 })
+    const editData    = reactive({ id:null, month:0, student:'', status:'', paid_date:'', penalty:0, slip_file:null })
+    const slipUrl     = computed(() => editData.slip_file ? SLIP_BASE_URL + editData.slip_file : '')
 
     function exportExcel() {
       if (!window.XLSX) return alert('โหลด SheetJS ไม่สำเร็จ')
@@ -187,7 +213,7 @@ createApp({
       saving.value = false
     }
 
-    return { statusModal, saving, editData, monthNames, openStatus, saveStatus, exportExcel }
+    return { statusModal, saving, editData, monthNames, slipUrl, openStatus, saveStatus, exportExcel }
   }
 }).mount('#app')
 })
