@@ -20,6 +20,10 @@ $is_super = $role === 'super_admin';
             @click="doSeedJanuary" :disabled="loading">
       📥 นำเข้าข้อมูล ม.ค.2569
     </button>
+    <button class="btn btn-sm" style="background:#dbeafe;border:1px solid #93c5fd;color:#1e40af;border-radius:.5rem;padding:.3rem .8rem"
+            @click="doSeedMarch" :disabled="loading">
+      📥 นำเข้าข้อมูล มี.ค.2569
+    </button>
     <?php if ($is_super): ?>
     <button class="btn btn-gray btn-sm text-red-500" data-modal-open="clearTxnModal">🗑 ล้างธุรกรรม</button>
     <?php endif; ?>
@@ -297,6 +301,17 @@ createApp({
       loading.value = false
     }
 
+    async function doSeedMarch() {
+      if (!confirm('นำเข้าข้อมูลมีนาคม 2569 (95 รายการ) จากเอกสาร PDF?\nจะอัปเดตรายการที่มีอยู่แล้วและสร้างรายการใหม่')) return
+      loading.value = true
+      try {
+        const res = await axios.post('<?= base_url('admin/seed_march') ?>', new FormData())
+        showToast(`นำเข้าสำเร็จ — อัปเดต ${res.data.updated} รายการ | สร้างใหม่ ${res.data.inserted} รายการ`)
+        setTimeout(() => location.reload(), 1400)
+      } catch(e) { showToast('นำเข้าล้มเหลว', false) }
+      loading.value = false
+    }
+
     async function doGenerate(month, year) {
       if (!confirm(`สร้างรายการชำระเงินเดือน ${month}/${year} สำหรับนิสิตที่ยังไม่มีรายการ?`)) return
       loading.value = true
@@ -338,7 +353,7 @@ createApp({
     return {
       loading, saving, detailModal, detailLoading, detailLabel, detailYear,
       detailRecords, detailSearch, filteredRecords, detailStats,
-      openMonthDetail, saveRecord, doSeedJanuary, doGenerate, doOverdue, doPenalty
+      openMonthDetail, saveRecord, doSeedJanuary, doSeedMarch, doGenerate, doOverdue, doPenalty
     }
   }
 }).mount('#app')

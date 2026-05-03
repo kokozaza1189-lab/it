@@ -105,6 +105,7 @@ $route['admin/clear_students']         = 'admin/clear_students';
 $route['admin/get_month_detail']       = 'admin/get_month_detail';
 $route['admin/update_payment_record']  = 'admin/update_payment_record';
 $route['admin/seed_january']           = 'admin/seed_january';
+$route['admin/seed_march']             = 'admin/seed_march';
 $route['admin/users']                = 'admin/users';
 $route['admin/add_user']             = 'admin/add_user';
 $route['admin/edit_user']            = 'admin/edit_user';
