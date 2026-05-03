@@ -83,7 +83,9 @@ class Payment_model extends CI_Model {
 
     // Recalculate penalty for overdue records (days past due_day)
     public function recalc_penalties($year, $month, $daily_penalty, $due_day) {
-        $due_date   = mktime(0,0,0, $month < 543 ? $month : $month, $due_day, $year - 543);
+        // Academic year 2568: months 1-7 fall in CE 2026, months 8-12 fall in CE 2025
+        $ce_year    = ($month <= 7) ? ($year - 543 + 1) : ($year - 543);
+        $due_date   = mktime(0, 0, 0, $month, $due_day, $ce_year);
         $today      = time();
         $days_overdue = max(0, (int)(($today - $due_date) / 86400));
         $penalty    = round($days_overdue * $daily_penalty, 2);

@@ -233,7 +233,7 @@ class Admin extends MY_Controller {
         foreach ($rows as [$sid, $amount, $penalty, $status]) {
             $existing = $this->db->where('student_id',$sid)->where('year',$year)->where('month',$month)->get('payment_records')->row();
             $rec = ['amount'=>$amount,'penalty'=>$penalty,'status'=>$status,'updated_at'=>date('Y-m-d H:i:s')];
-            if ($status === 'paid') $rec['paid_date'] = '2025-01-31';
+            if ($status === 'paid') $rec['paid_date'] = '2026-01-31';
             if ($existing) {
                 $this->db->where('id', $existing->id)->update('payment_records', $rec);
                 $updated++;
@@ -309,7 +309,7 @@ class Admin extends MY_Controller {
         foreach ($rows as [$sid, $amount, $penalty, $status]) {
             $existing = $this->db->where('student_id',$sid)->where('year',$year)->where('month',$month)->get('payment_records')->row();
             $rec = ['amount'=>$amount,'penalty'=>$penalty,'status'=>$status,'updated_at'=>date('Y-m-d H:i:s')];
-            if ($status === 'paid') $rec['paid_date'] = '2025-03-31';
+            if ($status === 'paid') $rec['paid_date'] = '2026-03-31';
             if ($existing) {
                 $this->db->where('id', $existing->id)->update('payment_records', $rec);
                 $updated++;
