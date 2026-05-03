@@ -10,9 +10,12 @@ class Payment extends MY_Controller {
 
     public function index() {
         $this->require_login();
-        $user = $this->get_user();
-        $year = $this->acad_year;
-        $payments = $this->Payment_model->get_by_student($user['student_id'], $year);
+        $user   = $this->get_user();
+        $year   = $this->acad_year;
+        $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,3'));
+        $all    = $this->Payment_model->get_by_student($user['student_id'], $year);
+        // Only surface months that are configured for collection
+        $payments = array_values(array_filter($all, fn($p) => in_array((int)$p->month, $active)));
         $this->render('payment/index', [
             'title'    => 'การชำระเงินของฉัน',
             'payments' => $payments,
