@@ -272,26 +272,22 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
     </div>
 
     <!-- QR Code -->
-    <div class="gf-card">
-      <p class="text-sm font-medium text-gray-700 mb-4">สแกน QR เพื่อชำระเงิน</p>
+    <?php
+    $qr_path = FCPATH . ($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
+    $qr_url  = base_url($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
+    ?>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 4px">
+      <?php if (file_exists($qr_path)): ?>
+        <img src="<?= $qr_url ?>" alt="QR PromptPay"
+             style="width:100%;max-width:300px;height:auto;display:block;border-radius:20px"/>
+      <?php else: ?>
+        <div style="width:280px;padding:32px;display:flex;flex-direction:column;align-items:center;background:#f8fafc;border-radius:20px;border:2px dashed #cbd5e1;text-align:center">
+          <span style="font-size:48px">🔲</span>
+          <p style="font-size:12px;color:#94a3b8;margin-top:12px">วางไฟล์ QR code ที่<br><strong>assets/img/qr_payment.jpg</strong></p>
+        </div>
+      <?php endif; ?>
 
-      <?php
-      $qr_path = FCPATH . ($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
-      $qr_url  = base_url($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
-      ?>
-      <div style="display:flex;justify-content:center">
-        <?php if (file_exists($qr_path)): ?>
-          <img src="<?= $qr_url ?>" alt="QR PromptPay"
-               style="width:100%;max-width:320px;height:auto;display:block;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,.12)"/>
-        <?php else: ?>
-          <div style="width:280px;padding:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border-radius:16px;border:2px dashed #cbd5e1;text-align:center">
-            <span style="font-size:48px">🔲</span>
-            <p style="font-size:12px;color:#94a3b8;margin-top:12px">วางไฟล์ QR code ที่<br><strong>assets/img/qr_payment.jpg</strong></p>
-          </div>
-        <?php endif; ?>
-      </div>
-
-      <div class="mt-3" style="display:flex;align-items:center;gap:8px;background:#f8f9fa;border-radius:8px;padding:8px 12px;font-size:12px;color:#5f6368">
+      <div style="display:flex;align-items:center;gap:8px;background:white;border-radius:10px;padding:10px 14px;font-size:12px;color:#5f6368;box-shadow:0 1px 4px rgba(0,0,0,.08)">
         💡 กรอกจำนวน <strong style="color:#673ab7">฿<span v-text="displayTotal.toFixed(2)"><?= number_format($total, 2) ?></span></strong> ตอนโอน
       </div>
     </div>
