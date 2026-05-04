@@ -275,67 +275,20 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
     <div class="gf-card">
       <p class="text-sm font-medium text-gray-700 mb-4">สแกน QR เพื่อชำระเงิน</p>
 
-      <div class="qr-bg rounded-2xl p-4">
-        <!-- KBank Make Header -->
-        <div style="border-radius:12px;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;background:linear-gradient(135deg,#1a3a2a,#1b5e20)">
-          <div>
-            <p class="font-bold text-lg text-white" style="line-height:1">make</p>
-            <p class="text-xs" style="color:#a5d6a7">by KBank</p>
+      <?php
+      $qr_path = FCPATH . ($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
+      $qr_url  = base_url($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
+      ?>
+      <div style="display:flex;justify-content:center">
+        <?php if (file_exists($qr_path)): ?>
+          <img src="<?= $qr_url ?>" alt="QR PromptPay"
+               style="width:100%;max-width:320px;height:auto;display:block;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,.12)"/>
+        <?php else: ?>
+          <div style="width:280px;padding:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border-radius:16px;border:2px dashed #cbd5e1;text-align:center">
+            <span style="font-size:48px">🔲</span>
+            <p style="font-size:12px;color:#94a3b8;margin-top:12px">วางไฟล์ QR code ที่<br><strong>assets/img/qr_payment.jpg</strong></p>
           </div>
-          <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15)">
-            <span class="text-white text-xs font-bold">K</span>
-          </div>
-        </div>
-
-        <!-- QR frame -->
-        <div class="bg-white rounded-2xl overflow-hidden" style="box-shadow:0 2px 12px rgba(0,0,0,.12)">
-          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#1a237e">
-            <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#00bcd4">
-              <span class="text-white text-sm font-bold">+</span>
-            </div>
-            <div>
-              <p class="text-white font-bold text-sm" style="letter-spacing:3px">THAI QR</p>
-              <p class="text-xs" style="color:#90caf9;letter-spacing:3px">PAYMENT</p>
-            </div>
-          </div>
-
-          <div class="px-5 py-5 text-center">
-            <div class="inline-block text-white text-xs font-bold px-5 py-1 rounded mb-4" style="background:#1a237e;letter-spacing:2px">PromptPay</div>
-
-            <div style="display:flex;justify-content:center;margin-bottom:16px">
-              <div style="border-radius:12px;border:2px solid #f3f4f6;padding:12px;background:white;display:inline-block">
-                <?php
-                $qr_path = FCPATH . ($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
-                $qr_url  = base_url($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
-                ?>
-                <?php if (file_exists($qr_path)): ?>
-                  <img src="<?= $qr_url ?>" alt="QR PromptPay" width="180" height="180"
-                       style="display:block;border-radius:8px"/>
-                <?php else: ?>
-                  <div style="width:180px;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border-radius:8px;border:1.5px dashed #cbd5e1">
-                    <span style="font-size:40px">🔲</span>
-                    <p style="font-size:11px;color:#94a3b8;margin-top:8px;text-align:center">วาง qr_payment.jpg<br>ในโฟลเดอร์<br>assets/img/</p>
-                  </div>
-                <?php endif; ?>
-              </div>
-            </div>
-
-            <p class="text-sm font-medium mb-1" style="color:#00897b">สแกน QR เพื่อโอนเข้าบัญชี</p>
-            <p class="font-bold text-gray-800"><?= htmlspecialchars($settings['bank_name'] ?? 'นายไพศาล กองมณี') ?></p>
-            <p class="text-sm text-gray-500 mt-0.5"><?= htmlspecialchars($settings['bank_account'] ?? '202-3-90895-9') ?></p>
-
-            <div class="mt-3 rounded-xl px-4 py-2 text-xs text-gray-500" style="background:#f5f5f5">
-              💬 บัญชีออมทรัพย์ IT สาขาวิชาเทคโนโลยีสารสนเทศ
-            </div>
-
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0">
-              <p class="text-left text-gray-400" style="font-size:10px;line-height:1.4">
-                Accepts all banks<br/>รับเงินได้จากทุกธนาคาร
-              </p>
-              <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#00897b;color:white;font-size:12px;font-weight:700">m</div>
-            </div>
-          </div>
-        </div>
+        <?php endif; ?>
       </div>
 
       <div class="mt-3" style="display:flex;align-items:center;gap:8px;background:#f8f9fa;border-radius:8px;padding:8px 12px;font-size:12px;color:#5f6368">
