@@ -278,8 +278,10 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
     ?>
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 4px">
       <?php if (file_exists($qr_path)): ?>
-        <img src="<?= $qr_url ?>" alt="QR PromptPay"
-             style="width:100%;max-width:300px;height:auto;display:block;border-radius:20px"/>
+        <div style="width:100%;max-width:420px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.15)">
+          <img src="<?= $qr_url ?>" alt="QR PromptPay"
+               style="width:100%;height:auto;display:block;object-fit:contain"/>
+        </div>
       <?php else: ?>
         <div style="width:280px;padding:32px;display:flex;flex-direction:column;align-items:center;background:#f8fafc;border-radius:20px;border:2px dashed #cbd5e1;text-align:center">
           <span style="font-size:48px">🔲</span>
