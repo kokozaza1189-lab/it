@@ -111,7 +111,15 @@ foreach ($students as $s) {
                       'slip_file' => isset($p->slip_file) ? $p->slip_file : null,
                     ]), ENT_QUOTES) ?>)">
               <?= $lbl ?>
-              <?php if (isset($p->penalty) && $p->penalty > 0): ?>+<?= $p->penalty ?>฿<?php endif; ?>
+              <?php
+                $m_amt = (float)($p->amount ?? 0);
+                $m_pen = (float)($p->penalty ?? 0);
+                $m_total = $m_amt + $m_pen;
+                if ($p->status === 'overdue' && $m_total > 0):
+              ?>฿<?= number_format($m_total, 0) ?><?php endif; ?>
+              <?php if ($p->status === 'overdue' && $m_pen > 0 && $m_amt > 0): ?>
+                <span style="font-size:9px;opacity:.75">(+<?= number_format($m_pen,0) ?>)</span>
+              <?php endif; ?>
               <?php if (!empty($p->slip_file)): ?><span style="font-size:9px">📎</span><?php endif; ?>
             </button>
           </td>
