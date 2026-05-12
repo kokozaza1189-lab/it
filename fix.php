@@ -47,7 +47,38 @@ if ($from_gh) {
     $written = file_put_contents($dir . 'all.php', PAYMENT_ALL_CONTENT);
     if ($written !== false) { $results[] = "✅ application/views/payment/all.php (embedded)"; $ok++; }
     else { $results[] = "❌ application/views/payment/all.php — write failed"; $fail++; }
-    $results[] = "⚠️ GitHub repo is private — other files not updated. Use it_deploy.zip for full deploy.";
+
+    // Fallback: surgical patch for pay/index.php QR section
+    $pay_file = $base . 'application/views/pay/index.php';
+    if (file_exists($pay_file)) {
+        $pay_content = file_get_contents($pay_file);
+        // Replace everything between <!-- QR Code --> and <!-- Slip upload -->
+        $new_qr = "    <!-- QR Code -->\n    <?php\n    \$qr_path = FCPATH . (\$settings['qr_image'] ?? 'assets/img/qr_payment.jpg');\n    \$qr_url  = base_url(\$settings['qr_image'] ?? 'assets/img/qr_payment.jpg');\n    ?>\n    <div style=\"display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 4px\">\n      <?php if (file_exists(\$qr_path)): ?>\n        <div style=\"width:100%;max-width:420px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.15)\">\n          <img src=\"<?= \$qr_url ?>\" alt=\"QR PromptPay\"\n               style=\"width:100%;height:auto;display:block;object-fit:contain\"/>\n        </div>\n      <?php else: ?>\n        <div style=\"width:280px;padding:32px;display:flex;flex-direction:column;align-items:center;background:#f8fafc;border-radius:20px;border:2px dashed #cbd5e1;text-align:center\">\n          <span style=\"font-size:48px\">🔲</span>\n          <p style=\"font-size:12px;color:#94a3b8;margin-top:12px\">วางไฟล์ QR code ที่<br><strong>assets/img/qr_payment.jpg</strong></p>\n        </div>\n      <?php endif; ?>\n\n      <div style=\"display:flex;align-items:center;gap:8px;background:white;border-radius:10px;padding:10px 14px;font-size:12px;color:#5f6368;box-shadow:0 1px 4px rgba(0,0,0,.08)\">\n        💡 กรอกจำนวน <strong style=\"color:#673ab7\">฿<span v-text=\"displayTotal.toFixed(2)\"><?= number_format(\$total, 2) ?></span></strong> ตอนโอน\n      </div>\n    </div>\n\n    ";
+        $patched = preg_replace(
+            '/[ \t]*<!-- QR Code -->.*?<!-- Slip upload -->/s',
+            $new_qr . '<!-- Slip upload -->',
+            $pay_content
+        );
+        if ($patched !== null && $patched !== $pay_content) {
+            if (file_put_contents($pay_file, $patched) !== false) {
+                $results[] = "✅ application/views/pay/index.php (QR section patched)";
+                $ok++;
+            } else {
+                $results[] = "❌ application/views/pay/index.php — write failed";
+                $fail++;
+            }
+        } elseif ($patched === $pay_content) {
+            $results[] = "ℹ️ application/views/pay/index.php — QR section already up to date";
+        } else {
+            $results[] = "❌ application/views/pay/index.php — pattern not found, manual update needed";
+            $fail++;
+        }
+    } else {
+        $results[] = "❌ application/views/pay/index.php — file not found on server";
+        $fail++;
+    }
+
+    $results[] = "⚠️ GitHub repo is private — controllers/models not updated. Use it_deploy.zip for full deploy.";
 }
 
 header('Content-Type: text/plain; charset=utf-8');
