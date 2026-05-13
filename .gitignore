@@ -5,3 +5,12 @@ application/cache/*
 vendor/
 assets/uploads/slips/*
 !assets/uploads/slips/.gitkeep
+
+# Local-only / sensitive files — never commit
+try_ftp.php
+*.tmp
+*.zip
+chk.php
+test.php
+info.php
+phpinfo.php
