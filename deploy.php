@@ -52,10 +52,25 @@ $files = [
 
 $secret = $_POST['secret'] ?? $_GET['secret'] ?? '';
 
+// Files that must also be synced into the pay/ subdirectory
+$pay_subdir_files = [
+    'application/controllers/Pay.php',
+    'application/core/MY_Controller.php',
+    'application/models/Payment_model.php',
+    'application/models/Setting_model.php',
+    'application/models/Student_model.php',
+    'application/views/pay/index.php',
+    'application/views/templates/footer.php',
+    'application/views/templates/header.php',
+    'application/views/templates/sidebar.php',
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $secret === DEPLOY_SECRET) {
     $results = [];
     $ok = 0;
     $fail = 0;
+
+    // Deploy to main app
     foreach ($files as $file) {
         $url = GITHUB_RAW . $file;
         $content = @file_get_contents($url);
@@ -75,6 +90,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $secret === DEPLOY_SECRET) {
             $fail++;
         }
     }
+
+    // Also sync critical files into pay/ subdirectory (separate CI3 install)
+    $pay_dir = __DIR__ . '/pay/';
+    if (is_dir($pay_dir)) {
+        foreach ($pay_subdir_files as $file) {
+            $dest = $pay_dir . $file;
+            $dir = dirname($dest);
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+            // Reuse already-downloaded content from main deploy
+            $src = __DIR__ . '/' . $file;
+            if (file_exists($src) && copy($src, $dest)) {
+                $results[] = ['file' => 'pay/' . $file, 'status' => 'OK'];
+                $ok++;
+            } else {
+                $results[] = ['file' => 'pay/' . $file, 'status' => 'FAIL - could not copy to pay/'];
+                $fail++;
+            }
+        }
+    }
+
     header('Content-Type: text/plain; charset=utf-8');
     echo "Deploy complete: $ok OK, $fail FAIL\n\n";
     foreach ($results as $r) {
