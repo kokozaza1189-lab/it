@@ -1,6 +1,10 @@
 <?php
 $month_names = [1=>'มกราคม',2=>'กุมภาพันธ์',3=>'มีนาคม',4=>'เมษายน',5=>'พฤษภาคม',6=>'มิถุนายน',
                 7=>'กรกฎาคม',8=>'สิงหาคม',9=>'กันยายน',10=>'ตุลาคม',11=>'พฤศจิกายน',12=>'ธันวาคม'];
+// Compute month-aware fee directly in view (guards against controller caching issues)
+$_fee_jan  = (float)($settings['fee_january'] ?? 35);
+$_fee_std  = (float)($settings['monthly_fee'] ?? 50);
+$_view_fee = ((int)$month === 1) ? $_fee_jan : $_fee_std;
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -153,8 +157,40 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
     </div>
     <?php endif; ?>
 
+    <!-- QR Code -->
+    <?php if (!empty($settings['qr_image'])): ?>
+    <div class="gf-card" style="padding:0;overflow:hidden;border:2px solid #1565c0">
+      <!-- Navy header bar -->
+      <div style="background:#0d47a1;padding:10px 20px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="8" fill="white"/><path d="M6 6h8v8H6zm0 10h8v8H6zm10-10h8v8h-8zm10 0h8v8h-8zm0 10h8v8h-8zm-10 10h8v8h-8zm10 0h8v8h-8z" fill="#0d47a1" opacity=".4"/><rect x="16" y="16" width="8" height="8" fill="#0d47a1"/></svg>
+          <div>
+            <p style="color:white;font-weight:700;font-size:14px;letter-spacing:.5px;line-height:1.1">THAI QR PAYMENT</p>
+          </div>
+        </div>
+        <!-- PromptPay text badge -->
+        <div style="background:white;border-radius:6px;padding:3px 10px">
+          <p style="color:#0d47a1;font-weight:700;font-size:11px;letter-spacing:.5px">PromptPay</p>
+        </div>
+      </div>
+      <!-- QR image body -->
+      <div style="padding:20px 16px 16px;background:linear-gradient(145deg,#e8f5e9,#e3f2fd,#ede7f6);text-align:center">
+        <div style="background:white;border-radius:14px;padding:14px;display:inline-block;box-shadow:0 2px 12px rgba(0,0,0,.12)">
+          <img src="<?= htmlspecialchars(base_url('assets/uploads/qr/' . $settings['qr_image'])) ?>"
+               alt="QR PromptPay"
+               onerror="this.src='<?= htmlspecialchars($settings['qr_image']) ?>'"
+               style="width:190px;height:190px;object-fit:contain;display:block"/>
+        </div>
+        <p style="color:#1565c0;font-weight:600;font-size:12px;margin-top:14px">สแกน QR เพื่อโอนเข้าบัญชี</p>
+        <p style="font-weight:700;font-size:17px;color:#1a237e;margin-top:6px"><?= htmlspecialchars($settings['bank_name'] ?? '') ?></p>
+        <p style="color:#546e7a;font-size:13px;margin-top:3px;letter-spacing:.5px"><?= htmlspecialchars($settings['bank_account'] ?? '') ?></p>
+        <p style="color:#90a4ae;font-size:11px;margin-top:6px">รับเงินได้จากทุกธนาคาร · Accepts all banks</p>
+      </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Header card -->
-    <?php $display_year = ($month <= 7) ? ($year + 1) : $year; ?>
+    <?php $display_year = $year; // Always show the academic year as-is ?>
     <div class="gf-card" style="border-top:10px solid #673ab7">
       <h1 class="text-2xl font-semibold text-gray-800">
         ฟอร์มชำระเงินสาขา IT<br/>
@@ -167,7 +203,7 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
           <span style="font-size:28px">🏦</span>
           <div>
             <p class="font-semibold text-gray-800">ธนาคารกสิกรไทย</p>
-            <p class="text-gray-500 text-xs">฿<?= number_format($monthly_fee, 0) ?> / เดือน</p>
+            <p class="text-gray-500 text-xs">฿<?= number_format($_view_fee, 0) ?> / เดือน</p>
           </div>
         </div>
         <div style="display:flex;gap:32px;flex-wrap:wrap;padding-left:4px">
@@ -251,7 +287,7 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;justify-content:space-between" class="text-sm" v-show="displayAmt > 0">
             <span class="text-gray-600">ค่าธรรมเนียมเดือน <?= $month_names[$month] ?? '' ?></span>
-            <span class="font-medium text-gray-800">฿<span v-text="displayAmt.toFixed(2)"><?= number_format($monthly_fee, 2) ?></span></span>
+            <span class="font-medium text-gray-800">฿<span v-text="displayAmt.toFixed(2)"><?= number_format($_view_fee, 2) ?></span></span>
           </div>
           <div style="display:none" v-show="displayPen > 0">
             <div style="display:flex;justify-content:space-between" class="text-sm">
@@ -261,36 +297,13 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
           </div>
           <div style="display:flex;justify-content:space-between;border-top:1px solid #d1c4e9;padding-top:8px">
             <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
-            <span class="text-xl font-bold" style="color:#673ab7">฿<span v-text="displayTotal.toFixed(2)"><?= number_format($total, 2) ?></span></span>
+            <span class="text-xl font-bold" style="color:#673ab7">฿<span v-text="displayTotal.toFixed(2)"><?= number_format($_view_fee + $penalty, 2) ?></span></span>
           </div>
         </div>
         <span class="inline-block mt-3 text-xs font-medium px-3 py-1 rounded-full"
               :style="isOverdue ? 'background:#ffebee;color:#c62828' : 'background:#e8f5e9;color:#2e7d32'">
           <span v-text="isOverdue ? '🔴 เกินกำหนดชำระแล้ว' : '🟢 ยังไม่เกินกำหนด'"><?= $is_past_due ? '🔴 เกินกำหนดชำระแล้ว' : '🟢 ยังไม่เกินกำหนด' ?></span>
         </span>
-      </div>
-    </div>
-
-    <!-- QR Code -->
-    <?php
-    $qr_path = FCPATH . ($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
-    $qr_url  = base_url($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
-    ?>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 4px">
-      <?php if (file_exists($qr_path)): ?>
-        <div style="width:100%;max-width:420px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.15)">
-          <img src="<?= $qr_url ?>" alt="QR PromptPay"
-               style="width:100%;height:auto;display:block;object-fit:contain"/>
-        </div>
-      <?php else: ?>
-        <div style="width:280px;padding:32px;display:flex;flex-direction:column;align-items:center;background:#f8fafc;border-radius:20px;border:2px dashed #cbd5e1;text-align:center">
-          <span style="font-size:48px">🔲</span>
-          <p style="font-size:12px;color:#94a3b8;margin-top:12px">วางไฟล์ QR code ที่<br><strong>assets/img/qr_payment.jpg</strong></p>
-        </div>
-      <?php endif; ?>
-
-      <div style="display:flex;align-items:center;gap:8px;background:white;border-radius:10px;padding:10px 14px;font-size:12px;color:#5f6368;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-        💡 กรอกจำนวน <strong style="color:#673ab7">฿<span v-text="displayTotal.toFixed(2)"><?= number_format($total, 2) ?></span></strong> ตอนโอน
       </div>
     </div>
 
@@ -357,9 +370,9 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-const BASE_FEE      = <?= (float)$monthly_fee ?>
+const BASE_FEE      = <?= $_view_fee ?>
 const BASE_PENALTY  = <?= (float)$penalty ?>
-const BASE_TOTAL    = <?= (float)$total ?>
+const BASE_TOTAL    = <?= $_view_fee + (float)$penalty ?>
 const IS_OVERDUE_BASE = <?= $is_past_due ? 'true' : 'false' ?>
 
 const { createApp, ref, computed } = Vue

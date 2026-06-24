@@ -29,7 +29,7 @@ $role_colors = [
   <div class="lg:col-span-1">
     <div class="card">
       <h2 class="font-bold text-slate-800 text-base mb-5">ตั้งค่าทั่วไป</h2>
-      <form method="POST" action="<?= base_url('settings/save') ?>" class="space-y-4">
+      <form method="POST" action="<?= base_url('settings/save') ?>" class="space-y-4" enctype="multipart/form-data">
         <div>
           <label class="lbl">ปีการศึกษา (พ.ศ.)</label>
           <input name="academic_year" type="number" class="inp <?= !$can_save?'bg-slate-50':'' ?>"
@@ -40,6 +40,14 @@ $role_colors = [
           <label class="lbl">ค่าธรรมเนียมรายเดือน (฿)</label>
           <input name="monthly_fee" type="number" step="0.01" class="inp <?= !$can_save?'bg-slate-50':'' ?>"
                  value="<?= htmlspecialchars($settings['monthly_fee'] ?? 50) ?>"
+                 <?= !$can_save?'readonly':'' ?>/>
+        </div>
+        <div>
+          <label class="lbl">ค่าธรรมเนียมมกราคม (฿)
+            <span class="text-slate-400 text-xs font-normal ml-1">พิเศษเฉพาะ ม.ค.</span>
+          </label>
+          <input name="fee_january" type="number" step="0.01" class="inp <?= !$can_save?'bg-slate-50':'' ?>"
+                 value="<?= htmlspecialchars($settings['fee_january'] ?? 35) ?>"
                  <?= !$can_save?'readonly':'' ?>/>
         </div>
         <div>
@@ -60,6 +68,40 @@ $role_colors = [
                  value="<?= htmlspecialchars($settings['active_months'] ?? '1,3,4,5,6,7,8,9,10,11') ?>"
                  <?= !$can_save?'readonly':'' ?>/>
           <p class="text-slate-400 text-xs mt-1">เช่น 1,2,3,4 หมายถึง ม.ค.–เม.ย.</p>
+        </div>
+        <!-- QR PromptPay -->
+        <div>
+          <label class="lbl">🏦 ชื่อบัญชี (bank_name)</label>
+          <input name="bank_name" class="inp <?= !$can_save?'bg-slate-50':'' ?>"
+                 value="<?= htmlspecialchars($settings['bank_name'] ?? '') ?>"
+                 <?= !$can_save?'readonly':'' ?> placeholder="เช่น นายไพศาล กองมณี"/>
+        </div>
+        <div>
+          <label class="lbl">เลขบัญชี (bank_account)</label>
+          <input name="bank_account" class="inp <?= !$can_save?'bg-slate-50':'' ?>"
+                 value="<?= htmlspecialchars($settings['bank_account'] ?? '') ?>"
+                 <?= !$can_save?'readonly':'' ?> placeholder="เช่น 202-3-90895-9"/>
+        </div>
+        <div>
+          <label class="lbl">📱 QR PromptPay
+            <span class="text-slate-400 text-xs font-normal ml-1">(PNG/JPG ที่ได้จากแอปธนาคาร)</span>
+          </label>
+          <?php if (!empty($settings['qr_image'])): ?>
+          <div class="mb-2 p-2 rounded-xl flex items-center gap-3" style="background:#e0f2fe;border:1px solid #7dd3fc">
+            <img src="<?= base_url('assets/uploads/qr/' . $settings['qr_image']) ?>"
+                 alt="QR" style="height:64px;width:64px;object-fit:contain;border-radius:8px;border:1px solid #ddd;background:#fff"/>
+            <div class="text-xs text-blue-700">
+              <p class="font-semibold">QR ปัจจุบัน: <?= htmlspecialchars($settings['qr_image']) ?></p>
+              <p class="text-slate-500 mt-0.5">อัปโหลดใหม่เพื่อแทนที่</p>
+            </div>
+          </div>
+          <?php endif; ?>
+          <?php if ($can_save): ?>
+          <input type="file" name="qr_image" accept=".jpg,.jpeg,.png"
+                 class="block w-full inp cursor-pointer" style="padding:6px"/>
+          <?php else: ?>
+          <p class="text-slate-400 text-xs">เฉพาะ Treasurer / Super Admin เปลี่ยนได้</p>
+          <?php endif; ?>
         </div>
         <?php if ($can_save): ?>
         <button type="submit" class="btn btn-blue w-full">บันทึกการตั้งค่า</button>

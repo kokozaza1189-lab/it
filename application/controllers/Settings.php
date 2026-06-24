@@ -22,14 +22,31 @@ class Settings extends MY_Controller {
     // Save general settings (treasurer/super_admin)
     public function save() {
         $this->require_role(['super_admin','treasurer']);
-        $keys = ['academic_year','monthly_fee','penalty_per_day','due_day','active_months'];
+        $keys = ['academic_year','monthly_fee','fee_january','penalty_per_day','due_day','active_months',
+                 'bank_name','bank_account'];
         foreach ($keys as $k) {
             $val = $this->input->post($k, TRUE);
             if ($val !== null && $val !== '') {
                 $this->Setting_model->set($k, $val);
             }
         }
-        // Refresh session year cache
+        // QR image upload
+        if (!empty($_FILES['qr_image']['name'])) {
+            $uploadPath = rtrim(FCPATH, '/') . '/assets/uploads/qr/';
+            if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
+            $this->load->library('upload');
+            $this->upload->initialize([
+                'upload_path'   => $uploadPath,
+                'allowed_types' => 'jpg|jpeg|png',
+                'max_size'      => 5120,
+                'file_name'     => 'qr_promptpay',
+                'overwrite'     => true,
+                'encrypt_name'  => false,
+            ]);
+            if ($this->upload->do_upload('qr_image')) {
+                $this->Setting_model->set('qr_image', $this->upload->data('file_name'));
+            }
+        }
         $this->session->set_flashdata('success', 'บันทึกการตั้งค่าเรียบร้อย');
         redirect('settings');
     }
