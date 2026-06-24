@@ -12,7 +12,7 @@ class Api extends MY_Controller {
     public function students() {
         $this->require_login();
         $this->load->model(['Student_model','Payment_model']);
-        $year     = $this->input->get('year') ?: 2568;
+        $year     = $this->input->get('year') ?: $this->acad_year;
         $students = $this->Student_model->get_with_payments($year);
         $this->json($students);
     }
@@ -47,7 +47,7 @@ class Api extends MY_Controller {
     public function dashboard() {
         $this->require_login();
         $this->load->model(['Payment_model','Expense_model','Fund_model']);
-        $year = 2568;
+        $year = $this->acad_year;
         $this->json([
             'payment_stats' => $this->Payment_model->get_stats($year),
             'fund_balance'  => $this->Fund_model->get_balance(),
