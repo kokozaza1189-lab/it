@@ -195,9 +195,11 @@ class Payment_model extends CI_Model {
      * always including $default_year even if empty.
      */
     public function get_available_years($default_year = 2569) {
-        $rows  = $this->db->select('DISTINCT year')->order_by('year', 'DESC')->get('payment_records')->result();
+        $query = $this->db->select('year')->distinct()->order_by('year', 'DESC')->get('payment_records');
+        if (!$query) return [$default_year];
+        $rows  = $query->result();
         $years = array_map(fn($r) => (int)$r->year, $rows);
-        if (!in_array($default_year, $years)) $years[] = $default_year;
+        if (empty($years) || !in_array($default_year, $years)) $years[] = $default_year;
         rsort($years);
         return $years;
     }
