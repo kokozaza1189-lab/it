@@ -25,9 +25,9 @@ class Reports extends MY_Controller {
             $active = $active_setting;
         } else {
             // Query which months have data for this year
-            $rows = $this->db->select('DISTINCT month')->where('year', $year)
-                             ->order_by('month', 'ASC')->get('payment_records')->result();
-            $active = array_map(fn($r) => (int)$r->month, $rows);
+            $q = $this->db->select('month')->distinct()->where('year', $year)
+                          ->order_by('month', 'ASC')->get('payment_records');
+            $active = $q ? array_map(fn($r) => (int)$r->month, $q->result()) : [];
             if (empty($active)) $active = $active_setting; // fallback
         }
 
