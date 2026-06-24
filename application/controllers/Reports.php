@@ -13,11 +13,24 @@ class Reports extends MY_Controller {
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
         $years  = $this->Payment_model->get_available_years($this->acad_year);
         if (!in_array($year, $years)) $year = $years[0];
-        $active = array_values(array_filter(
+        // For current year: use active_months setting
+        // For other years: use months that actually have payment records
+        $active_setting = array_values(array_filter(
             array_map('intval', explode(',', $this->settings['active_months'] ?? '')),
             fn($m) => $m >= 1 && $m <= 12
         ));
-        if (empty($active)) $active = [1,2,3,4];
+        if (empty($active_setting)) $active_setting = [1,2,3,4];
+
+        if ($year == $this->acad_year) {
+            $active = $active_setting;
+        } else {
+            // Query which months have data for this year
+            $rows = $this->db->select('DISTINCT month')->where('year', $year)
+                             ->order_by('month', 'ASC')->get('payment_records')->result();
+            $active = array_map(fn($r) => (int)$r->month, $rows);
+            if (empty($active)) $active = $active_setting; // fallback
+        }
+
         $th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
         $monthly = [];
         $total_income  = 0;
