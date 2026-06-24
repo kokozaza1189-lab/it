@@ -1,6 +1,6 @@
 <?php
 $role = $current_user['role'];
-$can_create  = in_array($role, ['activity_staff','academic_staff','super_admin']);
+$can_create  = in_array($role, ['activity_staff','academic_staff','treasurer','head_it','advisor','super_admin']);
 $can_approve = in_array($role, ['treasurer','super_admin']);
 $status_label = ['draft'=>'ร่าง','submitted'=>'ส่งแล้ว','pending'=>'รอพิจารณา','approved'=>'อนุมัติ','rejected'=>'ปฏิเสธ','completed'=>'เสร็จสิ้น'];
 $status_badge = ['draft'=>'b-draft','submitted'=>'b-submitted','pending'=>'b-pending','approved'=>'b-approved','rejected'=>'b-rejected','completed'=>'b-completed'];

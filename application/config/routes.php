@@ -54,9 +54,11 @@ $route['404_override']         = '';
 $route['translate_uri_dashes'] = FALSE;
 
 // Auth
-$route['login']          = 'auth/login';
-$route['logout']         = 'auth/logout';
-$route['register']       = 'auth/register';
+$route['login']              = 'auth/login';
+$route['logout']             = 'auth/logout';
+$route['register']           = 'auth/register';
+$route['forgot']             = 'auth/forgot';
+$route['reset/(:any)']       = 'auth/reset/$1';
 
 // Main pages
 $route['dashboard']                = 'dashboard/index';

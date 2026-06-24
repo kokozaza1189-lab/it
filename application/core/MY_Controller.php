@@ -15,13 +15,13 @@ class MY_Controller extends CI_Controller {
     ];
 
     protected $settings  = [];
-    protected $acad_year = 2568;
+    protected $acad_year = 2569;
 
     public function __construct() {
         parent::__construct();
         $this->load->model('Setting_model');
         $this->settings  = $this->Setting_model->get_all();
-        $this->acad_year = (int)($this->settings['academic_year'] ?? 2568);
+        $this->acad_year = (int)($this->settings['academic_year'] ?? 2569);
     }
 
     protected function require_login() {
@@ -70,13 +70,26 @@ class MY_Controller extends CI_Controller {
         exit;
     }
 
+    /**
+     * Return the fee for a given month.
+     * Month 1 (January) uses the `fee_january` setting (default 35 ฿).
+     * All other months use `monthly_fee` (default 50 ฿).
+     */
+    protected function fee_for_month($month) {
+        $month = (int)$month;
+        if ($month === 1) {
+            return (float)($this->settings['fee_january'] ?? 35);
+        }
+        return (float)($this->settings['monthly_fee'] ?? 50);
+    }
+
     protected function can($action) {
         $role  = $this->session->userdata('role');
         $perms = [
-            'create_expense'  => ['activity_staff','academic_staff','super_admin'],
+            'create_expense'  => ['activity_staff','academic_staff','treasurer','head_it','advisor','super_admin'],
             'approve_expense' => ['treasurer','super_admin'],
             'edit_payment'    => ['treasurer','super_admin'],
-            'view_all'        => ['treasurer','head_it','advisor','auditor','super_admin'],
+            'view_all'        => ['activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
             'manage_settings' => ['super_admin','treasurer'],
             'super'           => ['super_admin'],
         ];

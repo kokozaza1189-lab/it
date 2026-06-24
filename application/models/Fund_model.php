@@ -33,7 +33,7 @@ class Fund_model extends CI_Model {
     }
 
     // Monthly summary using txn_date (ISO date column)
-    public function get_monthly_summary($year_be = 2568) {
+    public function get_monthly_summary($year_be = 2569) {
         $year_ad = $year_be - 543;
         $months  = [];
         for ($m = 1; $m <= 12; $m++) {

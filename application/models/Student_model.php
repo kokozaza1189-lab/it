@@ -60,7 +60,7 @@ class Student_model extends CI_Model {
     }
 
     // Load students with payment data for given months
-    public function get_with_payments($year = 2568, $months = [1,2,3,4]) {
+    public function get_with_payments($year = 2569, $months = [1,2,3,4]) {
         $students = $this->get_all();
         foreach ($students as &$s) {
             $s->payments  = [];

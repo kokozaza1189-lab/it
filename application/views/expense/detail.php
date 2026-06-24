@@ -58,32 +58,88 @@ $cur_idx  = array_search($expense->status, $flow);
       <div><p class="text-slate-400 text-xs">ผู้เบิก</p><p class="font-medium"><?= htmlspecialchars($expense->requester_name) ?></p></div>
       <div><p class="text-slate-400 text-xs">วันที่</p><p class="font-medium"><?= $expense->expense_date ?></p></div>
       <div class="col-span-2"><p class="text-slate-400 text-xs">เหตุผล</p><p class="font-medium"><?= htmlspecialchars($expense->reason ?? '-') ?></p></div>
+      <?php if (!empty($expense->bank_name) || !empty($expense->bank_account)): ?>
+      <div>
+        <p class="text-slate-400 text-xs">🏦 ธนาคาร</p>
+        <p class="font-medium"><?= htmlspecialchars($expense->bank_name ?? '-') ?></p>
+      </div>
+      <div>
+        <p class="text-slate-400 text-xs">เลขที่บัญชี</p>
+        <p class="font-medium font-mono"><?= htmlspecialchars($expense->bank_account ?? '-') ?></p>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 
   <!-- Items table -->
   <div class="card">
     <h3 class="font-bold text-slate-800 mb-4">รายการสินค้า</h3>
+    <?php
+      $hasDiscount = array_sum(array_map(fn($it) => (float)($it->discount ?? 0), $expense->items)) > 0;
+    ?>
     <table class="tbl">
-      <thead><tr><th>#</th><th>รายการ</th><th>ราคา</th><th>จำนวน</th><th>รวม</th></tr></thead>
+      <thead><tr>
+        <th>#</th><th>รายการ</th><th>ราคา/ชิ้น</th><th>จำนวน</th>
+        <?php if ($hasDiscount): ?><th class="text-amber-600">ส่วนลด</th><?php endif; ?>
+        <th>ยอดสุทธิ</th>
+      </tr></thead>
       <tbody>
-        <?php $grand = 0; foreach ($expense->items as $i => $item):
-          $sub = $item->price * $item->quantity; $grand += $sub; ?>
+        <?php $grand = 0; $totalDisc = 0;
+          foreach ($expense->items as $i => $item):
+            $disc = (float)($item->discount ?? 0);
+            $sub  = max(0, $item->price * $item->quantity - $disc);
+            $grand += $sub; $totalDisc += $disc;
+        ?>
         <tr>
           <td class="text-slate-400"><?= $i+1 ?></td>
           <td class="font-medium"><?= htmlspecialchars($item->item_name) ?></td>
           <td>฿<?= number_format($item->price, 2) ?></td>
           <td><?= $item->quantity ?></td>
-          <td class="font-bold">฿<?= number_format($sub, 2) ?></td>
+          <?php if ($hasDiscount): ?>
+          <td class="<?= $disc > 0 ? 'text-amber-600 font-semibold' : 'text-slate-300' ?>">
+            <?= $disc > 0 ? '-฿'.number_format($disc, 2) : '—' ?>
+          </td>
+          <?php endif; ?>
+          <td class="font-bold <?= $disc > 0 ? 'text-green-600' : '' ?>">฿<?= number_format($sub, 2) ?></td>
         </tr>
         <?php endforeach; ?>
+        <?php if ($hasDiscount && $totalDisc > 0): ?>
+        <tr style="background:#fffbeb">
+          <td colspan="<?= $hasDiscount ? 5 : 4 ?>" class="text-right text-amber-700 font-medium text-sm">รวมส่วนลดทั้งหมด</td>
+          <td class="font-bold text-amber-600">-฿<?= number_format($totalDisc, 2) ?></td>
+        </tr>
+        <?php endif; ?>
         <tr style="background:#f8fafc">
-          <td colspan="4" class="text-right font-bold text-slate-700">ยอดรวมทั้งหมด</td>
+          <td colspan="<?= $hasDiscount ? 5 : 4 ?>" class="text-right font-bold text-slate-700">ยอดรวมทั้งหมด</td>
           <td class="font-bold text-blue-600 text-lg">฿<?= number_format($grand, 2) ?></td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <!-- Attachment -->
+  <?php if (!empty($expense->attachment)): ?>
+  <?php
+    $attExt = strtolower(pathinfo($expense->attachment, PATHINFO_EXTENSION));
+    $attUrl = base_url('assets/uploads/expense_docs/' . $expense->attachment);
+  ?>
+  <div class="card">
+    <h3 class="font-bold text-slate-800 mb-4">📎 เอกสารแนบ / หลักฐาน</h3>
+    <?php if (in_array($attExt, ['jpg','jpeg','png'])): ?>
+      <a href="<?= $attUrl ?>" target="_blank" class="block">
+        <img src="<?= $attUrl ?>" alt="เอกสารแนบ"
+             style="max-width:100%;max-height:420px;border-radius:10px;object-fit:contain;border:1px solid #e2e8f0"/>
+      </a>
+      <a href="<?= $attUrl ?>" target="_blank" class="btn btn-gray btn-sm mt-3 inline-flex items-center gap-1">
+        🔍 เปิดในแท็บใหม่
+      </a>
+    <?php else: ?>
+      <a href="<?= $attUrl ?>" target="_blank" class="btn btn-gray inline-flex items-center gap-2">
+        📄 ดาวน์โหลดเอกสาร (<?= strtoupper($attExt) ?>)
+      </a>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
 
   <!-- Actions — plain form POSTs, no Vue needed -->
   <div class="flex flex-wrap gap-3">

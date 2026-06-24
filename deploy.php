@@ -70,6 +70,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $secret === DEPLOY_SECRET) {
     $ok = 0;
     $fail = 0;
 
+    // ── DB Migrations ─────────────────────────────────────────────────────────
+    $db_cfg = __DIR__ . '/application/config/database.php';
+    if (file_exists($db_cfg)) {
+        $db = [];
+        require $db_cfg;   // populates $db['default']
+        $cfg = $db['default'];
+        try {
+            $pdo = new PDO(
+                "mysql:host={$cfg['hostname']};dbname={$cfg['database']};charset=utf8mb4",
+                $cfg['username'], $cfg['password'],
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+            $migrations = [
+                // expenses — add missing columns
+                "ALTER TABLE `expenses` ADD COLUMN `bank_name`   VARCHAR(100)  DEFAULT NULL AFTER `reason`",
+                "ALTER TABLE `expenses` ADD COLUMN `bank_account` VARCHAR(50)  DEFAULT NULL AFTER `bank_name`",
+                "ALTER TABLE `expenses` ADD COLUMN `attachment`  VARCHAR(255)  DEFAULT NULL AFTER `bank_account`",
+                // expense_items — add discount column
+                "ALTER TABLE `expense_items` ADD COLUMN `discount` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `quantity`",
+            ];
+            foreach ($migrations as $sql) {
+                try {
+                    $pdo->exec($sql);
+                    $results[] = "✅ DB migration OK: " . preg_replace('/\s+/',' ', substr($sql, 0, 70));
+                    $ok++;
+                } catch (PDOException $e) {
+                    // "Duplicate column name" = already applied — not a failure
+                    if (strpos($e->getMessage(), 'Duplicate column') !== false) {
+                        $results[] = "ℹ️  DB already up-to-date: " . preg_replace('/ADD COLUMN.*/', '', $sql);
+                    } else {
+                        $results[] = "❌ DB migration FAIL: " . $e->getMessage();
+                        $fail++;
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            $results[] = "❌ DB connect failed: " . $e->getMessage();
+            $fail++;
+        }
+    }
+
     // Deploy to main app
     foreach ($files as $file) {
         $url = GITHUB_RAW . $file;

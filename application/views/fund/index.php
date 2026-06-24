@@ -35,8 +35,9 @@ $th_months   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.',
   <div class="card lg:col-span-2 overflow-hidden">
     <div class="flex items-center justify-between mb-4">
       <h2 class="font-bold text-slate-800">รายการบัญชี</h2>
-      <div class="flex gap-2">
-        <button class="btn btn-gray btn-sm" @click="exportExcel">📊 Export</button>
+      <div class="flex gap-2 flex-wrap">
+        <button class="btn btn-gray btn-sm" @click="exportExcel">📊 Excel</button>
+        <button class="btn btn-gray btn-sm" @click="exportPDF">📄 PDF</button>
         <?php if ($can_adjust): ?>
           <button class="btn btn-blue btn-sm" onclick="document.getElementById('adjustModal').style.display='flex'">+ เพิ่มรายการ</button>
         <?php endif; ?>
@@ -156,11 +157,86 @@ createApp({
         'หมายเหตุ': r.note,
       }))
       const ws = XLSX.utils.json_to_sheet(rows)
+      // Column widths
+      ws['!cols'] = [14,36,16,16,16,28].map(w => ({ wch: w }))
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, 'Ledger')
       XLSX.writeFile(wb, 'fund_ledger_' + new Date().toISOString().slice(0,10) + '.xlsx')
     }
-    return { exportExcel }
+
+    function exportPDF() {
+      const date  = new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})
+      const bal   = ledgerData.length ? ledgerData[0].balance : 0
+      const fmt   = n => n ? '฿' + Number(n).toLocaleString('th-TH',{minimumFractionDigits:2}) : '-'
+
+      const rows  = ledgerData.map(r => `
+        <tr>
+          <td>${r.entry_date}</td>
+          <td>${r.title}</td>
+          <td class="num income">${r.income  ? fmt(r.income)  : '-'}</td>
+          <td class="num expense">${r.expense ? fmt(r.expense) : '-'}</td>
+          <td class="num bal">${fmt(r.balance)}</td>
+          <td class="note">${r.note || ''}</td>
+        </tr>`).join('')
+
+      const html = `<!DOCTYPE html><html lang="th"><head>
+<meta charset="UTF-8"/>
+<title>บัญชีเงินกลาง สาขา IT</title>
+<style>
+  @page { size: A4 landscape; margin: 15mm 12mm; }
+  * { font-family: 'Sarabun', 'Tahoma', sans-serif; box-sizing: border-box; }
+  body { margin: 0; color: #0f172a; font-size: 12pt; }
+  .header { text-align: center; margin-bottom: 14px; }
+  .header h1 { font-size: 16pt; font-weight: 700; margin: 0 0 4px; }
+  .header p  { font-size: 10pt; color: #475569; margin: 0; }
+  .summary { display: flex; gap: 24px; margin-bottom: 12px; justify-content: flex-end; }
+  .summary span { font-size: 11pt; }
+  .summary .lbl { color: #64748b; }
+  .summary .val { font-weight: 700; color: #1e40af; }
+  table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+  thead tr { background: #1e293b; color: white; }
+  thead th { padding: 8px 10px; text-align: left; font-weight: 600; white-space: nowrap; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #eff6ff; }
+  td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+  .num   { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .income  { color: #059669; font-weight: 600; }
+  .expense { color: #dc2626; font-weight: 600; }
+  .bal     { color: #1e40af; font-weight: 700; }
+  .note    { color: #64748b; font-size: 10pt; }
+  tfoot td { font-weight: 700; background: #f1f5f9; border-top: 2px solid #cbd5e1; padding: 8px 10px; }
+  .footer { margin-top: 14px; text-align: right; font-size: 9pt; color: #94a3b8; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"/>
+</head><body>
+<div class="header">
+  <h1>📒 บัญชีเงินกลาง — สาขาวิชาเทคโนโลยีสารสนเทศ</h1>
+  <p>พิมพ์วันที่ ${date}</p>
+</div>
+<div class="summary">
+  <span><span class="lbl">ยอดคงเหลือปัจจุบัน:</span> <span class="val">${fmt(bal)}</span></span>
+  <span><span class="lbl">จำนวนรายการ:</span> <span class="val">${ledgerData.length} รายการ</span></span>
+</div>
+<table>
+  <thead><tr>
+    <th>วันที่</th><th>รายการ</th>
+    <th style="text-align:right">รายรับ (฿)</th>
+    <th style="text-align:right">รายจ่าย (฿)</th>
+    <th style="text-align:right">คงเหลือ (฿)</th>
+    <th>หมายเหตุ</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="footer">ระบบการเงิน สาขา IT · พิมพ์ด้วยระบบ IT Finance</div>
+</body></html>`
+
+      const w = window.open('','_blank','width=1000,height=700')
+      w.document.write(html)
+      w.document.close()
+      w.onload = () => { w.focus(); w.print() }
+    }
+
+    return { exportExcel, exportPDF }
   }
 }).mount('#app')
 

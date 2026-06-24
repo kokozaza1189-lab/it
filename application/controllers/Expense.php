@@ -38,11 +38,12 @@ class Expense extends MY_Controller {
     }
 
     public function create() {
-        $this->require_role(['activity_staff','academic_staff','super_admin']);
+        $this->require_role(['activity_staff','academic_staff','treasurer','head_it','advisor','super_admin']);
         if ($this->input->post()) {
-            $names  = $this->input->post('item_name')  ?: [];
-            $prices = $this->input->post('item_price') ?: [];
-            $qtys   = $this->input->post('item_qty')   ?: [];
+            $names     = $this->input->post('item_name')     ?: [];
+            $prices    = $this->input->post('item_price')    ?: [];
+            $qtys      = $this->input->post('item_qty')      ?: [];
+            $discounts = $this->input->post('item_discount') ?: [];
             $items  = [];
             foreach ($names as $i => $name) {
                 if (!empty(trim($name))) {
@@ -50,11 +51,13 @@ class Expense extends MY_Controller {
                         'item_name' => trim($name),
                         'price'     => (float)($prices[$i] ?? 0),
                         'quantity'  => (int)($qtys[$i] ?? 1),
+                        'discount'  => (float)($discounts[$i] ?? 0),
                     ];
                 }
             }
             $user  = $this->get_user();
-            $total = array_sum(array_map(fn($it) => $it['price'] * $it['quantity'], $items));
+            $total = array_sum(array_map(fn($it) => max(0, $it['price'] * $it['quantity'] - $it['discount']), $items));
+            $attachment = $this->_handle_attachment();
             $id    = $this->Expense_model->create([
                 'title'          => $this->input->post('title', TRUE),
                 'department'     => $this->input->post('department', TRUE),
@@ -65,6 +68,9 @@ class Expense extends MY_Controller {
                 'status'         => $this->input->post('submit_type') === 'submit' ? 'submitted' : 'draft',
                 'expense_date'   => date('Y-m-d'),
                 'reason'         => $this->input->post('reason', TRUE),
+                'attachment'     => $attachment,
+                'bank_name'      => $this->input->post('bank_name', TRUE),
+                'bank_account'   => $this->input->post('bank_account', TRUE),
             ], $items);
             redirect('expense/' . $id);
         }
@@ -85,9 +91,10 @@ class Expense extends MY_Controller {
             show_error('คุณไม่มีสิทธิ์แก้ไขคำขอนี้', 403);
         }
         if ($this->input->post()) {
-            $names  = $this->input->post('item_name')  ?: [];
-            $prices = $this->input->post('item_price') ?: [];
-            $qtys   = $this->input->post('item_qty')   ?: [];
+            $names     = $this->input->post('item_name')     ?: [];
+            $prices    = $this->input->post('item_price')    ?: [];
+            $qtys      = $this->input->post('item_qty')      ?: [];
+            $discounts = $this->input->post('item_discount') ?: [];
             $items  = [];
             foreach ($names as $i => $name) {
                 if (!empty(trim($name))) {
@@ -95,19 +102,25 @@ class Expense extends MY_Controller {
                         'item_name' => trim($name),
                         'price'     => (float)($prices[$i] ?? 0),
                         'quantity'  => (int)($qtys[$i] ?? 1),
+                        'discount'  => (float)($discounts[$i] ?? 0),
                     ];
                 }
             }
-            $total  = array_sum(array_map(fn($it) => $it['price'] * $it['quantity'], $items));
+            $total  = array_sum(array_map(fn($it) => max(0, $it['price'] * $it['quantity'] - $it['discount']), $items));
             $status = $this->input->post('submit_type') === 'submit' ? 'submitted' : 'draft';
-            $this->Expense_model->update_expense($id, [
-                'title'      => $this->input->post('title', TRUE),
-                'department' => $this->input->post('department', TRUE),
-                'category'   => $this->input->post('category', TRUE),
-                'reason'     => $this->input->post('reason', TRUE),
-                'amount'     => $total,
-                'status'     => $status,
-            ], $items);
+            $upd = [
+                'title'        => $this->input->post('title', TRUE),
+                'department'   => $this->input->post('department', TRUE),
+                'category'     => $this->input->post('category', TRUE),
+                'reason'       => $this->input->post('reason', TRUE),
+                'amount'       => $total,
+                'status'       => $status,
+                'bank_name'    => $this->input->post('bank_name', TRUE),
+                'bank_account' => $this->input->post('bank_account', TRUE),
+            ];
+            $newFile = $this->_handle_attachment();
+            if ($newFile !== null) $upd['attachment'] = $newFile;
+            $this->Expense_model->update_expense($id, $upd, $items);
             redirect('expense/' . $id);
         }
         $this->render('expense/edit', [
@@ -173,6 +186,29 @@ class Expense extends MY_Controller {
         } else {
             redirect('expense/' . $id);
         }
+    }
+
+    private function _handle_attachment() {
+        if (empty($_FILES['attachment']['name'])) return null;
+        $uploadPath = rtrim(FCPATH, '/') . '/assets/uploads/expense_docs/';
+        if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
+        // Always initialize fresh (CI3 library is singleton — must call initialize())
+        $this->load->library('upload');
+        $this->upload->initialize([
+            'upload_path'     => $uploadPath,
+            'allowed_types'   => 'jpg|jpeg|png|pdf',
+            'max_size'        => 10240,
+            'file_name'       => 'exp_' . time() . '_' . mt_rand(1000, 9999),
+            'overwrite'       => false,
+            'encrypt_name'    => false,
+            'detect_mime'     => true,
+            'mod_mime_fix'    => true,
+        ]);
+        if ($this->upload->do_upload('attachment')) {
+            return $this->upload->data('file_name');
+        }
+        log_message('error', 'Expense attachment upload error: ' . strip_tags($this->upload->display_errors()));
+        return null;
     }
 
     private function _thai_date() {

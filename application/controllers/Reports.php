@@ -9,7 +9,7 @@ class Reports extends MY_Controller {
     }
 
     public function index() {
-        $this->require_role(['treasurer','head_it','advisor','auditor','super_admin']);
+        $this->require_login();
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
         $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,2,3,4'));
         $th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
