@@ -51,6 +51,22 @@ foreach ($students as $s) {
   <div class="kpi"><p class="text-slate-500 text-xs font-semibold uppercase">รอดำเนินการ</p><p class="text-2xl font-bold text-amber-500 mt-1"><?= $stats['pending'] ?></p></div>
 </div>
 
+<!-- Year pill selector -->
+<?php if (count($years) > 1): ?>
+<div class="flex items-center gap-2 mb-4">
+  <span class="text-xs text-slate-400 font-medium">ปีการศึกษา:</span>
+  <?php foreach ($years as $y): ?>
+  <a href="<?= base_url('payment/all?year='.$y.'&search='.urlencode($search)) ?>"
+     class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
+     style="<?= $y == $year
+       ? 'background:#1d4ed8;color:#fff;border-color:#1d4ed8'
+       : 'background:#fff;color:#64748b;border-color:#e2e8f0' ?>">
+    <?= $y ?>
+  </a>
+  <?php endforeach; ?>
+</div>
+<?php endif; ?>
+
 <!-- Search + filter -->
 <div class="card mb-5">
   <form method="GET" action="<?= base_url('payment/all') ?>" class="flex flex-wrap gap-3 items-end">
@@ -58,12 +74,9 @@ foreach ($students as $s) {
       <label class="lbl">ค้นหา</label>
       <input name="search" value="<?= htmlspecialchars($search) ?>" class="inp" placeholder="ชื่อหรือรหัสนิสิต"/>
     </div>
-    <div>
-      <label class="lbl">ปีการศึกษา</label>
-      <input name="year" type="number" value="<?= $year ?>" class="inp" style="width:100px"/>
-    </div>
+    <input type="hidden" name="year" value="<?= $year ?>"/>
     <button type="submit" class="btn btn-blue">🔍 ค้นหา</button>
-    <a href="<?= base_url('payment/all') ?>" class="btn btn-gray">รีเซ็ต</a>
+    <a href="<?= base_url('payment/all?year='.$year) ?>" class="btn btn-gray">รีเซ็ต</a>
     <button type="button" class="btn btn-gray" @click="exportExcel">📊 Export Excel</button>
     <a href="<?= base_url('admin/payments') ?>" class="btn btn-gray">⚙️ จัดการ</a>
   </form>
@@ -189,7 +202,7 @@ foreach ($students as $s) {
         <input type="number" step="0.01" min="0" v-model.number="editData.penalty" class="inp"
                :style="editData.penalty > 0 ? 'border-color:#fcd34d;background:#fffbeb' : ''"/>
         <p v-show="editData.penalty > 0" style="display:none;color:#b45309" class="text-xs mt-1">
-          รวมที่ต้องชำระ ฿<span v-text="(editData.amount + editData.penalty).toFixed(2)"></span>
+          รวมที่ต้องชำระ ฿<span v-text="(Number(editData.amount||0) + Number(editData.penalty||0)).toFixed(2)"></span>
         </p>
       </div>
     </div>
@@ -263,7 +276,7 @@ createApp({
         const fd = new FormData()
         fd.append('id',        editData.id)
         fd.append('status',    editData.status)
-        fd.append('amount',    editData.amount)
+        fd.append('amount',    editData.amount || 0)
         fd.append('penalty',   editData.penalty || 0)
         fd.append('paid_date', editData.paid_date || '')
         await axios.post('<?= base_url('payment/update_status') ?>', fd)

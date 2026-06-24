@@ -15,10 +15,27 @@ foreach ($payments as $p) {
 $bank_account = $settings['bank_account'] ?? '202-3-90895-9';
 $bank_name    = $settings['bank_name']    ?? 'นายไพศาล กองมณี';
 $monthly_fee  = (float)($settings['monthly_fee'] ?? 50);
+$penalty_day  = (float)($settings['penalty_per_day'] ?? 5);
 $role         = $current_user['role'];
 $has_student  = !empty($current_user['student_id']);
 ?>
 <div id="app">
+
+<!-- ── Year selector bar ──────────────────────────────────────── -->
+<?php if (count($years) > 1): ?>
+<div class="flex items-center gap-2 mb-4">
+  <span class="text-xs text-slate-400 font-medium">ปีการศึกษา:</span>
+  <?php foreach ($years as $y): ?>
+  <a href="<?= base_url('payment?year='.$y) ?>"
+     class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
+     style="<?= $y == $year
+       ? 'background:#1d4ed8;color:#fff;border-color:#1d4ed8'
+       : 'background:#fff;color:#64748b;border-color:#e2e8f0' ?>">
+    <?= $y ?>
+  </a>
+  <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 <?php if ($has_student): ?>
 <!-- ── Notification alerts ──────────────────────────────────── -->
@@ -141,44 +158,94 @@ if (!empty($penalty_only)):
   </div>
 </div>
 
-<!-- Overdue bills -->
+<!-- Bills — penalty-style detailed view -->
 <?php if (!empty($payable)): ?>
-<p class="font-semibold text-slate-700 text-sm px-1 mb-2">📌 บิลที่ต้องชำระ</p>
-<?php foreach ($payable as $p): ?>
-<div class="card mb-3" style="border:2px solid <?= $p->status==='overdue' ? '#fca5a5' : '#93c5fd' ?>">
-  <div class="flex items-center justify-between mb-3">
-    <div>
-      <p class="font-bold text-slate-800">บิลเดือน <?= $th_month_short[$p->month] ?> <?= $year ?></p>
-      <p class="text-xs text-slate-400 mt-0.5">รหัสนิสิต: <?= htmlspecialchars($current_user['student_id']) ?></p>
+<p class="font-semibold text-slate-700 text-sm px-1 mb-3">📌 บิลที่ต้องชำระ <?= count($payable) ?> รายการ</p>
+<?php foreach ($payable as $p):
+  $total_bill = (float)$p->amount + (float)$p->penalty;
+  $is_overdue = $p->status === 'overdue';
+  $days = ($penalty_day > 0 && $p->penalty > 0) ? round($p->penalty / $penalty_day) : 0;
+?>
+<div class="card mb-4" style="border:2px solid <?= $is_overdue ? '#fca5a5' : '#93c5fd' ?>">
+
+  <!-- Bill header -->
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+           style="background:<?= $is_overdue ? '#ef4444' : '#3b82f6' ?>">
+        <?= $p->month ?>
+      </div>
+      <div>
+        <p class="font-bold text-slate-800 text-base"><?= $month_names[$p->month] ?> <?= $year ?></p>
+        <span class="badge <?= $is_overdue ? 'b-overdue' : 'b-pending' ?> text-xs">
+          <?= $is_overdue ? 'ค้างชำระ' : 'รอดำเนินการ' ?>
+        </span>
+      </div>
     </div>
-    <span class="badge <?= $p->status==='overdue'?'b-overdue':'b-pending' ?>">
-      <?= $p->status==='overdue' ? 'ค้างชำระ' : 'รอดำเนินการ' ?>
-    </span>
+    <p class="font-bold text-xl <?= $is_overdue ? 'text-red-600' : 'text-blue-600' ?>">
+      ฿<?= number_format($total_bill, 2) ?>
+    </p>
   </div>
-  <div class="space-y-1 mb-3">
-    <div class="flex justify-between text-sm">
-      <span class="text-slate-500">ค่าธรรมเนียมรายเดือน</span>
-      <span class="font-medium">฿<?= number_format($p->amount, 2) ?></span>
+
+  <!-- Breakdown -->
+  <div class="rounded-xl p-4 mb-4 space-y-2" style="background:#f8fafc;border:1px solid #e2e8f0">
+    <div class="flex justify-between items-center text-sm">
+      <span class="text-slate-500">💰 ค่าธรรมเนียมรายเดือน</span>
+      <span class="font-semibold text-slate-700">฿<?= number_format($p->amount, 2) ?></span>
     </div>
     <?php if ($p->penalty > 0): ?>
-    <div class="flex justify-between text-sm">
-      <span class="text-red-500">ค่าปรับ (<?= round($p->penalty / 5) ?> วัน × 5฿)</span>
-      <span class="font-medium text-red-500">฿<?= number_format($p->penalty, 2) ?></span>
+    <div class="flex justify-between items-center text-sm">
+      <span class="text-red-500">🚨 ค่าปรับ<?= $days > 0 ? " ({$days} วัน × ฿{$penalty_day})" : '' ?></span>
+      <span class="font-bold text-red-500">+฿<?= number_format($p->penalty, 2) ?></span>
+    </div>
+    <?php else: ?>
+    <div class="flex justify-between items-center text-sm">
+      <span class="text-slate-400">ค่าปรับ</span>
+      <span class="text-slate-400">฿0.00</span>
     </div>
     <?php endif; ?>
-    <div class="flex justify-between font-bold pt-2 mt-1" style="border-top:1px solid #fee2e2">
-      <span>รวมบิลนี้</span>
-      <span class="text-red-500">฿<?= number_format($p->amount + $p->penalty, 2) ?></span>
+    <div class="flex justify-between items-center font-bold text-base pt-2"
+         style="border-top:2px dashed #e2e8f0">
+      <span class="text-slate-700">รวมที่ต้องชำระ</span>
+      <span class="text-red-600">฿<?= number_format($total_bill, 2) ?></span>
     </div>
   </div>
-  <button class="btn btn-blue w-full"
+
+  <!-- Action -->
+  <?php if ($is_overdue): ?>
+  <button class="btn btn-blue w-full text-base"
+          style="padding:12px"
           @click="openPayModal(<?= (int)$p->id ?>, <?= (int)$p->month ?>, <?= (float)$p->amount ?>, <?= (float)$p->penalty ?>)">
-    📱 ชำระบิลนี้ ฿<?= number_format($p->amount + $p->penalty, 2) ?>
+    💳 ชำระบิลนี้ &nbsp; ฿<?= number_format($total_bill, 2) ?>
   </button>
+  <?php else: ?>
+  <div class="rounded-xl py-3 px-4 text-center text-sm font-medium" style="background:#eff6ff;color:#1d4ed8">
+    ⏳ รอเจ้าหน้าที่ตรวจสอบสลิปการโอน
+    <?php if (!empty($p->slip_file)): ?>
+    <br><a href="<?= base_url('assets/uploads/slips/'.$p->slip_file) ?>" target="_blank"
+           class="text-xs text-blue-500 underline mt-1 inline-block">ดูสลิปที่แนบ</a>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
+
 </div>
 <?php endforeach; ?>
+
+<!-- Total bar when multiple overdue -->
+<?php if (!empty($overdue_months)): ?>
+<div class="card mb-4" style="background:#fef2f2;border:2px solid #fca5a5">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="font-bold text-red-700">💳 ยอดรวมที่ต้องชำระทั้งหมด</p>
+      <p class="text-xs text-red-400 mt-0.5">กรุณาชำระแยกตามเดือน 1 สลิป / 1 เดือน</p>
+    </div>
+    <p class="font-bold text-2xl text-red-600">฿<?= number_format($total_due, 2) ?></p>
+  </div>
+</div>
+<?php endif; ?>
+
 <?php elseif (!empty($payments)): ?>
-<!-- All paid → show summary -->
+<!-- All paid -->
 <div class="card mb-4" style="border:1.5px solid #6ee7b7;background:#f0fdf4">
   <div class="flex items-center gap-3">
     <span style="font-size:32px">🎉</span>
@@ -239,101 +306,50 @@ if (!empty($penalty_only)):
 </div>
 <?php endif; ?>
 
-<!-- ── QR Payment Form (ทุก role เห็น) ──────────────────────── -->
+<!-- ── Bank info card (ทุก role เห็น) ───────────────────────── -->
 <div class="card mt-4">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="font-bold text-slate-800 text-base">💳 ฟอร์มชำระค่าธรรมเนียม</h2>
-    <span class="badge b-pending text-xs">PromptPay / QR</span>
-  </div>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
-
-    <!-- QR + bank info -->
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <?php
-      $qr_path = FCPATH . ($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
-      $qr_url  = base_url($settings['qr_image'] ?? 'assets/img/qr_payment.jpg');
-      ?>
-      <?php if (file_exists($qr_path)): ?>
-        <div style="border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12)">
-          <img src="<?= $qr_url ?>" alt="QR PromptPay"
-               style="width:100%;height:auto;display:block;object-fit:contain"/>
-        </div>
-      <?php else: ?>
-        <div style="padding:32px;display:flex;flex-direction:column;align-items:center;background:#f8fafc;border-radius:16px;border:2px dashed #cbd5e1;text-align:center">
-          <span style="font-size:48px">🔲</span>
-          <p style="font-size:12px;color:#94a3b8;margin-top:10px">วางไฟล์ QR code ที่<br><strong>assets/img/qr_payment.jpg</strong></p>
-        </div>
-      <?php endif; ?>
-      <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-        <p class="text-xs font-semibold" style="color:#00897b;margin-bottom:6px">🏦 โอนเงินผ่านธนาคารกสิกรไทย</p>
-        <p class="font-bold text-slate-800 text-sm"><?= htmlspecialchars($bank_name) ?></p>
-        <p class="text-xs text-slate-500 tracking-wider mt-0.5"><?= htmlspecialchars($bank_account) ?></p>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;background:white;border-radius:10px;padding:10px 14px;font-size:12px;color:#5f6368;box-shadow:0 1px 4px rgba(0,0,0,.06)">
-        💡 กรอกจำนวน <strong style="color:#673ab7">฿<?= number_format($monthly_fee, 2) ?></strong> ตอนโอน (บวกค่าปรับถ้ามี)
-      </div>
+  <h2 class="font-bold text-slate-800 text-base mb-4">🏦 ข้อมูลการโอนเงิน</h2>
+  <div class="space-y-2.5">
+    <div class="flex justify-between text-sm">
+      <span class="text-slate-500">ธนาคาร</span>
+      <span class="font-medium text-slate-800">ธนาคารกสิกรไทย (KBank)</span>
     </div>
-
-    <!-- Slip upload form -->
-    <div class="space-y-4">
-      <?php if ($has_student && !empty($payable)): ?>
-      <div>
-        <label class="lbl">เลือกเดือนที่ชำระ</label>
-        <div class="space-y-2">
-          <?php foreach ($payable as $p): ?>
-          <button type="button"
-                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl font-medium text-sm transition-colors"
-                  style="background:#eff6ff;border:1.5px solid #bfdbfe;color:#1d4ed8"
-                  @click="openPayModal(<?= (int)$p->id ?>, <?= (int)$p->month ?>, <?= (float)$p->amount ?>, <?= (float)$p->penalty ?>)">
-            <span>📅 <?= $th_month_short[$p->month] ?> <?= $year ?></span>
-            <span class="font-bold">฿<?= number_format($p->amount + $p->penalty, 2) ?></span>
-          </button>
-          <?php endforeach; ?>
-        </div>
-        <p class="text-xs text-slate-400 mt-2">กดเลือกเดือนเพื่อเปิดฟอร์มชำระพร้อมอัปโหลดสลิป</p>
-      </div>
-      <?php elseif ($has_student): ?>
-      <div class="rounded-xl p-4 text-center" style="background:#f0fdf4;border:1.5px solid #bbf7d0">
-        <span style="font-size:32px">✅</span>
-        <p class="font-bold text-emerald-700 mt-2">ชำระครบทุกเดือนแล้ว</p>
-        <p class="text-sm text-emerald-600">ไม่มียอดที่ต้องชำระในขณะนี้</p>
-      </div>
-      <?php else: ?>
-      <!-- Staff: link to public pay form -->
-      <div class="space-y-3">
-        <p class="text-sm text-slate-600 font-medium">สำหรับช่วยนิสิตชำระเงิน ใช้ฟอร์มสาธารณะ:</p>
-        <a href="<?= base_url('pay') ?>" target="_blank"
-           class="btn btn-blue w-full text-center"
-           style="display:flex;align-items:center;justify-content:center;gap:8px">
-          📱 เปิดฟอร์มชำระเงินสาธารณะ
-        </a>
-        <p class="text-xs text-slate-400">ฟอร์มนี้ไม่ต้องล็อกอิน นิสิตสามารถเปิดได้โดยตรง</p>
-      </div>
-      <?php endif; ?>
-
-      <!-- Bank details box -->
-      <div class="rounded-xl p-4 space-y-2" style="background:#f8fafc;border:1px solid #e2e8f0">
-        <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">ข้อมูลการโอนเงิน</p>
-        <div class="flex justify-between text-sm">
-          <span class="text-slate-500">ชื่อบัญชี</span>
-          <span class="font-medium text-slate-800"><?= htmlspecialchars($bank_name) ?></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-slate-500">เลขบัญชี</span>
-          <span class="font-mono font-bold text-slate-800"><?= htmlspecialchars($bank_account) ?></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-slate-500">ค่าธรรมเนียม/เดือน</span>
-          <span class="font-bold text-blue-700">฿<?= number_format($monthly_fee, 2) ?></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-slate-500">ครบกำหนด</span>
-          <span class="font-medium text-slate-700">วันที่ <?= $settings['due_day'] ?? 8 ?> ของทุกเดือน</span>
-        </div>
-      </div>
+    <div class="flex justify-between text-sm">
+      <span class="text-slate-500">ชื่อบัญชี</span>
+      <span class="font-medium text-slate-800"><?= htmlspecialchars($bank_name) ?></span>
+    </div>
+    <div class="flex justify-between text-sm">
+      <span class="text-slate-500">เลขบัญชี</span>
+      <span class="font-mono font-bold text-slate-800 tracking-wider"><?= htmlspecialchars($bank_account) ?></span>
+    </div>
+    <div class="flex justify-between text-sm" style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:4px">
+      <span class="text-slate-500">ค่าธรรมเนียม/เดือน</span>
+      <span class="font-bold text-blue-700">
+        <?php
+          $fee_jan = (float)($settings['fee_january'] ?? 35);
+          $fee_std = (float)($settings['monthly_fee'] ?? 50);
+          echo $fee_jan !== $fee_std
+            ? "฿{$fee_jan} (ม.ค.) / ฿{$fee_std} (เดือนอื่น)"
+            : "฿" . number_format($fee_std, 2);
+        ?>
+      </span>
+    </div>
+    <div class="flex justify-between text-sm">
+      <span class="text-slate-500">ครบกำหนด</span>
+      <span class="font-medium text-slate-700">วันที่ <?= $settings['due_day'] ?? 8 ?> ของทุกเดือน</span>
     </div>
   </div>
+  <div class="mt-4 rounded-lg px-4 py-3 text-xs text-slate-500" style="background:#f0f9ff;border:1px solid #bae6fd">
+    💡 กรอกยอดตามที่แสดงในแต่ละบิล (รวมค่าปรับถ้ามี) แล้วกดปุ่ม <strong>ชำระบิล</strong> เพื่ออัปโหลดสลิป
+  </div>
+  <?php if (!$has_student): ?>
+  <a href="<?= base_url('pay') ?>" target="_blank"
+     class="btn btn-blue w-full text-center mt-4"
+     style="display:flex;align-items:center;justify-content:center;gap:8px">
+    📱 เปิดฟอร์มชำระเงินสาธารณะ
+  </a>
+  <p class="text-xs text-slate-400 text-center mt-1">ฟอร์มนี้ไม่ต้องล็อกอิน นิสิตสามารถเปิดได้โดยตรง</p>
+  <?php endif; ?>
 </div>
 
 <!-- QR Payment modal (for payable months) -->

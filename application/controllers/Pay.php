@@ -15,15 +15,23 @@ class Pay extends CI_Controller {
     }
 
     public function index() {
+        // Prevent LiteSpeed / proxy caching of this dynamic page
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+
         $settings   = $this->Setting_model->get_all();
         $month      = (int)($this->input->get('month') ?: date('n'));
         // Default year to the configured academic year, not raw CE+543 (which may not have records)
         $year       = (int)($this->input->get('year')  ?: ($settings['academic_year'] ?? (int)date('Y') + 543));
-        $monthly_fee = (float)($settings['monthly_fee'] ?? 50);
+        // Month 1 (January) has a special fee of 35 ฿ (fee_january setting)
+        $monthly_fee = ($month === 1)
+            ? (float)($settings['fee_january'] ?? 35)
+            : (float)($settings['monthly_fee'] ?? 50);
         $due_day     = (int)($settings['due_day'] ?? 8);
         $penalty_per_day = (float)($settings['penalty_per_day'] ?? 5);
 
-        // Academic year 2568: months 1-7 fall in CE 2026, months 8-12 fall in CE 2025
+        // Academic year 2569: months 1-7 fall in CE 2027, months 8-12 fall in CE 2026
         $ce_year = ($month <= 7) ? ($year - 543 + 1) : ($year - 543);
         $now = time();
         $due_date = mktime(0, 0, 0, $month, $due_day, $ce_year);
@@ -37,7 +45,11 @@ class Pay extends CI_Controller {
             $penalty = round($days_overdue * $penalty_per_day, 2);
         }
 
-        $active_months = array_map('intval', explode(',', $settings['active_months'] ?? '1,2,3,4'));
+        $active_months = array_values(array_filter(
+            array_map('intval', explode(',', $settings['active_months'] ?? '')),
+            fn($m) => $m >= 1 && $m <= 12
+        ));
+        if (empty($active_months)) $active_months = [1, 2, 3, 4];
         // Clamp month to one of the active months
         if (!in_array($month, $active_months)) {
             $month = $active_months[0];
@@ -112,7 +124,9 @@ class Pay extends CI_Controller {
         }
 
         $settings    = $this->Setting_model->get_all();
-        $monthly_fee = (float)($settings['monthly_fee'] ?? 50);
+        $monthly_fee = ($month === 1)
+            ? (float)($settings['fee_january'] ?? 35)
+            : (float)($settings['monthly_fee'] ?? 50);
         $this->Payment_model->submit_payment($sid, $year, $month, $file, $monthly_fee);
         $this->_json(['success' => true, 'name' => $s->name]);
     }

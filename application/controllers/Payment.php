@@ -11,22 +11,28 @@ class Payment extends MY_Controller {
     public function index() {
         $this->require_login();
         $user   = $this->get_user();
-        $year   = $this->acad_year;
-        $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,3'));
+        $years  = $this->Payment_model->get_available_years($this->acad_year);
+        $year   = (int)($this->input->get('year') ?: $this->acad_year);
+        if (!in_array($year, $years)) $year = $years[0];
+        $active = $this->_parse_months($this->settings['active_months'] ?? '', [1, 3]);
         $all    = $this->Payment_model->get_by_student($user['student_id'], $year);
         // Only surface months that are configured for collection
         $payments = array_values(array_filter($all, fn($p) => in_array((int)$p->month, $active)));
         $this->render('payment/index', [
             'title'    => 'การชำระเงินของฉัน',
+            'year'     => $year,
+            'years'    => $years,
             'payments' => $payments,
         ]);
     }
 
     public function all() {
-        $this->require_role(['treasurer','head_it','advisor','auditor','super_admin']);
+        $this->require_login();
+        $years  = $this->Payment_model->get_available_years($this->acad_year);
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
+        if (!in_array($year, $years)) $year = $years[0];
         $search = $this->input->get('search') ?: '';
-        $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,2,3,4'));
+        $active = $this->_parse_months($this->settings['active_months'] ?? '', [1, 2, 3, 4]);
         $students = $this->Student_model->get_with_payments($year, $active);
         if ($search) {
             $students = array_filter($students, fn($s) =>
@@ -37,6 +43,8 @@ class Payment extends MY_Controller {
         $stats = $this->Payment_model->get_stats($year);
         $this->render('payment/all', [
             'title'         => 'ภาพรวมการชำระเงิน',
+            'year'          => $year,
+            'years'         => $years,
             'students'      => array_values($students),
             'stats'         => $stats,
             'search'        => $search,
@@ -77,5 +85,17 @@ class Payment extends MY_Controller {
                    ? (float)$this->input->post('amount') : null;
         $this->Payment_model->update_status($id, $status, $date, $penalty, $amount);
         $this->json(['success' => true]);
+    }
+
+    /**
+     * Parse comma-separated month setting safely.
+     * Filters out zeros and non-month numbers; falls back to $default if empty.
+     */
+    private function _parse_months($raw, array $default = [1,2,3,4]) {
+        $months = array_values(array_filter(
+            array_map('intval', explode(',', $raw)),
+            fn($m) => $m >= 1 && $m <= 12
+        ));
+        return empty($months) ? $default : $months;
     }
 }

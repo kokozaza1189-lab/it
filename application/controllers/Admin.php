@@ -87,7 +87,9 @@ class Admin extends MY_Controller {
     public function payments() {
         $this->require_role(['treasurer','super_admin']);
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
-        $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,2,3,4'));
+        $raw    = array_map('intval', explode(',', $this->settings['active_months'] ?? ''));
+        $active = array_values(array_filter($raw, fn($m) => $m >= 1 && $m <= 12));
+        if (empty($active)) $active = [1, 2, 3, 4];
         $th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
         $summaries = [];
         foreach ($active as $m) {
@@ -108,7 +110,10 @@ class Admin extends MY_Controller {
         $this->require_role(['treasurer','super_admin']);
         $year   = (int)$this->input->post('year');
         $month  = (int)$this->input->post('month');
-        $amount = (float)($this->input->post('amount') ?: $this->settings['monthly_fee'] ?? 50);
+        // Use month-specific fee if no manual amount is provided (January = 35 ฿)
+        $amount = $this->input->post('amount') !== ''
+            ? (float)$this->input->post('amount')
+            : $this->fee_for_month($month);
         $n = $this->Payment_model->generate_month($year, $month, $amount);
         $this->json(['success' => true, 'created' => $n]);
     }
