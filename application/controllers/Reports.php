@@ -11,7 +11,13 @@ class Reports extends MY_Controller {
     public function index() {
         $this->require_login();
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
-        $active = array_map('intval', explode(',', $this->settings['active_months'] ?? '1,2,3,4'));
+        $years  = $this->Payment_model->get_available_years($this->acad_year);
+        if (!in_array($year, $years)) $year = $years[0];
+        $active = array_values(array_filter(
+            array_map('intval', explode(',', $this->settings['active_months'] ?? '')),
+            fn($m) => $m >= 1 && $m <= 12
+        ));
+        if (empty($active)) $active = [1,2,3,4];
         $th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
         $monthly = [];
         $total_income  = 0;
@@ -29,6 +35,8 @@ class Reports extends MY_Controller {
         $exp_stats      = $this->Expense_model->get_stats();
         $this->render('reports/index', [
             'title'          => 'รายงานสรุป',
+            'year'           => $year,
+            'years'          => $years,
             'monthly'        => $monthly,
             'active_months'  => $active,
             'total_income'   => $total_income,

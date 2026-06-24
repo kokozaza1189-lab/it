@@ -2,14 +2,21 @@
 $th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 ?>
 <div class="no-print mb-4 flex flex-wrap gap-3 items-center justify-between">
-  <form method="GET" action="<?= base_url('reports') ?>" class="flex gap-2 items-end">
-    <div>
-      <label class="lbl">ปีการศึกษา</label>
-      <input name="year" type="number" value="<?= $year ?>" class="inp" style="width:100px"/>
-    </div>
-    <button type="submit" class="btn btn-blue btn-sm">ค้นหา</button>
-    <a href="<?= base_url('reports') ?>" class="btn btn-gray btn-sm">ปีปัจจุบัน</a>
-  </form>
+  <div class="flex flex-wrap gap-2 items-center">
+    <?php if (!empty($years) && count($years) > 1): ?>
+      <?php foreach ($years as $y): ?>
+      <a href="<?= base_url('reports?year='.$y) ?>"
+         class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
+         style="<?= $y == $year ? 'background:#1e40af;color:#fff;border-color:#1e40af' : 'background:#fff;color:#475569;border-color:#e2e8f0' ?>">
+        <?= $y ?>
+      </a>
+      <?php endforeach; ?>
+    <?php endif; ?>
+    <form method="GET" action="<?= base_url('reports') ?>" class="flex gap-2 items-end ml-2">
+      <input name="year" type="number" value="<?= $year ?>" class="inp" style="width:88px;padding:4px 8px"/>
+      <button type="submit" class="btn btn-blue btn-sm">ค้นหา</button>
+    </form>
+  </div>
   <button onclick="window.print()" class="btn btn-gray btn-sm">🖨️ พิมพ์รายงาน</button>
 </div>
 
