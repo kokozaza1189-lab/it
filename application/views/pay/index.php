@@ -179,7 +179,7 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
           <img src="<?= htmlspecialchars(base_url('assets/uploads/qr/' . $settings['qr_image'])) ?>"
                alt="QR PromptPay"
                onerror="this.src='<?= htmlspecialchars($settings['qr_image']) ?>'"
-               style="width:190px;height:190px;object-fit:contain;display:block"/>
+               style="width:100%;max-width:280px;height:auto;object-fit:contain;display:block"/>
         </div>
         <p style="color:#1565c0;font-weight:600;font-size:12px;margin-top:14px">สแกน QR เพื่อโอนเข้าบัญชี</p>
         <p style="font-weight:700;font-size:17px;color:#1a237e;margin-top:6px"><?= htmlspecialchars($settings['bank_name'] ?? '') ?></p>
