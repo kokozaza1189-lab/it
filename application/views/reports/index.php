@@ -1,23 +1,36 @@
 <?php
 $th_months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 ?>
-<div class="no-print mb-4 flex flex-wrap gap-3 items-center justify-between">
-  <div class="flex flex-wrap gap-2 items-center">
-    <?php if (!empty($years) && count($years) > 1): ?>
-      <?php foreach ($years as $y): ?>
-      <a href="<?= base_url('reports?year='.$y) ?>"
-         class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
-         style="<?= $y == $year ? 'background:#1e40af;color:#fff;border-color:#1e40af' : 'background:#fff;color:#475569;border-color:#e2e8f0' ?>">
-        <?= $y ?>
-      </a>
-      <?php endforeach; ?>
-    <?php endif; ?>
-    <form method="GET" action="<?= base_url('reports') ?>" class="flex gap-2 items-end ml-2">
-      <input name="year" type="number" value="<?= $year ?>" class="inp" style="width:88px;padding:4px 8px"/>
-      <button type="submit" class="btn btn-blue btn-sm">ค้นหา</button>
-    </form>
+<div class="no-print mb-5">
+  <!-- Year selector bar -->
+  <div class="card mb-3" style="padding:16px 20px">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm font-semibold text-slate-500 mr-1">ปีการศึกษา:</span>
+        <?php if (!empty($years)): ?>
+          <?php foreach ($years as $y): ?>
+          <a href="<?= base_url('reports?year='.$y) ?>"
+             class="transition-all font-bold"
+             style="display:inline-flex;align-items:center;justify-content:center;
+                    min-width:72px;padding:8px 20px;border-radius:10px;font-size:18px;
+                    text-decoration:none;
+                    <?= $y == $year
+                      ? 'background:#1e40af;color:#fff;box-shadow:0 4px 12px rgba(30,64,175,.35)'
+                      : 'background:#f1f5f9;color:#334155;border:2px solid #e2e8f0' ?>">
+            <?= $y ?>
+          </a>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+      <div class="flex items-center gap-2">
+        <form method="GET" action="<?= base_url('reports') ?>" class="flex gap-2 items-center">
+          <input name="year" type="number" value="<?= $year ?>" class="inp" style="width:96px;padding:6px 10px;font-size:15px"/>
+          <button type="submit" class="btn btn-blue">ค้นหา</button>
+        </form>
+        <button onclick="window.print()" class="btn btn-gray">🖨️ พิมพ์</button>
+      </div>
+    </div>
   </div>
-  <button onclick="window.print()" class="btn btn-gray btn-sm">🖨️ พิมพ์รายงาน</button>
 </div>
 
 <!-- Print header (hidden on screen) -->
