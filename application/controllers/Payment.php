@@ -32,7 +32,18 @@ class Payment extends MY_Controller {
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
         if (!in_array($year, $years)) $year = $years[0];
         $search = $this->input->get('search') ?: '';
-        $active = $this->_parse_months($this->settings['active_months'] ?? '', [1, 2, 3, 4]);
+
+        // For current year use active_months setting; for past years detect from DB
+        $setting_months = $this->_parse_months($this->settings['active_months'] ?? '', [1, 2, 3, 4]);
+        if ($year != $this->acad_year) {
+            $q = $this->db->select('month')->distinct()->where('year', $year)
+                          ->order_by('month', 'ASC')->get('payment_records');
+            $db_months = $q ? array_map(fn($r) => (int)$r->month, $q->result()) : [];
+            $active = !empty($db_months) ? $db_months : $setting_months;
+        } else {
+            $active = $setting_months;
+        }
+
         $students = $this->Student_model->get_with_payments($year, $active);
         if ($search) {
             $students = array_filter($students, fn($s) =>
