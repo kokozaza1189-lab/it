@@ -193,40 +193,6 @@ $penalty_total    = array_sum(array_column($penalty_rows, 'pen'));
 $penalty_students = count(array_unique(array_column($penalty_rows, 'id')));
 ?>
 <div v-show="activeTab==='penalty'" style="display:none">
-  <!-- QR PromptPay — รับชำระค่าปรับ -->
-  <?php if (!empty($settings['qr_image'])):
-    $qr_img = $settings['qr_image'];
-    // qr_image may be a bare filename (uploaded via Settings) or a full path (e.g. assets/img/x.jpg)
-    $qr_in_uploads = base_url('assets/uploads/qr/'.$qr_img);
-    $qr_as_path    = base_url($qr_img);
-    $qr_url = (strpos($qr_img, '/') !== false) ? $qr_as_path : $qr_in_uploads;   // primary guess
-    $qr_alt = (strpos($qr_img, '/') !== false) ? $qr_in_uploads : $qr_as_path;   // fallback
-  ?>
-  <div class="card mb-4" style="padding:0;overflow:hidden;border:2px solid #1565c0">
-    <div style="background:#0d47a1;padding:10px 20px;display:flex;align-items:center;justify-content:space-between">
-      <span style="color:white;font-weight:700;font-size:14px;letter-spacing:.5px">🔲 THAI QR PAYMENT</span>
-      <span style="background:white;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:#0d47a1">PromptPay</span>
-    </div>
-    <div style="padding:16px 20px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#e8f5e9,#e3f2fd)">
-      <div style="background:white;border-radius:12px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,.12);flex-shrink:0">
-        <img src="<?= htmlspecialchars($qr_url) ?>"
-             onerror="this.onerror=null;this.src='<?= htmlspecialchars($qr_alt) ?>'"
-             alt="QR PromptPay" style="width:130px;height:130px;object-fit:contain;display:block"/>
-      </div>
-      <div>
-        <p style="color:#1565c0;font-weight:600;font-size:12px;margin-bottom:4px">สแกน QR เพื่อชำระค่าปรับ</p>
-        <?php if (!empty($settings['bank_name'])): ?>
-        <p style="font-weight:700;color:#0d47a1;font-size:16px;margin:0"><?= htmlspecialchars($settings['bank_name']) ?></p>
-        <?php endif; ?>
-        <?php if (!empty($settings['bank_account'])): ?>
-        <p style="color:#546e7a;font-size:13px;margin:2px 0 0;font-family:monospace"><?= htmlspecialchars($settings['bank_account']) ?></p>
-        <?php endif; ?>
-        <p style="color:#90a4ae;font-size:11px;margin-top:6px">รับเงินได้จากทุกธนาคาร · Accepts all banks</p>
-      </div>
-    </div>
-  </div>
-  <?php endif; ?>
-
   <?php if (empty($penalty_rows)): ?>
   <div class="card text-center py-12">
     <p class="text-4xl mb-2">✅</p>
