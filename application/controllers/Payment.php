@@ -69,12 +69,8 @@ class Payment extends MY_Controller {
         $user  = $this->get_user();
         $month = (int)$this->input->post('month');
         $year  = (int)($this->input->post('year') ?: $this->acad_year);
-        // Normally pay for the logged-in student; ช่วงทดลอง: super_admin may pay for a test student via as_sid
         $sid   = $user['student_id'];
-        if (empty($sid) && $this->can('view_all')) {
-            $sid = preg_replace('/[^0-9]/', '', (string)$this->input->post('as_sid')) ?: null;
-        }
-        if (!$sid) { $this->json(['success' => false, 'error' => 'ไม่พบรหัสนิสิต'], 400); return; }
+        if (!$sid) { $this->json(['success' => false, 'error' => 'บัญชีนี้ไม่มีรหัสนิสิต'], 400); return; }
         $file  = '';
         if (!empty($_FILES['slip']['name'])) {
             $config = [
