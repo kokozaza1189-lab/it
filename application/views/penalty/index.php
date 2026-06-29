@@ -99,10 +99,10 @@ $has_overdue = !empty(array_filter($penalties, fn($p) => $p->status === 'overdue
 
   <!-- Action -->
   <?php if ($is_overdue): ?>
-  <button class="btn btn-blue w-full text-base py-3"
-          @click="openPayModal(<?= (int)$p->id ?>, <?= (int)$p->month ?>, <?= (float)$p->amount ?>, <?= (float)$p->penalty ?>)">
-    💳 ชำระบิลนี้ &nbsp; ฿<?= number_format($total_bill, 2) ?>
-  </button>
+  <a class="btn btn-blue w-full text-base py-3" style="display:block;text-align:center;text-decoration:none"
+     href="<?= base_url('pay?month='.(int)$p->month.'&year='.(int)$year.'&sid='.urlencode($current_user['student_id'] ?? '')) ?>">
+    💳 ชำระค่าปรับเดือนนี้ &nbsp; ฿<?= number_format($total_bill, 2) ?>
+  </a>
   <?php else: ?>
   <div class="rounded-xl py-3 px-4 text-center text-sm font-medium" style="background:#eff6ff;color:#1d4ed8">
     ⏳ รอเจ้าหน้าที่ตรวจสอบสลิปการโอน

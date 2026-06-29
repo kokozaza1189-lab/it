@@ -145,7 +145,7 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
       <p class="text-xs font-medium text-gray-500 mb-2">เลือกเดือนที่ต้องการชำระ</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         <?php foreach ($active_months as $m): ?>
-          <a href="<?= base_url('pay') ?>?month=<?= $m ?>&year=<?= $year ?>"
+          <a href="<?= base_url('pay') ?>?month=<?= $m ?>&year=<?= $year ?><?= !empty($prefill_sid) ? '&sid='.$prefill_sid : '' ?>"
              style="padding:8px 16px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;border:1.5px solid;transition:all .2s;
                     <?= $m == $month
                       ? 'background:#673ab7;color:#fff;border-color:#673ab7'
@@ -376,7 +376,7 @@ createApp({
     const MONTH      = <?= (int)$month ?>
     const YEAR       = <?= (int)$year ?>
 
-    const studentId   = ref('')
+    const studentId   = ref('<?= isset($prefill_sid) ? $prefill_sid : '' ?>')
     const foundName   = ref('')
     const lookupState = ref('')
     const errSid      = ref('')
@@ -507,6 +507,9 @@ createApp({
       dbPayment.value = null
       clearSlip(); submitted.value = false
     }
+
+    // Auto-lookup when student id arrives pre-filled (from the penalty page)
+    if (studentId.value.length === 10) onSidInput()
 
     return {
       studentId, foundName, lookupState, errSid,
