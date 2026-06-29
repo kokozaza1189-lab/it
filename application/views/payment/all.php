@@ -239,30 +239,46 @@ $penalty_students = count(array_unique(array_column($penalty_rows, 'id')));
       <p class="font-bold" style="color:#dc2626">รวมค่าปรับ ฿<?= number_format($penalty_total, 2) ?></p>
     </div>
     <div class="overflow-x-auto">
-      <table class="tbl">
+      <table class="tbl" style="width:100%">
         <thead><tr>
-          <th>#</th><th>ชื่อ-สกุล</th><th>รหัส</th><th>เดือน</th>
-          <th class="text-right">ค่าธรรมเนียม</th>
-          <th class="text-right">ค่าปรับ</th>
-          <th class="text-right">รวม</th>
-          <th class="text-center">จ่าย</th>
+          <th style="text-align:center;width:46px">#</th>
+          <th style="text-align:left">ชื่อ-สกุล</th>
+          <th style="text-align:left">รหัส</th>
+          <th style="text-align:center">เดือน</th>
+          <th style="text-align:right">ค่าธรรมเนียม</th>
+          <th style="text-align:right">ค่าปรับ</th>
+          <th style="text-align:right">รวม</th>
+          <th style="text-align:center;width:110px">จ่าย</th>
         </tr></thead>
         <tbody>
-          <?php foreach ($penalty_rows as $i => $r): ?>
-          <tr>
-            <td class="text-slate-400 text-xs"><?= $i+1 ?></td>
-            <td class="font-medium text-slate-800"><?= htmlspecialchars($r['name']) ?></td>
-            <td class="font-mono text-xs text-slate-500"><?= $r['id'] ?></td>
-            <td><span style="background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:700;padding:2px 9px;border-radius:6px"><?= $th_months[$r['month']] ?></span></td>
-            <td class="text-right text-sm" style="color:#dc2626;font-weight:600">฿<?= number_format($r['fee'], 2) ?></td>
-            <td class="text-right" style="color:#dc2626;font-weight:700">฿<?= number_format($r['pen'], 2) ?></td>
-            <td class="text-right" style="color:#dc2626;font-weight:800">฿<?= number_format($r['fee']+$r['pen'], 2) ?></td>
-            <td class="text-center">
+          <?php
+          // group rows by student so multi-month students share name/id cells (rowspan)
+          $grouped = [];
+          foreach ($penalty_rows as $r) { $grouped[$r['id']][] = $r; }
+          $sno = 0;
+          foreach ($grouped as $sid => $rows):
+            $sno++; $n = count($rows);
+            foreach ($rows as $j => $r):
+          ?>
+          <tr<?= ($j === 0) ? ' style="border-top:2px solid #eef2f7"' : '' ?>>
+            <?php if ($j === 0): ?>
+            <td rowspan="<?= $n ?>" style="text-align:center;color:#94a3b8;font-size:12px;vertical-align:middle"><?= $sno ?></td>
+            <td rowspan="<?= $n ?>" class="font-medium text-slate-800" style="vertical-align:middle">
+              <?= htmlspecialchars($r['name']) ?>
+              <?php if ($n > 1): ?><span style="display:block;font-size:11px;color:#dc2626;font-weight:700;margin-top:2px">⚠️ ค้าง <?= $n ?> เดือน</span><?php endif; ?>
+            </td>
+            <td rowspan="<?= $n ?>" class="font-mono text-xs text-slate-500" style="vertical-align:middle"><?= $r['id'] ?></td>
+            <?php endif; ?>
+            <td style="text-align:center"><span style="background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:700;padding:2px 9px;border-radius:6px"><?= $th_months[$r['month']] ?></span></td>
+            <td style="text-align:right;color:#dc2626;font-weight:600;font-size:13px">฿<?= number_format($r['fee'], 2) ?></td>
+            <td style="text-align:right;color:#dc2626;font-weight:700">฿<?= number_format($r['pen'], 2) ?></td>
+            <td style="text-align:right;color:#dc2626;font-weight:800">฿<?= number_format($r['fee']+$r['pen'], 2) ?></td>
+            <td style="text-align:center">
               <button class="btn btn-blue" style="padding:4px 14px;font-size:12px"
                       @click="openStatus(<?= htmlspecialchars(json_encode($r['rec']), ENT_QUOTES) ?>)">💰 จ่าย</button>
             </td>
           </tr>
-          <?php endforeach; ?>
+          <?php endforeach; endforeach; ?>
         </tbody>
       </table>
     </div>
