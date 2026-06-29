@@ -57,6 +57,7 @@ class Payment extends MY_Controller {
         $this->render('payment/all', [
             'title'         => ($tab === 'penalty') ? 'ค่าปรับ' : 'ภาพรวมการชำระเงิน',
             'active_tab'    => $tab,
+            'penalty_page'  => ($tab_seg === 'penalty'),   // true = standalone ค่าปรับ page (/payment/penalty)
             'year'          => $year,
             'years'         => $years,
             'students'      => array_values($students),

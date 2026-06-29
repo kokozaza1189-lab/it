@@ -56,7 +56,7 @@ foreach ($students as $s) {
 <div class="flex items-center gap-2 mb-4">
   <span class="text-xs text-slate-400 font-medium">ปีการศึกษา:</span>
   <?php foreach ($years as $y): ?>
-  <a :href="(activeTab==='penalty' ? '<?= base_url('payment/penalty?year='.$y.'&search='.urlencode($search)) ?>' : '<?= base_url('payment/all?year='.$y.'&search='.urlencode($search)) ?>')"
+  <a <?php if ($penalty_page ?? false): ?>href="<?= base_url('payment/penalty?year='.$y.'&search='.urlencode($search)) ?>"<?php else: ?>:href="'<?= base_url('payment/all?year='.$y.'&search='.urlencode($search)) ?>' + (activeTab==='penalty' ? '&tab=penalty' : '')"<?php endif; ?>
      class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
      style="<?= $y == $year
        ? 'background:#1d4ed8;color:#fff;border-color:#1d4ed8'
