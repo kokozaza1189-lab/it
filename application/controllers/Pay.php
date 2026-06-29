@@ -31,29 +31,33 @@ class Pay extends CI_Controller {
         $due_day     = (int)($settings['due_day'] ?? 8);
         $penalty_per_day = (float)($settings['penalty_per_day'] ?? 5);
 
-        // Academic year 2569: months 1-7 fall in CE 2027, months 8-12 fall in CE 2026
-        $ce_year = ($month <= 7) ? ($year - 543 + 1) : ($year - 543);
-        $now = time();
-        $due_date = mktime(0, 0, 0, $month, $due_day, $ce_year);
-        $days_overdue = 0;
-        $penalty = 0;
-        if ($now > $due_date) {
-            // Cap at end of month
-            $end_of_month = mktime(0, 0, 0, $month + 1, 1, $ce_year) - 86400;
-            $cap = min($now, $end_of_month);
-            $days_overdue = max(0, (int)(($cap - $due_date) / 86400));
-            $penalty = round($days_overdue * $penalty_per_day, 2);
-        }
-
         $active_months = array_values(array_filter(
             array_map('intval', explode(',', $settings['active_months'] ?? '')),
             fn($m) => $m >= 1 && $m <= 12
         ));
         if (empty($active_months)) $active_months = [1, 2, 3, 4];
-        // Clamp month to one of the active months
+        // Clamp month to one of the active months FIRST (before date calc)
         if (!in_array($month, $active_months)) {
             $month = $active_months[0];
         }
+
+        // ── Date calculation ──────────────────────────────────────────────────
+        // Thai academic year N (BE): months 6–12 → CE year N−543
+        //                            months 1–5  → CE year N−543+1
+        $ce_year      = ($month <= 5) ? ($year - 543 + 1) : ($year - 543);
+        $display_year = $ce_year + 543;   // back to BE for display
+        $due_date     = mktime(0, 0, 0, $month, $due_day, $ce_year);
+        $now          = time();
+        $days_overdue = 0;
+        $penalty      = 0;
+        if ($now > $due_date) {
+            $end_of_month = mktime(0, 0, 0, $month + 1, 1, $ce_year) - 86400;
+            $cap          = min($now, $end_of_month);
+            $days_overdue = max(0, (int)(($cap - $due_date) / 86400));
+            $penalty      = round($days_overdue * $penalty_per_day, 2);
+        }
+        $days_left = ($now <= $due_date) ? (int)(($due_date - $now) / 86400) : 0;
+
         $month_names = [1=>'มกราคม',2=>'กุมภาพันธ์',3=>'มีนาคม',4=>'เมษายน',5=>'พฤษภาคม',6=>'มิถุนายน',
                         7=>'กรกฎาคม',8=>'สิงหาคม',9=>'กันยายน',10=>'ตุลาคม',11=>'พฤศจิกายน',12=>'ธันวาคม'];
         $this->load->view('pay/index', [
@@ -61,10 +65,14 @@ class Pay extends CI_Controller {
             'settings'        => $settings,
             'month'           => $month,
             'year'            => $year,
+            'display_year'    => $display_year,
+            'ce_year'         => $ce_year,
             'monthly_fee'     => $monthly_fee,
             'due_day'         => $due_day,
             'penalty_per_day' => $penalty_per_day,
+            'days_left'       => $days_left,
             'days_overdue'    => $days_overdue,
+            'is_past_due'     => $now > $due_date,
             'penalty'         => $penalty,
             'total'           => $monthly_fee + $penalty,
             'month_names'     => $month_names,

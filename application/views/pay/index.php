@@ -218,26 +218,19 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         </div>
       </div>
 
-      <!-- Deadline -->
-      <?php
-        $ce_year_view = ($month <= 7) ? ($year - 543 + 1) : ($year - 543);
-        $due_date_ts  = mktime(0, 0, 0, $month, $due_day, $ce_year_view);
-        $days_left    = max(0, (int)(($due_date_ts - time()) / 86400));
-        $is_past_due  = time() > $due_date_ts;
-      ?>
-      <div class="mt-3" style="display:flex;align-items:center;gap:12px;background:#fff3e0;border-left:4px solid #ff6d00;border-radius:0 12px 12px 0;padding:12px 16px">
-        <span style="font-size:20px">⏰</span>
+      <!-- Deadline — dates computed in controller (Pay.php), passed as $display_year, $days_left, $is_past_due -->
+      <div class="mt-3" style="display:flex;align-items:center;gap:12px;background:<?= $is_past_due ? '#fef2f2' : '#fff3e0' ?>;border-left:4px solid <?= $is_past_due ? '#dc2626' : '#ff6d00' ?>;border-radius:0 12px 12px 0;padding:12px 16px">
+        <span style="font-size:20px"><?= $is_past_due ? '⚠️' : '⏰' ?></span>
         <div class="flex-1">
-          <p class="text-xs font-semibold" style="color:#e65100">กำหนดชำระ</p>
-          <p class="text-sm" style="color:#bf360c">
+          <p class="text-xs font-semibold" style="color:<?= $is_past_due ? '#b91c1c' : '#e65100' ?>">กำหนดชำระ</p>
+          <p class="text-sm" style="color:<?= $is_past_due ? '#7f1d1d' : '#bf360c' ?>">
             <strong>วันที่ <?= $due_day ?> <?= $month_names[$month] ?? '' ?> <?= $display_year ?></strong>
           </p>
         </div>
         <div class="text-right">
-          <p class="text-xs" style="color:#ff6d00"><?= $is_past_due ? 'เกินกำหนด' : 'เหลืออีก' ?></p>
-          <p class="text-xl font-bold" style="color:#e65100">
-            <?= $is_past_due ? $days_overdue : $days_left ?>
-            <span class="text-xs font-normal">วัน</span>
+          <p class="text-xs" style="color:<?= $is_past_due ? '#dc2626' : '#ff6d00' ?>"><?= $is_past_due ? 'เกินกำหนด' : 'เหลืออีก' ?></p>
+          <p class="text-xl font-bold" style="color:<?= $is_past_due ? '#b91c1c' : '#e65100' ?>">
+            <?= $is_past_due ? $days_overdue : $days_left ?> <span class="text-xs font-normal">วัน</span>
           </p>
         </div>
       </div>

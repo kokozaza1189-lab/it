@@ -161,6 +161,36 @@ $has_overdue = !empty(array_filter($penalties, fn($p) => $p->status === 'overdue
         </div>
       </div>
 
+      <!-- QR Code Payment -->
+      <?php if (!empty($settings['qr_image'])): ?>
+      <div style="border:2px solid #1565c0;border-radius:14px;overflow:hidden">
+        <div style="background:#0d47a1;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
+          <div class="flex items-center gap-2">
+            <span style="background:#fff;border-radius:6px;padding:3px 6px;font-size:11px;font-weight:900;color:#0d47a1;letter-spacing:.5px">🔲 THAI QR PAYMENT</span>
+          </div>
+          <span style="background:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:800;color:#003087">PromptPay</span>
+        </div>
+        <div style="padding:14px 12px 10px;background:linear-gradient(135deg,#e8f5e9,#e3f2fd);text-align:center">
+          <div style="background:#fff;border-radius:12px;padding:10px;display:inline-block;box-shadow:0 2px 10px rgba(0,0,0,.12)">
+            <img src="<?= base_url('assets/uploads/qr/'.$settings['qr_image']) ?>"
+                 alt="QR PromptPay" style="width:170px;height:170px;object-fit:contain;display:block"/>
+          </div>
+          <p style="color:#1565c0;font-size:12px;margin:8px 0 2px;font-weight:600">สแกน QR เพื่อโอนชำระค่าปรับ</p>
+          <?php if (!empty($settings['bank_name'])): ?>
+          <p style="font-weight:700;color:#0d47a1;font-size:14px;margin:0"><?= htmlspecialchars($settings['bank_name']) ?></p>
+          <?php endif; ?>
+          <?php if (!empty($settings['bank_account'])): ?>
+          <p style="color:#546e7a;font-size:12px;margin:2px 0 0;font-family:monospace"><?= htmlspecialchars($settings['bank_account']) ?></p>
+          <?php endif; ?>
+          <div style="margin-top:6px;padding:5px 10px;background:rgba(255,255,255,.6);border-radius:8px;display:inline-block">
+            <p style="font-size:11px;color:#e65100;font-weight:700;margin:0">
+              ⚠️ กรอกยอด <strong>฿<span class="qr-total-amount">0.00</span></strong> ตอนโอน
+            </p>
+          </div>
+        </div>
+      </div>
+      <?php endif; ?>
+
       <!-- Slip upload -->
       <div>
         <label class="lbl">แนบสลิปการโอนเงิน <span class="text-red-500">*</span></label>
@@ -214,6 +244,9 @@ createApp({
       amount.value = amt; penalty.value = pen
       slipFile.value = null; slipName.value = ''
       payModal.value = true
+      // Update QR amount display
+      const el = document.querySelector('.qr-total-amount')
+      if (el) el.textContent = (amt + pen).toFixed(2)
     }
     function onSlip(e) {
       const f = e.target.files[0]
