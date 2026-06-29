@@ -69,32 +69,31 @@ foreach ($students as $s) {
 
 <!-- Search + filter -->
 <div class="card mb-5">
-  <form method="GET" action="<?= base_url('payment/all') ?>" class="flex flex-wrap gap-3 items-end">
+  <form method="GET" action="<?= ($penalty_page ?? false) ? base_url('payment/penalty') : base_url('payment/all') ?>" class="flex flex-wrap gap-3 items-end">
     <div class="flex-1 min-w-48">
       <label class="lbl">ค้นหา</label>
       <input name="search" value="<?= htmlspecialchars($search) ?>" class="inp" placeholder="ชื่อหรือรหัสนิสิต"/>
     </div>
     <input type="hidden" name="year" value="<?= $year ?>"/>
     <button type="submit" class="btn btn-blue">🔍 ค้นหา</button>
-    <a href="<?= base_url('payment/all?year='.$year) ?>" class="btn btn-gray">รีเซ็ต</a>
+    <a href="<?= (($penalty_page ?? false) ? base_url('payment/penalty') : base_url('payment/all')).'?year='.$year ?>" class="btn btn-gray">รีเซ็ต</a>
     <button type="button" class="btn btn-gray" @click="exportExcel">📊 Export Excel</button>
     <a href="<?= base_url('admin/payments') ?>" class="btn btn-gray">⚙️ จัดการ</a>
   </form>
 </div>
 
-<!-- Tab selector -->
+<!-- Tab selector (real navigation: ภาพรวมการชำระ ↔ ค่าปรับ pages) -->
+<?php $pp = $penalty_page ?? false; ?>
 <div class="flex gap-2 mb-4">
-  <button @click="activeTab='payment'"
-          :class="activeTab==='payment' ? 'btn btn-blue' : 'btn btn-gray'">
+  <a href="<?= base_url('payment/all') ?>" class="btn <?= !$pp ? 'btn-blue' : 'btn-gray' ?>" style="text-decoration:none">
     💳 การชำระเงิน
-  </button>
-  <button @click="activeTab='penalty'"
-          :class="activeTab==='penalty' ? 'btn btn-blue' : 'btn btn-gray'">
+  </a>
+  <a href="<?= base_url('payment/penalty') ?>" class="btn <?= $pp ? 'btn-blue' : 'btn-gray' ?>" style="text-decoration:none">
     🚨 ค่าปรับ
     <?php if ($alert_overdue > 0): ?>
     <span style="background:#ef4444;color:#fff;border-radius:9999px;padding:1px 7px;font-size:11px;margin-left:4px"><?= $alert_overdue ?></span>
     <?php endif; ?>
-  </button>
+  </a>
 </div>
 
 <!-- Students table -->

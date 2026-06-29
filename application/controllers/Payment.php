@@ -28,6 +28,8 @@ class Payment extends MY_Controller {
 
     public function all($tab_seg = null) {
         $this->require_login();
+        header('X-LiteSpeed-Cache-Control: no-cache');   // ensure fresh HTML (LiteSpeed ignores std Cache-Control)
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         $years  = $this->Payment_model->get_available_years($this->acad_year);
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
         if (!in_array($year, $years)) $year = $years[0];
