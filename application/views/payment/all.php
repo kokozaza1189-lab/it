@@ -82,19 +82,6 @@ foreach ($students as $s) {
   </form>
 </div>
 
-<!-- Tab selector (real navigation: ภาพรวมการชำระ ↔ ค่าปรับ pages) -->
-<?php $pp = $penalty_page ?? false; ?>
-<div class="flex gap-2 mb-4">
-  <a href="<?= base_url('payment/all') ?>" class="btn <?= !$pp ? 'btn-blue' : 'btn-gray' ?>" style="text-decoration:none">
-    💳 การชำระเงิน
-  </a>
-  <a href="<?= base_url('payment/penalty') ?>" class="btn <?= $pp ? 'btn-blue' : 'btn-gray' ?>" style="text-decoration:none">
-    🚨 ค่าปรับ
-    <?php if ($alert_overdue > 0): ?>
-    <span style="background:#ef4444;color:#fff;border-radius:9999px;padding:1px 7px;font-size:11px;margin-left:4px"><?= $alert_overdue ?></span>
-    <?php endif; ?>
-  </a>
-</div>
 
 <!-- Students table -->
 <div v-show="activeTab==='payment'" class="card overflow-hidden">

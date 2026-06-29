@@ -22,7 +22,7 @@ $menus = [
    'url'=>base_url('payment/all')],
   ['key'=>'penalty',     'label'=>'ค่าปรับ',              'icon'=>'🚨',
    'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
-   'url'=>base_url('penalty')],
+   'url'=> in_array($role, ['super_admin','head_it','treasurer']) ? base_url('payment/penalty') : base_url('penalty')],
   ['key'=>'expense',     'label'=>'เบิกเงิน',           'icon'=>'💸',
    'roles'=>['activity_staff','academic_staff','treasurer','super_admin','head_it','advisor'],
    'url'=>base_url('expense')],
