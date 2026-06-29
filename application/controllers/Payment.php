@@ -26,7 +26,7 @@ class Payment extends MY_Controller {
         ]);
     }
 
-    public function all() {
+    public function all($tab_seg = null) {
         $this->require_login();
         $years  = $this->Payment_model->get_available_years($this->acad_year);
         $year   = (int)($this->input->get('year') ?: $this->acad_year);
@@ -52,9 +52,11 @@ class Payment extends MY_Controller {
             );
         }
         $stats = $this->Payment_model->get_stats($year);
-        $tab   = $this->input->get('tab');
+        // tab via clean path segment (/payment/penalty) survives the host's query-param stripping
+        $tab   = ($tab_seg === 'penalty') ? 'penalty' : $this->input->get('tab');
         $this->render('payment/all', [
             'title'         => ($tab === 'penalty') ? 'ค่าปรับ' : 'ภาพรวมการชำระเงิน',
+            'active_tab'    => $tab,
             'year'          => $year,
             'years'         => $years,
             'students'      => array_values($students),

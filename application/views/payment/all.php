@@ -56,7 +56,7 @@ foreach ($students as $s) {
 <div class="flex items-center gap-2 mb-4">
   <span class="text-xs text-slate-400 font-medium">ปีการศึกษา:</span>
   <?php foreach ($years as $y): ?>
-  <a :href="'<?= base_url('payment/all?year='.$y.'&search='.urlencode($search)) ?>' + (activeTab==='penalty' ? '&tab=penalty' : '')"
+  <a :href="(activeTab==='penalty' ? '<?= base_url('payment/penalty?year='.$y.'&search='.urlencode($search)) ?>' : '<?= base_url('payment/all?year='.$y.'&search='.urlencode($search)) ?>')"
      class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
      style="<?= $y == $year
        ? 'background:#1d4ed8;color:#fff;border-color:#1d4ed8'
@@ -344,7 +344,8 @@ const monthNames = ['','มกราคม','กุมภาพันธ์','�
 const SLIP_BASE_URL = '<?= base_url('assets/uploads/slips/') ?>'
 createApp({
   setup() {
-    const _tabParam   = new URLSearchParams(window.location.search).get('tab')
+    const _srvTab     = '<?= ($active_tab ?? '') === 'penalty' ? 'penalty' : '' ?>'
+    const _tabParam   = _srvTab || new URLSearchParams(window.location.search).get('tab')
     const activeTab   = ref(_tabParam === 'penalty' ? 'penalty' : 'payment')
     const statusModal = ref(false)
     const saving      = ref(false)

@@ -64,6 +64,7 @@ $route['reset/(:any)']       = 'auth/reset/$1';
 $route['dashboard']                = 'dashboard/index';
 $route['payment']                  = 'payment/index';
 $route['payment/all']              = 'payment/all';
+$route['payment/penalty']          = 'payment/all/penalty';   // penalty overview via clean path (host drops ?tab)
 $route['payment/submit']           = 'payment/submit';
 $route['payment/update_status']    = 'payment/update_status';
 

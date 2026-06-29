@@ -8,11 +8,14 @@ class Penalty extends MY_Controller {
         $this->load->model(['Payment_model','Student_model']);
     }
 
+    // roles ที่เห็น "ภาพรวมค่าปรับทั้งหมด" แทนค่าปรับส่วนตัว
+    private $overview_roles = ['super_admin', 'head_it', 'treasurer'];
+
     public function index() {
         $this->require_login();
-        // เฉพาะ admin (super_admin) → ดูภาพรวมค่าปรับทั้งหมด; role อื่นเช็ค/ชำระของตัวเอง
-        if (($this->get_user()['role'] ?? '') === 'super_admin') {
-            redirect('payment/all?tab=penalty');
+        // admin/หัวหน้าสาขา/เหรัญญิก → ดูภาพรวมค่าปรับทั้งหมด; role อื่นเช็ค/ชำระของตัวเอง
+        if (in_array($this->get_user()['role'] ?? '', $this->overview_roles)) {
+            redirect('payment/penalty');
             return;
         }
         $years = $this->Payment_model->get_available_years($this->acad_year);
@@ -25,7 +28,7 @@ class Penalty extends MY_Controller {
     public function pay($month) {
         $this->require_login();
         $user  = $this->get_user();
-        if (($user['role'] ?? '') === 'super_admin') { redirect('payment/all?tab=penalty'); return; }
+        if (in_array($user['role'] ?? '', $this->overview_roles)) { redirect('payment/penalty'); return; }
         $month = (int)$month;
         $year  = (int)($this->input->get('year') ?: $this->acad_year);
         $rec   = $this->Payment_model->get_month($user['student_id'], $year, $month);

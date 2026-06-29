@@ -66,7 +66,7 @@ $active_tab   = isset($_GET['tab']) ? $_GET['tab'] : '';
 // (prevents e.g. "payment" lighting up while on "payment/all", and lights up
 //  "ค่าปรับ" when viewing the penalty tab of payment/all).
 $active_key = '';
-if ($current_page === 'payment/all' && $active_tab === 'penalty') {
+if ($current_page === 'payment/penalty' || ($current_page === 'payment/all' && $active_tab === 'penalty')) {
     $active_key = 'penalty';
 } else {
     foreach ($menus as $mm) {
