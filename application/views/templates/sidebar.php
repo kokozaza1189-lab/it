@@ -18,7 +18,7 @@ $menus = [
    'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('pay')],
   ['key'=>'payment/all', 'label'=>'ภาพรวมการชำระ',    'icon'=>'📋',
-   'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
+   'roles'=>['treasurer','head_it','advisor','auditor','super_admin'],
    'url'=>base_url('payment/all')],
   ['key'=>'penalty',     'label'=>'ค่าปรับ',              'icon'=>'🚨',
    'roles'=>['student','activity_staff','academic_staff','treasurer','head_it','advisor','auditor','super_admin'],
