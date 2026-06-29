@@ -120,7 +120,6 @@ $route['profile/change_password']    = 'profile/change_password';
 
 // Penalty
 $route['penalty']                    = 'penalty/index';
-$route['penalty/overview']           = 'penalty/overview';
 
 // Reports
 $route['reports']                    = 'reports/index';
