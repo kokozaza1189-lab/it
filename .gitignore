@@ -14,3 +14,12 @@ chk.php
 test.php
 info.php
 phpinfo.php
+
+# DB dumps — contain real student PII, must NOT be public
+db/*.sql
+!db/schema.sql
+
+# One-time deploy/patch tools — contain secrets, never commit
+deploy.php
+patch.php
+fix.php
