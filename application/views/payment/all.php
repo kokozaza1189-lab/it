@@ -183,7 +183,11 @@ foreach ($students as $s) {
 ?>
 <div v-show="activeTab==='penalty'" style="display:none">
   <!-- QR PromptPay — รับชำระค่าปรับ -->
-  <?php if (!empty($settings['qr_image'])): ?>
+  <?php if (!empty($settings['qr_image'])):
+    $qr_img = $settings['qr_image'];
+    // qr_image may be a bare filename (uploaded via Settings) or a full path (e.g. assets/img/x.jpg)
+    $qr_url = (strpos($qr_img, '/') !== false) ? base_url($qr_img) : base_url('assets/uploads/qr/'.$qr_img);
+  ?>
   <div class="card mb-4" style="padding:0;overflow:hidden;border:2px solid #1565c0">
     <div style="background:#0d47a1;padding:10px 20px;display:flex;align-items:center;justify-content:space-between">
       <span style="color:white;font-weight:700;font-size:14px;letter-spacing:.5px">🔲 THAI QR PAYMENT</span>
@@ -191,7 +195,7 @@ foreach ($students as $s) {
     </div>
     <div style="padding:16px 20px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#e8f5e9,#e3f2fd)">
       <div style="background:white;border-radius:12px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,.12);flex-shrink:0">
-        <img src="<?= base_url('assets/uploads/qr/'.$settings['qr_image']) ?>"
+        <img src="<?= htmlspecialchars($qr_url) ?>"
              alt="QR PromptPay" style="width:110px;height:110px;object-fit:contain;display:block"/>
       </div>
       <div>
