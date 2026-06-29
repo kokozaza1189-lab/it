@@ -164,7 +164,10 @@ $has_overdue = !empty(array_filter($penalties, fn($p) => $p->status === 'overdue
       <!-- QR Code Payment -->
       <?php if (!empty($settings['qr_image'])):
         $qr_img = $settings['qr_image'];
-        $qr_url = (strpos($qr_img, '/') !== false) ? base_url($qr_img) : base_url('assets/uploads/qr/'.$qr_img);
+        $qr_in_uploads = base_url('assets/uploads/qr/'.$qr_img);
+        $qr_as_path    = base_url($qr_img);
+        $qr_url = (strpos($qr_img, '/') !== false) ? $qr_as_path : $qr_in_uploads;
+        $qr_alt = (strpos($qr_img, '/') !== false) ? $qr_in_uploads : $qr_as_path;
       ?>
       <div style="border:2px solid #1565c0;border-radius:14px;overflow:hidden">
         <div style="background:#0d47a1;padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
@@ -176,6 +179,7 @@ $has_overdue = !empty(array_filter($penalties, fn($p) => $p->status === 'overdue
         <div style="padding:14px 12px 10px;background:linear-gradient(135deg,#e8f5e9,#e3f2fd);text-align:center">
           <div style="background:#fff;border-radius:12px;padding:10px;display:inline-block;box-shadow:0 2px 10px rgba(0,0,0,.12)">
             <img src="<?= htmlspecialchars($qr_url) ?>"
+                 onerror="this.onerror=null;this.src='<?= htmlspecialchars($qr_alt) ?>'"
                  alt="QR PromptPay" style="width:170px;height:170px;object-fit:contain;display:block"/>
           </div>
           <p style="color:#1565c0;font-size:12px;margin:8px 0 2px;font-weight:600">สแกน QR เพื่อโอนชำระค่าปรับ</p>

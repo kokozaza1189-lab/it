@@ -56,7 +56,7 @@ foreach ($students as $s) {
 <div class="flex items-center gap-2 mb-4">
   <span class="text-xs text-slate-400 font-medium">ปีการศึกษา:</span>
   <?php foreach ($years as $y): ?>
-  <a href="<?= base_url('payment/all?year='.$y.'&search='.urlencode($search)) ?>"
+  <a :href="'<?= base_url('payment/all?year='.$y.'&search='.urlencode($search)) ?>' + (activeTab==='penalty' ? '&tab=penalty' : '')"
      class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
      style="<?= $y == $year
        ? 'background:#1d4ed8;color:#fff;border-color:#1d4ed8'
@@ -186,7 +186,10 @@ foreach ($students as $s) {
   <?php if (!empty($settings['qr_image'])):
     $qr_img = $settings['qr_image'];
     // qr_image may be a bare filename (uploaded via Settings) or a full path (e.g. assets/img/x.jpg)
-    $qr_url = (strpos($qr_img, '/') !== false) ? base_url($qr_img) : base_url('assets/uploads/qr/'.$qr_img);
+    $qr_in_uploads = base_url('assets/uploads/qr/'.$qr_img);
+    $qr_as_path    = base_url($qr_img);
+    $qr_url = (strpos($qr_img, '/') !== false) ? $qr_as_path : $qr_in_uploads;   // primary guess
+    $qr_alt = (strpos($qr_img, '/') !== false) ? $qr_in_uploads : $qr_as_path;   // fallback
   ?>
   <div class="card mb-4" style="padding:0;overflow:hidden;border:2px solid #1565c0">
     <div style="background:#0d47a1;padding:10px 20px;display:flex;align-items:center;justify-content:space-between">
@@ -196,7 +199,8 @@ foreach ($students as $s) {
     <div style="padding:16px 20px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#e8f5e9,#e3f2fd)">
       <div style="background:white;border-radius:12px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,.12);flex-shrink:0">
         <img src="<?= htmlspecialchars($qr_url) ?>"
-             alt="QR PromptPay" style="width:110px;height:110px;object-fit:contain;display:block"/>
+             onerror="this.onerror=null;this.src='<?= htmlspecialchars($qr_alt) ?>'"
+             alt="QR PromptPay" style="width:130px;height:130px;object-fit:contain;display:block"/>
       </div>
       <div>
         <p style="color:#1565c0;font-weight:600;font-size:12px;margin-bottom:4px">สแกน QR เพื่อชำระค่าปรับ</p>
