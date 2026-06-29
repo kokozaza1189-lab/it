@@ -114,6 +114,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $secret === DEPLOY_SECRET) {
         }
     }
 
+    // Self-update deploy.php first so it always has the latest file list
+    $self_content = @file_get_contents(GITHUB_RAW . 'deploy.php');
+    if ($self_content !== false) {
+        file_put_contents(__FILE__, $self_content);
+        $results[] = '🔄 deploy.php self-updated';
+        $ok++;
+    }
+
     // Deploy to main app
     foreach ($files as $file) {
         $url = GITHUB_RAW . $file;
