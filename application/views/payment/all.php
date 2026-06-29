@@ -182,6 +182,32 @@ foreach ($students as $s) {
 }
 ?>
 <div v-show="activeTab==='penalty'" style="display:none">
+  <!-- QR PromptPay — รับชำระค่าปรับ -->
+  <?php if (!empty($settings['qr_image'])): ?>
+  <div class="card mb-4" style="padding:0;overflow:hidden;border:2px solid #1565c0">
+    <div style="background:#0d47a1;padding:10px 20px;display:flex;align-items:center;justify-content:space-between">
+      <span style="color:white;font-weight:700;font-size:14px;letter-spacing:.5px">🔲 THAI QR PAYMENT</span>
+      <span style="background:white;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:#0d47a1">PromptPay</span>
+    </div>
+    <div style="padding:16px 20px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#e8f5e9,#e3f2fd)">
+      <div style="background:white;border-radius:12px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,.12);flex-shrink:0">
+        <img src="<?= base_url('assets/uploads/qr/'.$settings['qr_image']) ?>"
+             alt="QR PromptPay" style="width:110px;height:110px;object-fit:contain;display:block"/>
+      </div>
+      <div>
+        <p style="color:#1565c0;font-weight:600;font-size:12px;margin-bottom:4px">สแกน QR เพื่อชำระค่าปรับ</p>
+        <?php if (!empty($settings['bank_name'])): ?>
+        <p style="font-weight:700;color:#0d47a1;font-size:16px;margin:0"><?= htmlspecialchars($settings['bank_name']) ?></p>
+        <?php endif; ?>
+        <?php if (!empty($settings['bank_account'])): ?>
+        <p style="color:#546e7a;font-size:13px;margin:2px 0 0;font-family:monospace"><?= htmlspecialchars($settings['bank_account']) ?></p>
+        <?php endif; ?>
+        <p style="color:#90a4ae;font-size:11px;margin-top:6px">รับเงินได้จากทุกธนาคาร · Accepts all banks</p>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
+
   <?php if (empty($penalty_rows)): ?>
   <div class="card text-center py-12">
     <p class="text-4xl mb-2">✅</p>
