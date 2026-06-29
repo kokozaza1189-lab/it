@@ -13,12 +13,16 @@ class Penalty extends MY_Controller {
         $years = $this->Payment_model->get_available_years($this->acad_year);
         $year  = (int)($this->input->get('year') ?: $this->acad_year);
         if (!in_array($year, $years)) $year = $years[0];
+        $this->_student_view($year, $years);
+    }
 
-        if ($this->can('view_all')) {
-            $this->_all_view($year, $years);
-        } else {
-            $this->_student_view($year, $years);
-        }
+    public function overview() {
+        $this->require_login();
+        if (!$this->can('view_all')) show_404();
+        $years = $this->Payment_model->get_available_years($this->acad_year);
+        $year  = (int)($this->input->get('year') ?: $this->acad_year);
+        if (!in_array($year, $years)) $year = $years[0];
+        $this->_all_view($year, $years);
     }
 
     // ─── Student: own penalties ───────────────────────────────────────
