@@ -137,59 +137,6 @@ class Payment_model extends CI_Model {
         return $result;
     }
 
-    // Get overdue/pending records grouped by student (for penalty overview)
-    public function get_penalty_cases($year, $status = 'overdue', $search = '') {
-        $q = $this->db
-            ->select('pr.id, pr.student_id, s.name, pr.month, pr.amount, pr.penalty, pr.status, pr.slip_file, pr.paid_date')
-            ->from('payment_records pr')
-            ->join('students s', 'pr.student_id = s.student_id')
-            ->where('pr.year', $year)
-            ->where('pr.status', $status);
-        if ($search) {
-            $q->group_start()
-              ->like('s.name', $search)
-              ->or_like('pr.student_id', $search)
-              ->group_end();
-        }
-        $rows = $q->order_by('s.name')->order_by('pr.month')->get()->result();
-        // Group by student
-        $grouped = [];
-        foreach ($rows as $r) {
-            if (!isset($grouped[$r->student_id])) {
-                $grouped[$r->student_id] = (object)[
-                    'student_id' => $r->student_id,
-                    'name'       => $r->name,
-                    'records'    => [],
-                    'total_fee'  => 0,
-                    'total_pen'  => 0,
-                ];
-            }
-            $grouped[$r->student_id]->records[] = $r;
-            $grouped[$r->student_id]->total_fee += (float)$r->amount;
-            $grouped[$r->student_id]->total_pen += (float)$r->penalty;
-        }
-        return array_values($grouped);
-    }
-
-    // Summary totals for penalty overview header
-    public function get_penalty_totals($year) {
-        $ov = $this->db->select_sum('amount')->select_sum('penalty')
-            ->where('year', $year)->where('status', 'overdue')
-            ->get('payment_records')->row();
-        $pending = $this->db->where('year', $year)->where('status', 'pending')
-            ->count_all_results('payment_records');
-        $stu = $this->db->query(
-            "SELECT COUNT(DISTINCT student_id) AS cnt FROM payment_records WHERE year=? AND status IN ('overdue','pending')",
-            [$year]
-        )->row();
-        return [
-            'total_fee'     => $ov ? (float)$ov->amount   : 0,
-            'total_penalty' => $ov ? (float)$ov->penalty  : 0,
-            'pending_count' => (int)$pending,
-            'students'      => $stu ? (int)$stu->cnt : 0,
-        ];
-    }
-
     /**
      * Return all distinct years that have payment records,
      * always including $default_year even if empty.

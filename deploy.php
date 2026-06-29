@@ -39,7 +39,6 @@ $files = [
     'application/views/fund/index.php',
     'application/views/notifications/index.php',
     'application/views/pay/index.php',
-    'application/views/penalty/all.php',
     'application/views/penalty/index.php',
     'application/views/payment/all.php',
     'application/views/payment/index.php',

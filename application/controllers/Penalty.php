@@ -10,15 +10,15 @@ class Penalty extends MY_Controller {
 
     public function index() {
         $this->require_login();
+        // Staff/admin inspect penalties via the "ค่าปรับ" tab on ภาพรวมการชำระ (payment/all).
+        if ($this->can('view_all')) {
+            redirect('payment/all');
+            return;
+        }
         $years = $this->Payment_model->get_available_years($this->acad_year);
         $year  = (int)($this->input->get('year') ?: $this->acad_year);
         if (!in_array($year, $years)) $year = $years[0];
-
-        if ($this->can('view_all')) {
-            $this->_all_view($year, $years);
-        } else {
-            $this->_student_view($year, $years);
-        }
+        $this->_student_view($year, $years);
     }
 
     // ─── Student: own penalties ───────────────────────────────────────
@@ -41,26 +41,6 @@ class Penalty extends MY_Controller {
             'total_due' => $total_due,
             'year'      => $year,
             'years'     => $years,
-        ]);
-    }
-
-    // ─── Staff / Treasurer: all students ─────────────────────────────
-    private function _all_view($year, $years) {
-        $this->require_login();
-        $search  = trim($this->input->get('search') ?: '');
-        $status  = $this->input->get('status') ?: 'overdue';
-
-        $cases   = $this->Payment_model->get_penalty_cases($year, $status, $search);
-        $summary = $this->Payment_model->get_penalty_totals($year);
-
-        $this->render('penalty/all', [
-            'title'   => 'ภาพรวมค่าปรับ',
-            'cases'   => $cases,
-            'summary' => $summary,
-            'year'    => $year,
-            'years'   => $years,
-            'search'  => $search,
-            'status'  => $status,
         ]);
     }
 }
