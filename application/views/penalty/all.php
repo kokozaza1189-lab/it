@@ -6,6 +6,34 @@ $total_outstanding = $summary['total_fee'] + $summary['total_penalty'];
 ?>
 <div id="app">
 
+<!-- QR Payment Info -->
+<?php if (!empty($settings['qr_image'])): ?>
+<div class="card mb-5" style="padding:0;overflow:hidden;border:2px solid #1565c0">
+  <div style="background:#0d47a1;padding:10px 20px;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="color:white;font-weight:700;font-size:14px;letter-spacing:.5px">🔲 THAI QR PAYMENT</span>
+    </div>
+    <span style="background:white;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:#0d47a1">PromptPay</span>
+  </div>
+  <div style="padding:16px 20px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#e8f5e9,#e3f2fd)">
+    <div style="background:white;border-radius:12px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,.12);flex-shrink:0">
+      <img src="<?= base_url('assets/uploads/qr/'.$settings['qr_image']) ?>"
+           alt="QR PromptPay" style="width:110px;height:110px;object-fit:contain;display:block"/>
+    </div>
+    <div>
+      <p style="color:#1565c0;font-weight:600;font-size:12px;margin-bottom:4px">สแกน QR เพื่อรับชำระค่าปรับ</p>
+      <?php if (!empty($settings['bank_name'])): ?>
+      <p style="font-weight:700;color:#0d47a1;font-size:16px;margin:0"><?= htmlspecialchars($settings['bank_name']) ?></p>
+      <?php endif; ?>
+      <?php if (!empty($settings['bank_account'])): ?>
+      <p style="color:#546e7a;font-size:13px;margin:2px 0 0;font-family:monospace"><?= htmlspecialchars($settings['bank_account']) ?></p>
+      <?php endif; ?>
+      <p style="color:#90a4ae;font-size:11px;margin-top:6px">รับเงินได้จากทุกธนาคาร · Accepts all banks</p>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <!-- Stats row -->
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
   <div class="card text-center py-4">
@@ -31,7 +59,7 @@ $total_outstanding = $summary['total_fee'] + $summary['total_penalty'];
 <div class="flex items-center gap-2 mb-4">
   <span class="text-xs text-slate-400 font-medium">ปีการศึกษา:</span>
   <?php foreach ($years as $y): ?>
-  <a href="<?= base_url('penalty').'?view=all&year='.$y.'&status='.urlencode($status) ?>"
+  <a href="<?= base_url('penalty?year='.$y.'&status='.urlencode($status)) ?>"
      class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
      style="<?= $y == $year
        ? 'background:#1d4ed8;color:#fff;border-color:#1d4ed8'
@@ -45,7 +73,6 @@ $total_outstanding = $summary['total_fee'] + $summary['total_penalty'];
 <!-- Filter bar -->
 <div class="card mb-5">
   <form method="GET" action="<?= base_url('penalty') ?>" class="flex flex-wrap gap-3 items-end">
-    <input type="hidden" name="view" value="all"/>
     <div class="flex-1 min-w-0">
       <label class="lbl">ค้นหานิสิต</label>
       <input name="search" value="<?= htmlspecialchars($search) ?>" class="inp"

@@ -14,7 +14,7 @@ class Penalty extends MY_Controller {
         $year  = (int)($this->input->get('year') ?: $this->acad_year);
         if (!in_array($year, $years)) $year = $years[0];
 
-        if ($this->input->get('view') === 'all' && $this->can('view_all')) {
+        if ($this->can('view_all')) {
             $this->_all_view($year, $years);
         } else {
             $this->_student_view($year, $years);
