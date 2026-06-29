@@ -8,27 +8,40 @@ class Penalty extends MY_Controller {
         $this->load->model(['Payment_model','Student_model']);
     }
 
+    // ช่วงทดลอง: รหัสนิสิตทดสอบที่มีค่าปรับ ใช้ให้ super_admin ลองหน้าฝั่งนิสิต
+    const TEST_STUDENT_ID = '6821652155';
+
     public function index() {
         $this->require_login();
-        // Staff/admin inspect penalties via the "ค่าปรับ" tab on ภาพรวมการชำระ (payment/all).
-        if ($this->can('view_all')) {
+        $user = $this->get_user();
+        // Staff/admin inspect penalties via the "ค่าปรับ" tab on ภาพรวมการชำระ.
+        // Exception (ช่วงทดลอง): super_admin may preview the student-side flow.
+        if ($this->can('view_all') && $user['role'] !== 'super_admin') {
             redirect('payment/all?tab=penalty');
             return;
         }
         $years = $this->Payment_model->get_available_years($this->acad_year);
         $year  = (int)($this->input->get('year') ?: $this->acad_year);
         if (!in_array($year, $years)) $year = $years[0];
-        $this->_student_view($year, $years);
+        $this->_student_view($year, $years, $this->_effective_sid($user));
+    }
+
+    // super_admin has no real student_id → fall back to a test student (ช่วงทดลอง)
+    private function _effective_sid($user) {
+        if (preg_match('/^\d{10}$/', (string)$user['student_id'])) return $user['student_id'];
+        if (($user['role'] ?? '') === 'super_admin') return self::TEST_STUDENT_ID;
+        return $user['student_id'];
     }
 
     // ─── Student: pay-a-penalty form (looks like /pay, uses session id) ──
     public function pay($month) {
         $this->require_login();
-        if ($this->can('view_all')) { redirect('payment/all?tab=penalty'); return; }
         $user  = $this->get_user();
+        if ($this->can('view_all') && $user['role'] !== 'super_admin') { redirect('payment/all?tab=penalty'); return; }
+        $sid   = $this->_effective_sid($user);
         $month = (int)$month;
         $year  = (int)($this->input->get('year') ?: $this->acad_year);
-        $rec   = $this->Payment_model->get_month($user['student_id'], $year, $month);
+        $rec   = $this->Payment_model->get_month($sid, $year, $month);
 
         $fee     = $rec ? (float)$rec->amount  : (($month === 1)
                      ? (float)($this->settings['fee_january'] ?? 35)
@@ -57,13 +70,15 @@ class Penalty extends MY_Controller {
             'is_past_due'  => $is_past_due,
             'days_overdue' => $days_overdue,
             'days_left'    => $days_left,
+            'pay_sid'      => $sid,
         ]);
     }
 
     // ─── Student: own penalties ───────────────────────────────────────
-    private function _student_view($year, $years) {
+    private function _student_view($year, $years, $sid = null) {
         $user    = $this->get_user();
-        $records = $this->Payment_model->get_by_student($user['student_id'], $year);
+        $sid     = $sid ?: $user['student_id'];
+        $records = $this->Payment_model->get_by_student($sid, $year);
 
         $penalties = array_values(array_filter($records,
             fn($r) => in_array($r->status, ['overdue','pending'])

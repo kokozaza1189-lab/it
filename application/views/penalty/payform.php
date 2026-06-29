@@ -168,6 +168,7 @@ createApp({
         fd.append('month', <?= (int)$month ?>)
         fd.append('year',  <?= (int)$year ?>)
         fd.append('slip',  slipFile.value)
+        fd.append('as_sid', '<?= isset($pay_sid) ? $pay_sid : '' ?>')
         await axios.post('<?= base_url('payment/submit') ?>', fd)
         showToast('ส่งหลักฐานการชำระแล้ว รอการตรวจสอบ')
         setTimeout(() => location.href = '<?= base_url('penalty') ?>', 1200)

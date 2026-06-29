@@ -69,20 +69,26 @@ class Payment extends MY_Controller {
         $user  = $this->get_user();
         $month = (int)$this->input->post('month');
         $year  = (int)($this->input->post('year') ?: $this->acad_year);
+        // Normally pay for the logged-in student; ช่วงทดลอง: super_admin may pay for a test student via as_sid
+        $sid   = $user['student_id'];
+        if (empty($sid) && $this->can('view_all')) {
+            $sid = preg_replace('/[^0-9]/', '', (string)$this->input->post('as_sid')) ?: null;
+        }
+        if (!$sid) { $this->json(['success' => false, 'error' => 'ไม่พบรหัสนิสิต'], 400); return; }
         $file  = '';
         if (!empty($_FILES['slip']['name'])) {
             $config = [
                 'upload_path'   => FCPATH . 'assets/uploads/slips/',
                 'allowed_types' => 'jpg|jpeg|png|pdf',
                 'max_size'      => 5120,
-                'file_name'     => 'slip_' . $user['student_id'] . '_' . $year . '_' . $month . '_' . time(),
+                'file_name'     => 'slip_' . $sid . '_' . $year . '_' . $month . '_' . time(),
             ];
             $this->load->library('upload', $config);
             if ($this->upload->do_upload('slip')) {
                 $file = $this->upload->data('file_name');
             }
         }
-        $this->Payment_model->submit_payment($user['student_id'], $year, $month, $file);
+        $this->Payment_model->submit_payment($sid, $year, $month, $file);
         $this->json(['success' => true]);
     }
 
