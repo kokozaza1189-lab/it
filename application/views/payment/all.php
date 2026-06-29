@@ -165,21 +165,32 @@ foreach ($students as $s) {
 
 <!-- Penalty tab -->
 <?php
-$penalty_rows = [];
+$penalty_rows = [];   // one row per (student, overdue month with penalty) — pay separately by month
 foreach ($students as $s) {
-    $total_fee = 0; $total_pen = 0; $months = [];
     foreach ($active_months as $m) {
         $p = $s->payments[$m] ?? null;
         if ($p && $p->status === 'overdue' && (float)$p->penalty > 0) {
-            $total_fee += (float)$p->amount;
-            $total_pen += (float)$p->penalty;
-            $months[]   = $m;
+            $penalty_rows[] = [
+                'name'  => $s->name,
+                'id'    => $s->student_id,
+                'month' => $m,
+                'fee'   => (float)$p->amount,
+                'pen'   => (float)$p->penalty,
+                'rec'   => [   // payload for the openStatus payment form
+                    'id'        => $p->id ?? null,
+                    'month'     => $m,
+                    'student'   => $s->name,
+                    'status'    => $p->status,
+                    'amount'    => (float)$p->amount,
+                    'penalty'   => (float)$p->penalty,
+                    'slip_file' => $p->slip_file ?? null,
+                ],
+            ];
         }
     }
-    if ($total_pen > 0) {
-        $penalty_rows[] = ['name'=>$s->name,'id'=>$s->student_id,'fee'=>$total_fee,'pen'=>$total_pen,'months'=>$months];
-    }
 }
+$penalty_total    = array_sum(array_column($penalty_rows, 'pen'));
+$penalty_students = count(array_unique(array_column($penalty_rows, 'id')));
 ?>
 <div v-show="activeTab==='penalty'" style="display:none">
   <!-- QR PromptPay — รับชำระค่าปรับ -->
@@ -224,16 +235,17 @@ foreach ($students as $s) {
   <?php else: ?>
   <div class="card overflow-hidden mb-4">
     <div class="flex items-center justify-between p-4" style="border-bottom:1px solid #f1f5f9">
-      <h2 class="font-bold text-slate-800">นิสิตที่มีค่าปรับค้าง (<?= count($penalty_rows) ?> คน)</h2>
-      <p class="font-bold text-red-600">รวมค่าปรับ ฿<?= number_format(array_sum(array_column($penalty_rows,'pen')), 2) ?></p>
+      <h2 class="font-bold text-slate-800">รายการค้างค่าปรับ (<?= $penalty_students ?> คน · <?= count($penalty_rows) ?> เดือน)</h2>
+      <p class="font-bold" style="color:#dc2626">รวมค่าปรับ ฿<?= number_format($penalty_total, 2) ?></p>
     </div>
     <div class="overflow-x-auto">
       <table class="tbl">
         <thead><tr>
-          <th>#</th><th>ชื่อ-สกุล</th><th>รหัส</th><th>เดือนที่ค้าง</th>
+          <th>#</th><th>ชื่อ-สกุล</th><th>รหัส</th><th>เดือน</th>
           <th class="text-right">ค่าธรรมเนียม</th>
           <th class="text-right">ค่าปรับ</th>
           <th class="text-right">รวม</th>
+          <th class="text-center">จ่าย</th>
         </tr></thead>
         <tbody>
           <?php foreach ($penalty_rows as $i => $r): ?>
@@ -241,12 +253,14 @@ foreach ($students as $s) {
             <td class="text-slate-400 text-xs"><?= $i+1 ?></td>
             <td class="font-medium text-slate-800"><?= htmlspecialchars($r['name']) ?></td>
             <td class="font-mono text-xs text-slate-500"><?= $r['id'] ?></td>
-            <td class="text-xs text-slate-500">
-              <?= implode(', ', array_map(fn($m) => $th_months[$m], $r['months'])) ?>
+            <td><span style="background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:700;padding:2px 9px;border-radius:6px"><?= $th_months[$r['month']] ?></span></td>
+            <td class="text-right text-sm" style="color:#dc2626;font-weight:600">฿<?= number_format($r['fee'], 2) ?></td>
+            <td class="text-right" style="color:#dc2626;font-weight:700">฿<?= number_format($r['pen'], 2) ?></td>
+            <td class="text-right" style="color:#dc2626;font-weight:800">฿<?= number_format($r['fee']+$r['pen'], 2) ?></td>
+            <td class="text-center">
+              <button class="btn btn-blue" style="padding:4px 14px;font-size:12px"
+                      @click="openStatus(<?= htmlspecialchars(json_encode($r['rec']), ENT_QUOTES) ?>)">💰 จ่าย</button>
             </td>
-            <td class="text-right text-sm">฿<?= number_format($r['fee'], 2) ?></td>
-            <td class="text-right font-bold text-red-500">฿<?= number_format($r['pen'], 2) ?></td>
-            <td class="text-right font-bold text-red-600">฿<?= number_format($r['fee']+$r['pen'], 2) ?></td>
           </tr>
           <?php endforeach; ?>
         </tbody>
@@ -392,7 +406,11 @@ createApp({
         await axios.post('<?= base_url('payment/update_status') ?>', fd)
         showToast('บันทึกสถานะแล้ว')
         statusModal.value = false
-        setTimeout(() => location.reload(), 800)
+        setTimeout(() => {
+          const u = new URL(location.href)
+          if (activeTab.value === 'penalty') u.searchParams.set('tab', 'penalty')
+          location.href = u.toString()
+        }, 800)
       } catch(e) { showToast('เกิดข้อผิดพลาด', false) }
       saving.value = false
     }
