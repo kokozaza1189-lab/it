@@ -31,7 +31,7 @@ $total_outstanding = $summary['total_fee'] + $summary['total_penalty'];
 <div class="flex items-center gap-2 mb-4">
   <span class="text-xs text-slate-400 font-medium">ปีการศึกษา:</span>
   <?php foreach ($years as $y): ?>
-  <a href="<?= base_url('penalty?year='.$y.'&status='.urlencode($status)) ?>"
+  <a href="<?= base_url('penalty').'?view=all&year='.$y.'&status='.urlencode($status) ?>"
      class="px-3 py-1 rounded-full text-xs font-bold border transition-all"
      style="<?= $y == $year
        ? 'background:#1d4ed8;color:#fff;border-color:#1d4ed8'
@@ -45,6 +45,7 @@ $total_outstanding = $summary['total_fee'] + $summary['total_penalty'];
 <!-- Filter bar -->
 <div class="card mb-5">
   <form method="GET" action="<?= base_url('penalty') ?>" class="flex flex-wrap gap-3 items-end">
+    <input type="hidden" name="view" value="all"/>
     <div class="flex-1 min-w-0">
       <label class="lbl">ค้นหานิสิต</label>
       <input name="search" value="<?= htmlspecialchars($search) ?>" class="inp"
