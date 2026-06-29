@@ -14,8 +14,9 @@ class Pay extends CI_Controller {
         $this->load->helper(['url','form']);
     }
 
-    public function index() {
+    public function index($p_stid = null) {
         // Prevent LiteSpeed / proxy caching of this dynamic page
+        header('X-LiteSpeed-Cache-Control: no-cache');   // LiteSpeed-specific (it ignores standard Cache-Control)
         header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         header('Pragma: no-cache');
         header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
@@ -61,7 +62,8 @@ class Pay extends CI_Controller {
         $month_names = [1=>'มกราคม',2=>'กุมภาพันธ์',3=>'มีนาคม',4=>'เมษายน',5=>'พฤษภาคม',6=>'มิถุนายน',
                         7=>'กรกฎาคม',8=>'สิงหาคม',9=>'กันยายน',10=>'ตุลาคม',11=>'พฤศจิกายน',12=>'ธันวาคม'];
         // Optional ?sid= to pre-fill the student id (e.g. coming from the in-app penalty page)
-        $prefill_sid = preg_replace('/[^0-9]/', '', (string)$this->input->get('stid'));
+        // student id comes via PATH (/pay/id/<sid>); fall back to query for compatibility
+        $prefill_sid = preg_replace('/[^0-9]/', '', (string)($p_stid !== null ? $p_stid : $this->input->get('stid')));
         $this->load->view('pay/index', [
             'title'           => 'ฟอร์มชำระเงิน — สาขา IT',
             'prefill_sid'     => $prefill_sid,

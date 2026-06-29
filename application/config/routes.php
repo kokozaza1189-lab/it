@@ -126,6 +126,7 @@ $route['reports']                    = 'reports/index';
 
 // Standalone public payment form (no login)
 $route['pay']                      = 'pay/index';
+$route['pay/id/(:num)']            = 'pay/index/$1';   // prefill student id via PATH (host drops unknown query params)
 $route['pay/lookup']               = 'pay/lookup';
 $route['pay/submit']               = 'pay/submit';
 

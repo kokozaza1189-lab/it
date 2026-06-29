@@ -100,7 +100,7 @@ $has_overdue = !empty(array_filter($penalties, fn($p) => $p->status === 'overdue
   <!-- Action -->
   <?php if ($is_overdue): ?>
   <a class="btn btn-blue w-full text-base py-3" style="display:block;text-align:center;text-decoration:none"
-     href="<?= base_url('pay?month='.(int)$p->month.'&year='.(int)$year.'&stid='.urlencode($current_user['student_id'] ?? '')) ?>">
+     href="<?= base_url('pay/id/'.urlencode($current_user['student_id'] ?? '').'?month='.(int)$p->month.'&year='.(int)$year) ?>">
     💳 ชำระค่าปรับเดือนนี้ &nbsp; ฿<?= number_format($total_bill, 2) ?>
   </a>
   <?php else: ?>
