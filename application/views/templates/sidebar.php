@@ -61,6 +61,22 @@ $menus = [
    'url'=>base_url('profile')],
 ];
 $current_page = uri_string();
+$active_tab   = isset($_GET['tab']) ? $_GET['tab'] : '';
+// Resolve ONE active menu key: longest-prefix match, with penalty-tab override
+// (prevents e.g. "payment" lighting up while on "payment/all", and lights up
+//  "ค่าปรับ" when viewing the penalty tab of payment/all).
+$active_key = '';
+if ($current_page === 'payment/all' && $active_tab === 'penalty') {
+    $active_key = 'penalty';
+} else {
+    foreach ($menus as $mm) {
+        if (!isset($mm['key'])) continue;
+        $k = $mm['key'];
+        if (($current_page === $k || strpos($current_page, $k.'/') === 0) && strlen($k) > strlen($active_key)) {
+            $active_key = $k;
+        }
+    }
+}
 ?>
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
@@ -96,7 +112,7 @@ $current_page = uri_string();
         <?php endif;
       elseif (in_array($role, $m['roles'])): ?>
         <a href="<?= $m['url'] ?>"
-           class="nav-item <?= (strpos($current_page, $m['key']) === 0) ? 'active' : '' ?>">
+           class="nav-item <?= ($m['key'] === $active_key) ? 'active' : '' ?>">
           <span class="nav-icon"><?= $m['icon'] ?></span>
           <span class="nav-label"><?= $m['label'] ?></span>
         </a>

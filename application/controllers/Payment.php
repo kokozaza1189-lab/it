@@ -52,8 +52,9 @@ class Payment extends MY_Controller {
             );
         }
         $stats = $this->Payment_model->get_stats($year);
+        $tab   = $this->input->get('tab');
         $this->render('payment/all', [
-            'title'         => 'ภาพรวมการชำระเงิน',
+            'title'         => ($tab === 'penalty') ? 'ค่าปรับ' : 'ภาพรวมการชำระเงิน',
             'year'          => $year,
             'years'         => $years,
             'students'      => array_values($students),
