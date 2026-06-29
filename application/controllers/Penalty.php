@@ -23,7 +23,15 @@ class Penalty extends MY_Controller {
         $years = $this->Payment_model->get_available_years($this->acad_year);
         $year  = (int)($this->input->get('year') ?: $this->acad_year);
         if (!in_array($year, $years)) $year = $years[0];
-        $this->_student_view($year, $years, $this->_effective_sid($user));
+        $sid = $this->_effective_sid($user);
+        // ช่วงทดลอง: ถ้า super_admin ใช้รหัสทดสอบ ให้เด้งไปปีที่มีค่าปรับจริง (เมื่อยังไม่ได้เลือกปีเอง)
+        if (($user['role'] ?? '') === 'super_admin' && !$this->input->get('year')) {
+            foreach ($years as $y) {
+                $recs = $this->Payment_model->get_by_student($sid, $y);
+                if (array_filter($recs, fn($r) => in_array($r->status, ['overdue','pending']))) { $year = $y; break; }
+            }
+        }
+        $this->_student_view($year, $years, $sid);
     }
 
     // super_admin has no real student_id → fall back to a test student (ช่วงทดลอง)
