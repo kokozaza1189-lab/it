@@ -118,6 +118,10 @@ $route['admin/delete_user']          = 'admin/delete_user';
 $route['profile']                    = 'profile/index';
 $route['profile/change_password']    = 'profile/change_password';
 
+// Penalty
+$route['penalty']                    = 'penalty/index';
+$route['penalty/all']                = 'penalty/all';
+
 // Reports
 $route['reports']                    = 'reports/index';
 
