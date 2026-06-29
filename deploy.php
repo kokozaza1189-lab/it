@@ -15,6 +15,7 @@ $files = [
     'application/controllers/Fund.php',
     'application/controllers/Notifications.php',
     'application/controllers/Pay.php',
+    'application/controllers/Penalty.php',
     'application/controllers/Payment.php',
     'application/controllers/Profile.php',
     'application/controllers/Reports.php',
