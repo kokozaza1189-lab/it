@@ -12,7 +12,7 @@ class Penalty extends MY_Controller {
         $this->require_login();
         // Staff/admin inspect penalties via the "ค่าปรับ" tab on ภาพรวมการชำระ (payment/all).
         if ($this->can('view_all')) {
-            redirect('payment/all');
+            redirect('payment/all?tab=penalty');
             return;
         }
         $years = $this->Payment_model->get_available_years($this->acad_year);
