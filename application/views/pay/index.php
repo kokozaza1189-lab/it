@@ -157,38 +157,6 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
     </div>
     <?php endif; ?>
 
-    <!-- QR Code -->
-    <?php if (!empty($settings['qr_image'])): ?>
-    <div class="gf-card" style="padding:0;overflow:hidden;border:2px solid #1565c0">
-      <!-- Navy header bar -->
-      <div style="background:#0d47a1;padding:10px 20px;display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:10px">
-          <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="8" fill="white"/><path d="M6 6h8v8H6zm0 10h8v8H6zm10-10h8v8h-8zm10 0h8v8h-8zm0 10h8v8h-8zm-10 10h8v8h-8zm10 0h8v8h-8z" fill="#0d47a1" opacity=".4"/><rect x="16" y="16" width="8" height="8" fill="#0d47a1"/></svg>
-          <div>
-            <p style="color:white;font-weight:700;font-size:14px;letter-spacing:.5px;line-height:1.1">THAI QR PAYMENT</p>
-          </div>
-        </div>
-        <!-- PromptPay text badge -->
-        <div style="background:white;border-radius:6px;padding:3px 10px">
-          <p style="color:#0d47a1;font-weight:700;font-size:11px;letter-spacing:.5px">PromptPay</p>
-        </div>
-      </div>
-      <!-- QR image body -->
-      <div style="padding:20px 16px 16px;background:linear-gradient(145deg,#e8f5e9,#e3f2fd,#ede7f6);text-align:center">
-        <div style="background:white;border-radius:14px;padding:14px;display:inline-block;box-shadow:0 2px 12px rgba(0,0,0,.12)">
-          <img src="<?= htmlspecialchars(base_url('assets/uploads/qr/' . $settings['qr_image'])) ?>"
-               alt="QR PromptPay"
-               onerror="this.src='<?= htmlspecialchars($settings['qr_image']) ?>'"
-               style="width:100%;max-width:280px;height:auto;object-fit:contain;display:block"/>
-        </div>
-        <p style="color:#1565c0;font-weight:600;font-size:12px;margin-top:14px">สแกน QR เพื่อโอนเข้าบัญชี</p>
-        <p style="font-weight:700;font-size:17px;color:#1a237e;margin-top:6px"><?= htmlspecialchars($settings['bank_name'] ?? '') ?></p>
-        <p style="color:#546e7a;font-size:13px;margin-top:3px;letter-spacing:.5px"><?= htmlspecialchars($settings['bank_account'] ?? '') ?></p>
-        <p style="color:#90a4ae;font-size:11px;margin-top:6px">รับเงินได้จากทุกธนาคาร · Accepts all banks</p>
-      </div>
-    </div>
-    <?php endif; ?>
-
     <!-- Header card -->
     <?php $display_year = $year; // Always show the academic year as-is ?>
     <div class="gf-card" style="border-top:10px solid #673ab7">
@@ -299,6 +267,37 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         </span>
       </div>
     </div>
+
+    <!-- QR Code — shown after total amount summary -->
+    <?php if (!empty($settings['qr_image'])): ?>
+    <div class="gf-card" style="padding:0;overflow:hidden;border:2px solid #1565c0">
+      <!-- Navy header bar -->
+      <div style="background:#0d47a1;padding:10px 20px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="8" fill="white"/><path d="M6 6h8v8H6zm0 10h8v8H6zm10-10h8v8h-8zm10 0h8v8h-8zm0 10h8v8h-8zm-10 10h8v8h-8zm10 0h8v8h-8z" fill="#0d47a1" opacity=".4"/><rect x="16" y="16" width="8" height="8" fill="#0d47a1"/></svg>
+          <div>
+            <p style="color:white;font-weight:700;font-size:14px;letter-spacing:.5px;line-height:1.1">THAI QR PAYMENT</p>
+          </div>
+        </div>
+        <div style="background:white;border-radius:6px;padding:3px 10px">
+          <p style="color:#0d47a1;font-weight:700;font-size:11px;letter-spacing:.5px">PromptPay</p>
+        </div>
+      </div>
+      <!-- QR image body -->
+      <div style="padding:20px 16px 16px;background:linear-gradient(145deg,#e8f5e9,#e3f2fd,#ede7f6);text-align:center">
+        <div style="background:white;border-radius:14px;padding:14px;display:inline-block;box-shadow:0 2px 12px rgba(0,0,0,.12)">
+          <img src="<?= htmlspecialchars(base_url('assets/uploads/qr/' . $settings['qr_image'])) ?>"
+               alt="QR PromptPay"
+               onerror="this.src='<?= htmlspecialchars($settings['qr_image']) ?>'"
+               style="width:100%;max-width:280px;height:auto;object-fit:contain;display:block"/>
+        </div>
+        <p style="color:#1565c0;font-weight:600;font-size:12px;margin-top:14px">สแกน QR เพื่อโอนเข้าบัญชี</p>
+        <p style="font-weight:700;font-size:17px;color:#1a237e;margin-top:6px"><?= htmlspecialchars($settings['bank_name'] ?? '') ?></p>
+        <p style="color:#546e7a;font-size:13px;margin-top:3px;letter-spacing:.5px"><?= htmlspecialchars($settings['bank_account'] ?? '') ?></p>
+        <p style="color:#90a4ae;font-size:11px;margin-top:6px">รับเงินได้จากทุกธนาคาร · Accepts all banks</p>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Slip upload -->
     <div class="gf-card">
