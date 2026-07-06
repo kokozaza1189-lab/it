@@ -88,6 +88,27 @@ class Payment extends MY_Controller {
         ]);
     }
 
+    // Central slip-review queue: every 'pending' payment (slip submitted, awaiting confirmation)
+    public function pending() {
+        $this->require_login();
+        if (in_array($this->session->userdata('role'), ['student','activity_staff','academic_staff'])) {
+            redirect('payment');
+            return;
+        }
+        header('X-LiteSpeed-Cache-Control: no-cache');
+        $rows = $this->db
+            ->select('pr.id, pr.student_id, s.name, pr.year, pr.month, pr.amount, pr.penalty, pr.slip_file, pr.updated_at')
+            ->from('payment_records pr')
+            ->join('students s', 'pr.student_id = s.student_id')
+            ->where('pr.status', 'pending')
+            ->order_by('pr.updated_at', 'DESC')
+            ->get()->result();
+        $this->render('payment/pending', [
+            'title' => 'รอตรวจสอบสลิป',
+            'rows'  => $rows,
+        ]);
+    }
+
     public function submit() {
         $this->require_login();
         $user  = $this->get_user();

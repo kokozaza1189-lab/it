@@ -65,6 +65,7 @@ $route['dashboard']                = 'dashboard/index';
 $route['payment']                  = 'payment/index';
 $route['payment/all']              = 'payment/all';
 $route['payment/penalty']          = 'payment/all/penalty';   // penalty overview via clean path (host drops ?tab)
+$route['payment/pending']          = 'payment/pending';        // central slip-review queue
 $route['payment/submit']           = 'payment/submit';
 $route['payment/update_status']    = 'payment/update_status';
 
