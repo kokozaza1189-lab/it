@@ -130,7 +130,50 @@ class Payment extends MY_Controller {
             }
         }
         $this->Payment_model->submit_payment($sid, $year, $month, $file);
-        $this->json(['success' => true]);
+
+        // AUTO slip verification via SlipOK — if the slip is a real transfer of the
+        // right amount to our account, mark it paid immediately; otherwise it stays
+        // 'pending' and lands in the /payment/pending review queue.
+        $auto = 'pending';
+        if ($file) {
+            $rec = $this->Payment_model->get_month($sid, $year, $month);
+            $expected = $rec ? ((float)$rec->amount + (float)$rec->penalty) : $this->fee_for_month($month);
+            if ($expected <= 0) $expected = $this->fee_for_month($month);
+            $v = $this->_slipok_verify(FCPATH . 'assets/uploads/slips/' . $file);
+            if ($v['verified'] && $rec && ($v['amount'] + 0.01) >= $expected) {
+                $this->Payment_model->update_status($rec->id, 'paid', date('Y-m-d'), 0, null);
+                $auto = 'paid';
+            }
+        }
+        $this->json(['success' => true, 'auto' => $auto]);
+    }
+
+    // Verify a payment slip with SlipOK (returns ['verified'=>bool,'amount'=>float,...]).
+    // Reads the real transfer amount + confirms it went to our registered account.
+    private function _slipok_verify($local_path) {
+        $key    = $this->settings['slipok_api_key']   ?? '';
+        $branch = $this->settings['slipok_branch_id'] ?? '';
+        if (!$key || !$branch || !is_file($local_path) || !function_exists('curl_init')) {
+            return ['verified' => false, 'message' => 'no_config_or_file'];
+        }
+        $ch = curl_init('https://api.slipok.com/api/line/apikey/' . $branch);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_TIMEOUT        => 25,
+            CURLOPT_HTTPHEADER     => ['x-authorization: ' . $key],
+            CURLOPT_POSTFIELDS     => ['files' => new CURLFile($local_path), 'log' => 'true'],
+        ]);
+        $resp = curl_exec($ch);
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        $j = json_decode($resp, true) ?: [];
+        $d = isset($j['data']) && is_array($j['data']) ? $j['data'] : $j;
+        $amount = isset($d['amount']) ? (float)$d['amount'] : (isset($d['paidLocalAmount']) ? (float)$d['paidLocalAmount'] : 0);
+        if ($http == 200 && !empty($j['success']) && $amount > 0) {
+            return ['verified' => true, 'amount' => $amount, 'transRef' => $d['transRef'] ?? ''];
+        }
+        return ['verified' => false, 'amount' => $amount, 'message' => ($j['message'] ?? ('http ' . $http))];
     }
 
     public function update_status() {
