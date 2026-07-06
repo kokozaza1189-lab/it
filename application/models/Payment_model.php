@@ -84,11 +84,13 @@ class Payment_model extends CI_Model {
     // Recalculate penalty for overdue records (days past due_day)
     public function recalc_penalties($year, $month, $daily_penalty, $due_day) {
         // Room-fee collection uses the BE calendar year directly (e.g. year 2569 = CE 2026)
-        $ce_year    = $year - 543;
-        $due_date   = mktime(0, 0, 0, $month, $due_day, $ce_year);
-        $today      = time();
-        $days_overdue = max(0, (int)(($today - $due_date) / 86400));
-        $penalty    = round($days_overdue * $daily_penalty, 2);
+        $ce_year      = $year - 543;
+        $due_date     = mktime(0, 0, 0, $month, $due_day, $ce_year);
+        // Penalty stops growing at the end of the month (cap) — next month is a fresh charge
+        $end_of_month = mktime(0, 0, 0, $month + 1, 1, $ce_year) - 86400;
+        $cap          = min(time(), $end_of_month);
+        $days_overdue = max(0, (int)(($cap - $due_date) / 86400));
+        $penalty      = round($days_overdue * $daily_penalty, 2);
         $this->db->where('year', $year)
             ->where('month', $month)
             ->where('status', 'overdue')
