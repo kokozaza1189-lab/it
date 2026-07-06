@@ -151,11 +151,11 @@ foreach ($students as $s) {
 
 <!-- Penalty tab -->
 <?php
-$penalty_rows = [];   // one row per (student, overdue month with penalty) — pay separately by month
+$penalty_rows = [];   // one row per (student, overdue month) — includes fee-overdue even before a penalty accrues
 foreach ($students as $s) {
     foreach ($active_months as $m) {
         $p = $s->payments[$m] ?? null;
-        if ($p && $p->status === 'overdue' && (float)$p->penalty > 0) {
+        if ($p && $p->status === 'overdue') {
             $penalty_rows[] = [
                 'name'  => $s->name,
                 'id'    => $s->student_id,
@@ -176,19 +176,20 @@ foreach ($students as $s) {
     }
 }
 $penalty_total    = array_sum(array_column($penalty_rows, 'pen'));
+$owed_total       = array_sum(array_map(fn($r) => $r['fee'] + $r['pen'], $penalty_rows));
 $penalty_students = count(array_unique(array_column($penalty_rows, 'id')));
 ?>
 <div v-show="activeTab==='penalty'" style="display:none">
   <?php if (empty($penalty_rows)): ?>
   <div class="card text-center py-12">
     <p class="text-4xl mb-2">✅</p>
-    <p class="text-slate-500 font-medium">ไม่มีนิสิตที่มีค่าปรับค้างชำระ</p>
+    <p class="text-slate-500 font-medium">ไม่มีนิสิตค้างชำระ</p>
   </div>
   <?php else: ?>
   <div class="card overflow-hidden mb-4">
     <div class="flex items-center justify-between p-4" style="border-bottom:1px solid #f1f5f9">
-      <h2 class="font-bold text-slate-800">รายการค้างค่าปรับ (<?= $penalty_students ?> คน · <?= count($penalty_rows) ?> เดือน)</h2>
-      <p class="font-bold" style="color:#dc2626">รวมค่าปรับ ฿<?= number_format($penalty_total, 2) ?></p>
+      <h2 class="font-bold text-slate-800">รายการค้างชำระ (<?= $penalty_students ?> คน · <?= count($penalty_rows) ?> รายการ)</h2>
+      <p class="font-bold" style="color:#dc2626">รวมที่ต้องเก็บ ฿<?= number_format($owed_total, 2) ?><?php if ($penalty_total > 0): ?> <span style="font-size:12px;font-weight:500">(ค่าปรับ ฿<?= number_format($penalty_total, 0) ?>)</span><?php endif; ?></p>
     </div>
     <div class="overflow-x-auto">
       <table class="tbl" style="width:100%">
@@ -223,7 +224,7 @@ $penalty_students = count(array_unique(array_column($penalty_rows, 'id')));
             <?php endif; ?>
             <td style="text-align:center"><span style="background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:700;padding:2px 9px;border-radius:6px"><?= $th_months[$r['month']] ?></span></td>
             <td style="text-align:right;color:#dc2626;font-weight:600;font-size:13px">฿<?= number_format($r['fee'], 2) ?></td>
-            <td style="text-align:right;color:#dc2626;font-weight:700">฿<?= number_format($r['pen'], 2) ?></td>
+            <td style="text-align:right;<?= $r['pen'] > 0 ? 'color:#dc2626;font-weight:700' : 'color:#94a3b8' ?>"><?= $r['pen'] > 0 ? '฿'.number_format($r['pen'], 2) : '—' ?></td>
             <td style="text-align:right;color:#dc2626;font-weight:800">฿<?= number_format($r['fee']+$r['pen'], 2) ?></td>
             <td style="text-align:center">
               <button class="btn btn-blue" style="padding:4px 14px;font-size:12px"
