@@ -4,11 +4,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Fund_model extends CI_Model {
 
     public function get_ledger() {
-        return $this->db->order_by('id', 'DESC')->get('fund_ledger')->result();
+        // chronological order (entries may be added out of id order); id breaks ties
+        return $this->db->order_by('txn_date', 'DESC')->order_by('id', 'DESC')->get('fund_ledger')->result();
     }
 
     public function get_balance() {
-        $row = $this->db->select('balance')->order_by('id','DESC')->limit(1)->get('fund_ledger')->row();
+        $row = $this->db->select('balance')->order_by('txn_date','DESC')->order_by('id','DESC')->limit(1)->get('fund_ledger')->row();
         return $row ? (float)$row->balance : 0;
     }
 
@@ -24,7 +25,7 @@ class Fund_model extends CI_Model {
 
     // Recalculate running balance for all entries in chronological order
     public function recalc_balances() {
-        $entries = $this->db->order_by('id','ASC')->get('fund_ledger')->result();
+        $entries = $this->db->order_by('txn_date','ASC')->order_by('id','ASC')->get('fund_ledger')->result();
         $bal = 0;
         foreach ($entries as $e) {
             $bal += (float)$e->income - (float)$e->expense;
