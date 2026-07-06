@@ -99,7 +99,7 @@ class Payment extends MY_Controller {
     }
 
     public function update_status() {
-        $this->require_role(['treasurer','super_admin']);
+        $this->require_role(['treasurer','head_it','super_admin']);
         $id      = (int)$this->input->post('id');
         $status  = $this->input->post('status');
         $date    = $this->input->post('paid_date') ?: null;

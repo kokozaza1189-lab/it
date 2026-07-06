@@ -372,7 +372,13 @@ createApp({
         fd.append('amount',    editData.amount || 0)
         fd.append('penalty',   editData.penalty || 0)
         fd.append('paid_date', editData.paid_date || '')
-        await axios.post('<?= base_url('payment/update_status') ?>', fd)
+        const res = await axios.post('<?= base_url('payment/update_status') ?>', fd)
+        // update_status returns JSON {success:true}; anything else = session/permission problem
+        if (!res.data || res.data.success !== true) {
+          showToast('บันทึกไม่สำเร็จ — กรุณาล็อกอินใหม่แล้วลองอีกครั้ง', false)
+          saving.value = false
+          return
+        }
         showToast('บันทึกสถานะแล้ว')
         statusModal.value = false
         setTimeout(() => {
@@ -380,7 +386,7 @@ createApp({
           if (activeTab.value === 'penalty') u.searchParams.set('tab', 'penalty')
           location.href = u.toString()
         }, 800)
-      } catch(e) { showToast('เกิดข้อผิดพลาด', false) }
+      } catch(e) { showToast('เกิดข้อผิดพลาด: ' + (e.response?.status || e.message), false) }
       saving.value = false
     }
 
