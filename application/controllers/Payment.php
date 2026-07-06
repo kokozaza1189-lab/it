@@ -51,6 +51,20 @@ class Payment extends MY_Controller {
             $active = $setting_months;
         }
 
+        // AUTO: keep the CURRENT month's penalty up to date on every overview load.
+        // Only the current calendar month of the current academic year is recalculated
+        // (recalc_penalties touches only 'overdue' rows), so past months' settled penalties stay intact.
+        if ($year == $this->acad_year) {
+            $cur_month = (int)date('n');
+            if (in_array($cur_month, $active)) {
+                $this->Payment_model->recalc_penalties(
+                    $year, $cur_month,
+                    (float)($this->settings['penalty_per_day'] ?? 5),
+                    (int)($this->settings['due_day'] ?? 8)
+                );
+            }
+        }
+
         $students = $this->Student_model->get_with_payments($year, $active);
         if ($search) {
             $students = array_filter($students, fn($s) =>
