@@ -168,9 +168,11 @@ createApp({
         fd.append('month', <?= (int)$month ?>)
         fd.append('year',  <?= (int)$year ?>)
         fd.append('slip',  slipFile.value)
-        await axios.post('<?= base_url('payment/submit') ?>', fd)
-        showToast('ส่งหลักฐานการชำระแล้ว รอการตรวจสอบ')
-        setTimeout(() => location.href = '<?= base_url('penalty') ?>', 1200)
+        const res = await axios.post('<?= base_url('payment/submit') ?>', fd)
+        showToast(res.data && res.data.auto === 'paid'
+          ? '✅ ชำระค่าปรับสำเร็จ! ระบบตรวจสลิปอัตโนมัติแล้ว'
+          : 'ส่งสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ')
+        setTimeout(() => location.href = '<?= base_url('penalty') ?>', 1500)
       } catch (e) { showToast('เกิดข้อผิดพลาด', false); submitting.value = false }
     }
     return { slipFile, slipName, submitting, onSlip, submitPayment }
