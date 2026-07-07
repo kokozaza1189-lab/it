@@ -88,26 +88,35 @@ class Payment extends MY_Controller {
         ]);
     }
 
-    // Central slip-review queue: every 'pending' payment (slip submitted, awaiting confirmation)
-    public function pending() {
+    // Slip queue. Default: only 'pending' slips awaiting manual review.
+    // /payment/pending/all : every slip ever submitted (incl. auto-approved 'paid'),
+    // so admins can see the full history, not just the manual-review backlog.
+    public function pending($mode = null) {
         $this->require_login();
         if (in_array($this->session->userdata('role'), ['student','activity_staff','academic_staff'])) {
             redirect('payment');
             return;
         }
         header('X-LiteSpeed-Cache-Control: no-cache');
-        $rows = $this->db
-            ->select('pr.id, pr.student_id, s.name, pr.year, pr.month, pr.amount, pr.penalty, pr.slip_file, pr.updated_at')
+        $show_all = ($mode === 'all');
+        $this->db
+            ->select('pr.id, pr.student_id, s.name, pr.year, pr.month, pr.amount, pr.penalty, pr.slip_file, pr.status, pr.paid_date, pr.updated_at')
             ->from('payment_records pr')
             ->join('students s', 'pr.student_id = s.student_id')
-            ->where('pr.status', 'pending')
             ->where('pr.slip_file IS NOT NULL', null, false)   // only real slip submissions
-            ->where('pr.slip_file !=', '')
-            ->order_by('pr.updated_at', 'DESC')
-            ->get()->result();
+            ->where('pr.slip_file !=', '');
+        if (!$show_all) $this->db->where('pr.status', 'pending');   // review queue = pending only
+        $rows = $this->db->order_by('pr.updated_at', 'DESC')->get()->result();
+        // count of items still needing manual review (for the toggle label)
+        $pending_count = $show_all
+            ? $this->db->where('pr.status','pending')->where('pr.slip_file IS NOT NULL', null, false)
+                       ->where('pr.slip_file !=','')->from('payment_records pr')->count_all_results()
+            : count($rows);
         $this->render('payment/pending', [
-            'title' => 'รอตรวจสอบสลิป',
-            'rows'  => $rows,
+            'title'         => $show_all ? 'ประวัติสลิปทั้งหมด' : 'รอตรวจสอบสลิป',
+            'rows'          => $rows,
+            'show_all'      => $show_all,
+            'pending_count' => $pending_count,
         ]);
     }
 
