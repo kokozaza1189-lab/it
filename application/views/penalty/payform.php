@@ -120,9 +120,10 @@ if (!empty($settings['qr_image'])) {
   <!-- Slip upload + submit -->
   <div class="card">
     <label class="lbl mb-2">แนบสลิปการโอนเงิน <span style="color:#dc2626">*</span></label>
-    <label :class="['block border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors',
+    <label style="position:relative" :class="['block border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors',
                     slipFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-blue-400 hover:bg-blue-50']">
-      <input type="file" class="hidden" accept="image/*,.pdf" @change="onSlip"/>
+      <input type="file" accept="image/*,.pdf" @change="onSlip"
+             style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"/>
       <span v-show="!slipFile">
         <span class="text-3xl block mb-2">📎</span>
         <p class="text-sm text-slate-600 font-medium">แตะเพื่อเลือกไฟล์สลิป</p>
