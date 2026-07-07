@@ -101,6 +101,8 @@ class Payment extends MY_Controller {
             ->from('payment_records pr')
             ->join('students s', 'pr.student_id = s.student_id')
             ->where('pr.status', 'pending')
+            ->where('pr.slip_file IS NOT NULL', null, false)   // only real slip submissions
+            ->where('pr.slip_file !=', '')
             ->order_by('pr.updated_at', 'DESC')
             ->get()->result();
         $this->render('payment/pending', [
