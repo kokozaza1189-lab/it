@@ -64,9 +64,13 @@ class MY_Controller extends CI_Controller {
     }
 
     protected function json($data, $status = 200) {
-        $this->output->set_status_header($status)
-            ->set_content_type('application/json')
-            ->set_output(json_encode($data));
+        // Send the body DIRECTLY. CI's set_output()/_display() pipeline is skipped by the
+        // exit below, which would otherwise drop the body entirely (empty 200 response).
+        if (!headers_sent()) {
+            http_response_code($status);
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        echo json_encode($data);
         exit;
     }
 

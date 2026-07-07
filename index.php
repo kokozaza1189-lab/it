@@ -53,7 +53,15 @@
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+	// Live host (devdeecloud.com) runs in production mode so PHP warnings are LOGGED,
+	// never echoed — echoed warnings corrupt JSON/AJAX responses. Local stays development.
+	if (isset($_SERVER['CI_ENV'])) {
+		define('ENVIRONMENT', $_SERVER['CI_ENV']);
+	} elseif (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'devdeecloud.com') !== false) {
+		define('ENVIRONMENT', 'production');
+	} else {
+		define('ENVIRONMENT', 'development');
+	}
 
 /*
  *---------------------------------------------------------------
