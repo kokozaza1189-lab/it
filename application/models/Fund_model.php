@@ -33,6 +33,24 @@ class Fund_model extends CI_Model {
         }
     }
 
+    // Sum all confirmed (paid) payments whose record was updated after $since.
+    // Used by the weekly auto-sweep to roll new room-fee + penalty income into the fund.
+    // Returns ['count','amount','watermark'] or null when nothing new is paid.
+    public function sweep_paid_since($since) {
+        $rows = $this->db->select('amount, penalty, updated_at')
+            ->where('status', 'paid')
+            ->where('updated_at >', $since)
+            ->get('payment_records')->result();
+        if (empty($rows)) return null;
+        $sum = 0.0; $max = (string)$since; $n = 0;
+        foreach ($rows as $r) {
+            $sum += (float)$r->amount + (float)$r->penalty;
+            if ((string)$r->updated_at > $max) $max = (string)$r->updated_at;   // same 'Y-m-d H:i:s' format → lexical compare OK
+            $n++;
+        }
+        return ['count' => $n, 'amount' => round($sum, 2), 'watermark' => $max];
+    }
+
     // Monthly summary using txn_date (ISO date column)
     public function get_monthly_summary($year_be = 2569) {
         $year_ad = $year_be - 543;

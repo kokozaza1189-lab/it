@@ -10,6 +10,7 @@ class Fund extends MY_Controller {
 
     public function index() {
         $this->require_role(['treasurer','head_it','advisor','auditor','super_admin']);
+        $this->maybe_weekly_fund_sweep();   // weekend auto roll-up of confirmed payments → fund
         $ledger  = $this->Fund_model->get_ledger();
         $balance = $this->Fund_model->get_balance();
         $monthly = $this->Fund_model->get_monthly_summary($this->acad_year);

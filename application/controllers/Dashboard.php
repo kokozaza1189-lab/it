@@ -10,6 +10,7 @@ class Dashboard extends MY_Controller {
 
     public function index() {
         $this->require_login();
+        $this->maybe_weekly_fund_sweep();   // weekend auto roll-up of confirmed payments → fund
         $user  = $this->get_user();
         $years = $this->Payment_model->get_available_years($this->acad_year);
         $year  = (int)($this->input->get('year') ?: $this->acad_year);

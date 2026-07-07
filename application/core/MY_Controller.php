@@ -83,6 +83,50 @@ class MY_Controller extends CI_Controller {
         return (float)($this->settings['monthly_fee'] ?? 50);
     }
 
+    /**
+     * Weekend auto roll-up: once per weekend, when an admin opens the site,
+     * sum every payment confirmed since the last sweep and book it as ONE
+     * income line in the central fund. A watermark (fund_last_sweep_at) in
+     * settings guarantees no payment is ever counted twice.
+     *
+     * First run only sets the baseline watermark (so already-booked history,
+     * e.g. the manually-entered July collection, is never double counted).
+     */
+    protected function maybe_weekly_fund_sweep() {
+        $role = $this->session->userdata('role');
+        if (!in_array($role, ['treasurer','head_it','super_admin'])) return;
+
+        $last = $this->settings['fund_last_sweep_at'] ?? '';
+        if (!$last) {                                            // first admin visit: set baseline NOW
+            $this->Setting_model->set('fund_last_sweep_at', date('Y-m-d H:i:s'));
+            return;                                              // so pre-existing (manual) history is never booked again
+        }
+        if ((int)date('N') < 6) return;                          // book only on the weekend (Sat=6, Sun=7)
+        if (strtotime($last) > strtotime('-3 days')) return;     // already swept this weekend
+
+        $this->load->model('Fund_model');
+        $res = $this->Fund_model->sweep_paid_since($last);
+        if ($res && $res['amount'] > 0) {
+            $th = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+            $ts = time();
+            $this->Fund_model->add_entry([
+                'entry_date' => date('j', $ts).' '.$th[(int)date('n', $ts)].' '.(date('Y', $ts) + 543),
+                'txn_date'   => date('Y-m-d', $ts),
+                'title'      => 'สรุปค่าห้อง+ค่าปรับ (อัตโนมัติ '.$res['count'].' รายการ)',
+                'type'       => 'income',
+                'income'     => $res['amount'],
+                'expense'    => null,
+                'balance'    => $this->Fund_model->get_balance() + $res['amount'],
+                'note'       => 'รวมยอดชำระที่ยืนยันแล้วประจำสัปดาห์ (ระบบเพิ่มอัตโนมัติ)',
+                'created_by' => $this->session->userdata('user_id'),
+            ]);
+            $this->Fund_model->recalc_balances();                // keep running balance correct
+        }
+        // advance watermark even when amount is 0 so we don't rescan the same window
+        $this->Setting_model->set('fund_last_sweep_at', $res ? $res['watermark'] : date('Y-m-d H:i:s'));
+        $this->settings = $this->Setting_model->get_all();       // refresh cache for this request
+    }
+
     protected function can($action) {
         $role  = $this->session->userdata('role');
         $perms = [
