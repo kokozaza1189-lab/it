@@ -142,17 +142,20 @@ class Payment extends MY_Controller {
         }
         $this->Payment_model->submit_payment($sid, $year, $month, $file);
 
-        // AUTO slip verification via SlipOK — if the slip is a real transfer of the
-        // right amount to our account, mark it paid immediately; otherwise it stays
-        // 'pending' and lands in the /payment/pending review queue.
+        // AUTO slip verification via SlipOK — if the slip is a real transfer that covers
+        // at least the ROOM FEE (penalty is waived, per policy), mark it paid immediately;
+        // otherwise it stays 'pending' and lands in the /payment/pending review queue.
         $auto = 'pending';
         if ($file) {
             $rec = $this->Payment_model->get_month($sid, $year, $month);
-            $expected = $rec ? ((float)$rec->amount + (float)$rec->penalty) : $this->fee_for_month($month);
-            if ($expected <= 0) $expected = $this->fee_for_month($month);
+            // Threshold = the room fee only (NOT fee + penalty). A student who transfers
+            // the full ฿50/฿35 room fee is approved even if the daily penalty isn't included;
+            // approving with penalty=0 waives it.
+            $fee = $rec ? (float)$rec->amount : $this->fee_for_month($month);
+            if ($fee <= 0) $fee = $this->fee_for_month($month);
             $v = $this->_slipok_verify(FCPATH . 'assets/uploads/slips/' . $file);
-            if ($v['verified'] && $rec && ($v['amount'] + 0.01) >= $expected) {
-                $this->Payment_model->update_status($rec->id, 'paid', date('Y-m-d'), 0, null);
+            if ($v['verified'] && $rec && ($v['amount'] + 0.01) >= $fee) {
+                $this->Payment_model->update_status($rec->id, 'paid', date('Y-m-d'), 0, null); // penalty=0 → waived
                 $auto = 'paid';
             }
         }
