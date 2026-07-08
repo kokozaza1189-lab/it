@@ -2,6 +2,7 @@
 $month_names = [1=>'มกราคม',2=>'กุมภาพันธ์',3=>'มีนาคม',4=>'เมษายน',5=>'พฤษภาคม',6=>'มิถุนายน',
                 7=>'กรกฎาคม',8=>'สิงหาคม',9=>'กันยายน',10=>'ตุลาคม',11=>'พฤศจิกายน',12=>'ธันวาคม'];
 $is_pending = ($status === 'pending');
+$fee_paid   = !empty($fee_paid);   // true = room fee already settled, paying only the penalty
 // QR url (qr_image may be a bare filename or a full path)
 $qr_url = $qr_alt = '';
 if (!empty($settings['qr_image'])) {
@@ -66,8 +67,12 @@ if (!empty($settings['qr_image'])) {
     <p class="text-sm font-medium text-slate-700 mb-3">สรุปยอดที่ต้องชำระ</p>
     <div style="display:flex;flex-direction:column;gap:8px">
       <div style="display:flex;justify-content:space-between" class="text-sm">
-        <span class="text-slate-600">ค่าธรรมเนียมเดือน <?= $month_names[$month] ?? '' ?></span>
+        <span class="text-slate-600">ค่าห้องเดือน <?= $month_names[$month] ?? '' ?></span>
+        <?php if ($fee_paid): ?>
+        <span class="font-medium" style="color:#16a34a">จ่ายแล้ว ✓</span>
+        <?php else: ?>
         <span class="font-medium text-slate-800">฿<?= number_format($fee, 2) ?></span>
+        <?php endif; ?>
       </div>
       <?php if ($penalty > 0): ?>
       <div style="display:flex;justify-content:space-between" class="text-sm">

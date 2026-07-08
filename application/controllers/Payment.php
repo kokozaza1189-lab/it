@@ -140,6 +140,25 @@ class Payment extends MY_Controller {
                 $file = $this->upload->data('file_name');
             }
         }
+        // PENALTY-ONLY payment: the room fee is already paid, only a residual penalty
+        // remains. Keep the record 'paid' (don't reset to pending); attach the slip and,
+        // if SlipOK confirms an amount covering the penalty, book it to the fund + clear it.
+        $existing = $this->Payment_model->get_month($sid, $year, $month);
+        if ($existing && $existing->status === 'paid' && (float)$existing->penalty > 0) {
+            $this->Payment_model->attach_slip($existing->id, $file);   // no status/updated_at change
+            $owed = (float)$existing->penalty;
+            $auto = 'pending';
+            if ($file) {
+                $v = $this->_slipok_verify(FCPATH . 'assets/uploads/slips/' . $file);
+                if ($v['verified'] && ($v['amount'] + 0.01) >= $owed) {
+                    $this->collect_penalty_to_fund($existing);         // fund income + clear penalty
+                    $auto = 'paid';
+                }
+            }
+            $this->json(['success' => true, 'auto' => $auto, 'kind' => 'penalty']);
+            return;
+        }
+
         $this->Payment_model->submit_payment($sid, $year, $month, $file);
 
         // AUTO slip verification via SlipOK — if the slip is a real transfer that covers
@@ -160,6 +179,17 @@ class Payment extends MY_Controller {
             }
         }
         $this->json(['success' => true, 'auto' => $auto]);
+    }
+
+    // Admin: collect a residual penalty (fee already paid). Books the penalty into the
+    // central fund and clears it from the record. Used by the ค่าปรับ page's clear button.
+    public function collect_penalty() {
+        $this->require_role(['treasurer','head_it','super_admin']);
+        $id  = (int)$this->input->post('id');
+        $rec = $this->db->get_where('payment_records', ['id' => $id])->row();
+        if (!$rec) { $this->json(['success' => false, 'error' => 'not_found'], 404); return; }
+        $collected = $this->collect_penalty_to_fund($rec);
+        $this->json(['success' => true, 'collected' => $collected]);
     }
 
     // Verify a payment slip with SlipOK (returns ['verified'=>bool,'amount'=>float,...]).

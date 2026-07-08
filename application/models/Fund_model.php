@@ -33,18 +33,20 @@ class Fund_model extends CI_Model {
         }
     }
 
-    // Sum all confirmed (paid) payments whose record was updated after $since.
-    // Used by the weekly auto-sweep to roll new room-fee + penalty income into the fund.
+    // Sum the ROOM FEE of confirmed (paid) payments whose record was updated after $since.
+    // Only the fee is swept — penalties are booked separately at the moment they are
+    // collected (see collect_penalty_to_fund), so a residual penalty owed on a paid
+    // record never inflates the fund, and clearing it later never re-counts the fee.
     // Returns ['count','amount','watermark'] or null when nothing new is paid.
     public function sweep_paid_since($since) {
-        $rows = $this->db->select('amount, penalty, updated_at')
+        $rows = $this->db->select('amount, updated_at')
             ->where('status', 'paid')
             ->where('updated_at >', $since)
             ->get('payment_records')->result();
         if (empty($rows)) return null;
         $sum = 0.0; $max = (string)$since; $n = 0;
         foreach ($rows as $r) {
-            $sum += (float)$r->amount + (float)$r->penalty;
+            $sum += (float)$r->amount;
             if ((string)$r->updated_at > $max) $max = (string)$r->updated_at;   // same 'Y-m-d H:i:s' format → lexical compare OK
             $n++;
         }

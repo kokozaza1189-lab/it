@@ -27,6 +27,21 @@ class Payment_model extends CI_Model {
         $this->db->where('id', $id)->update('payment_records', $data);
     }
 
+    // Attach a slip to a record WITHOUT touching status/updated_at.
+    // Used for penalty-only payments on an already-paid record so the weekly fund
+    // sweep (keyed on updated_at) does not re-count the fee.
+    public function attach_slip($id, $slip_file) {
+        if (!$slip_file) return;
+        $this->db->where('id', $id)->update('payment_records', ['slip_file' => $slip_file]);
+    }
+
+    // Clear a residual penalty once it has been collected. Deliberately does NOT bump
+    // updated_at — the fee was already swept into the fund and must not be re-counted;
+    // the collected penalty is booked separately as its own fund entry.
+    public function clear_penalty($id) {
+        $this->db->where('id', $id)->update('payment_records', ['penalty' => 0]);
+    }
+
     public function submit_payment($student_id, $year, $month, $slip_file = '', $amount = 50) {
         $existing = $this->get_month($student_id, $year, $month);
         if ($existing) {

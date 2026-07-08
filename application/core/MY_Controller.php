@@ -131,6 +131,36 @@ class MY_Controller extends CI_Controller {
         $this->settings = $this->Setting_model->get_all();       // refresh cache for this request
     }
 
+    /**
+     * Book a collected residual penalty into the central fund, then clear it from the
+     * payment record (without bumping updated_at, so the already-swept fee is not
+     * re-counted). Returns true if a penalty was booked, false if there was none.
+     * Used by both student self-pay (auto-verified) and admin manual clearing.
+     */
+    protected function collect_penalty_to_fund($rec) {
+        $amt = (float)($rec->penalty ?? 0);
+        if ($amt <= 0 || empty($rec->id)) return false;
+        $this->load->model(['Fund_model','Payment_model']);
+        $srow = $this->db->select('name')->where('student_id', $rec->student_id)->get('students')->row();
+        $name = $srow->name ?? ($rec->student_id ?? '');
+        $th   = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+        $ts   = time();
+        $this->Fund_model->add_entry([
+            'entry_date' => date('j', $ts).' '.$th[(int)date('n', $ts)].' '.(date('Y', $ts) + 543),
+            'txn_date'   => date('Y-m-d', $ts),
+            'title'      => 'ค่าปรับ '.$name.' ('.($th[(int)($rec->month ?? 0)] ?? '').')',
+            'type'       => 'income',
+            'income'     => $amt,
+            'expense'    => null,
+            'balance'    => $this->Fund_model->get_balance() + $amt,
+            'note'       => 'ชำระค่าปรับคงค้าง',
+            'created_by' => $this->session->userdata('user_id'),
+        ]);
+        $this->Fund_model->recalc_balances();
+        $this->Payment_model->clear_penalty($rec->id);
+        return true;
+    }
+
     protected function can($action) {
         $role  = $this->session->userdata('role');
         $perms = [

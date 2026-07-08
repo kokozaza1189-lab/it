@@ -237,8 +237,17 @@ $penalty_students = count(array_unique(array_column($penalty_rows, 'id')));
             <td style="text-align:right;<?= $r['pen'] > 0 ? 'color:#dc2626;font-weight:700' : 'color:#94a3b8' ?>"><?= $r['pen'] > 0 ? '฿'.number_format($r['pen'], 2) : '—' ?></td>
             <td style="text-align:right;color:#dc2626;font-weight:800">฿<?= number_format($r['fee']+$r['pen'], 2) ?></td>
             <td style="text-align:center">
-              <button class="btn btn-blue" style="padding:4px 14px;font-size:12px"
-                      @click="openStatus(<?= htmlspecialchars(json_encode($r['rec']), ENT_QUOTES) ?>)">💰 จ่าย</button>
+              <?php if (!empty($r['paid_fee'])): ?>
+                <?php if (!empty($r['rec']['slip_file'])): ?>
+                <a href="<?= base_url('assets/uploads/slips/'.$r['rec']['slip_file']) ?>" target="_blank"
+                   style="font-size:11px;color:#3b82f6;text-decoration:underline;display:block;margin-bottom:4px">📎 ดูสลิป</a>
+                <?php endif; ?>
+                <button class="btn" style="padding:4px 12px;font-size:12px;background:#16a34a;color:#fff"
+                        @click="collectPenalty(<?= (int)$r['rec']['id'] ?>, '<?= htmlspecialchars(addslashes($r['name']), ENT_QUOTES) ?>', <?= (float)$r['pen'] ?>)">✓ เคลียร์ค่าปรับ</button>
+              <?php else: ?>
+                <button class="btn btn-blue" style="padding:4px 14px;font-size:12px"
+                        @click="openStatus(<?= htmlspecialchars(json_encode($r['rec']), ENT_QUOTES) ?>)">💰 จ่าย</button>
+              <?php endif; ?>
             </td>
           </tr>
           <?php endforeach; endforeach; ?>
@@ -401,7 +410,18 @@ createApp({
       saving.value = false
     }
 
-    return { activeTab, statusModal, saving, editData, monthNames, slipUrl, openStatus, saveStatus, exportExcel }
+    async function collectPenalty(id, name, amount) {
+      if (!confirm('ยืนยันเก็บค่าปรับ ฿' + amount + ' ของ ' + name + ' เข้าเงินกลาง?')) return
+      try {
+        const fd = new FormData(); fd.append('id', id)
+        const res = await axios.post('<?= base_url('payment/collect_penalty') ?>', fd)
+        if (!res.data || res.data.success !== true) { showToast('ไม่สำเร็จ — กรุณาล็อกอินใหม่', false); return }
+        showToast('เคลียร์ค่าปรับแล้ว ✓ ลงเงินกลาง ฿' + amount)
+        setTimeout(() => location.reload(), 900)
+      } catch(e) { showToast('เกิดข้อผิดพลาด', false) }
+    }
+
+    return { activeTab, statusModal, saving, editData, monthNames, slipUrl, openStatus, saveStatus, exportExcel, collectPenalty }
   }
 }).mount('#app')
 })

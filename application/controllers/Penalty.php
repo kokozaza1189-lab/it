@@ -37,6 +37,8 @@ class Penalty extends MY_Controller {
                      ? (float)($this->settings['fee_january'] ?? 35)
                      : (float)($this->settings['monthly_fee']  ?? 50));
         $penalty = $rec ? (float)$rec->penalty : 0.0;
+        // Fee already settled → this is a penalty-only payment (charge just the penalty)
+        $fee_paid = $rec && $rec->status === 'paid';
 
         // Due-date / overdue calc (same rule as Pay.php)
         $due_day = (int)($this->settings['due_day'] ?? 8);
@@ -53,7 +55,8 @@ class Penalty extends MY_Controller {
             'year'         => $year,
             'fee'          => $fee,
             'penalty'      => $penalty,
-            'total'        => $fee + $penalty,
+            'total'        => $fee_paid ? $penalty : ($fee + $penalty),
+            'fee_paid'     => $fee_paid,
             'status'       => $rec->status    ?? 'none',
             'slip_file'    => $rec->slip_file  ?? null,
             'due_day'      => $due_day,
@@ -70,12 +73,14 @@ class Penalty extends MY_Controller {
 
         $penalties = array_values(array_filter($records,
             fn($r) => in_array($r->status, ['overdue','pending'])
+                   || ($r->status === 'paid' && (float)$r->penalty > 0)   // fee paid, penalty still owed
         ));
 
-        $total_due = array_sum(array_map(
-            fn($r) => $r->status === 'overdue' ? (float)$r->amount + (float)$r->penalty : 0,
-            $penalties
-        ));
+        $total_due = array_sum(array_map(function($r) {
+            if ($r->status === 'overdue') return (float)$r->amount + (float)$r->penalty;
+            if ($r->status === 'paid')    return (float)$r->penalty;   // residual penalty only (fee already paid)
+            return 0;                                                  // pending → awaiting review
+        }, $penalties));
 
         $this->render('penalty/index', [
             'title'     => 'ค่าปรับของฉัน',

@@ -46,36 +46,44 @@ $has_overdue = !empty(array_filter($penalties, fn($p) => $p->status === 'overdue
 </p>
 
 <?php foreach ($penalties as $p):
-  $total_bill = (float)$p->amount + (float)$p->penalty;
-  $is_overdue = $p->status === 'overdue';
+  $is_overdue  = $p->status === 'overdue';
+  $is_residual = ($p->status === 'paid' && (float)$p->penalty > 0);   // fee paid, only penalty owed
+  $can_pay     = $is_overdue || $is_residual;
+  $owed        = $is_residual ? (float)$p->penalty : ((float)$p->amount + (float)$p->penalty);
+  $accent      = $is_overdue ? '#ef4444' : ($is_residual ? '#f59e0b' : '#3b82f6');
+  $border      = $is_overdue ? '#fca5a5' : ($is_residual ? '#fcd34d' : '#93c5fd');
   $days = $penalty_day > 0 && $p->penalty > 0 ? round($p->penalty / $penalty_day) : 0;
 ?>
-<div class="card mb-4" style="border:2px solid <?= $is_overdue ? '#fca5a5' : '#93c5fd' ?>">
+<div class="card mb-4" style="border:2px solid <?= $border ?>">
 
   <!-- Bill header -->
   <div class="flex items-center justify-between mb-4">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
-           style="background:<?= $is_overdue ? '#ef4444' : '#3b82f6' ?>">
+           style="background:<?= $accent ?>">
         <?= $p->month ?>
       </div>
       <div>
         <p class="font-bold text-slate-800 text-base"><?= $month_names[$p->month] ?> <?= $year ?></p>
-        <span class="badge <?= $is_overdue ? 'b-overdue' : 'b-pending' ?> text-xs">
-          <?= $is_overdue ? 'ค้างชำระ' : 'รอดำเนินการ' ?>
+        <span class="badge <?= $can_pay ? 'b-overdue' : 'b-pending' ?> text-xs">
+          <?= $is_overdue ? 'ค้างชำระ' : ($is_residual ? 'ค้างค่าปรับ' : 'รอดำเนินการ') ?>
         </span>
       </div>
     </div>
-    <p class="font-bold text-xl <?= $is_overdue ? 'text-red-600' : 'text-blue-600' ?>">
-      ฿<?= number_format($total_bill, 2) ?>
+    <p class="font-bold text-xl" style="color:<?= $accent ?>">
+      ฿<?= number_format($owed, 2) ?>
     </p>
   </div>
 
   <!-- Breakdown -->
   <div class="rounded-xl p-4 mb-4 space-y-2" style="background:#f8fafc;border:1px solid #e2e8f0">
     <div class="flex justify-between items-center text-sm">
-      <span class="text-slate-500">💰 ค่าธรรมเนียมรายเดือน</span>
+      <span class="text-slate-500">💰 ค่าห้องรายเดือน</span>
+      <?php if ($is_residual): ?>
+      <span class="font-semibold" style="color:#16a34a">จ่ายแล้ว ✓</span>
+      <?php else: ?>
       <span class="font-semibold text-slate-700">฿<?= number_format($p->amount, 2) ?></span>
+      <?php endif; ?>
     </div>
     <?php if ($p->penalty > 0): ?>
     <div class="flex justify-between items-center text-sm">
@@ -93,15 +101,15 @@ $has_overdue = !empty(array_filter($penalties, fn($p) => $p->status === 'overdue
     <div class="flex justify-between items-center font-bold text-base pt-2"
          style="border-top:2px dashed #e2e8f0">
       <span class="text-slate-700">รวมที่ต้องชำระ</span>
-      <span class="text-red-600">฿<?= number_format($total_bill, 2) ?></span>
+      <span class="text-red-600">฿<?= number_format($owed, 2) ?></span>
     </div>
   </div>
 
   <!-- Action -->
-  <?php if ($is_overdue): ?>
+  <?php if ($can_pay): ?>
   <a class="btn btn-blue w-full text-base py-3" style="display:block;text-align:center;text-decoration:none"
      href="<?= base_url('penalty/pay/'.(int)$p->month.'?year='.(int)$year) ?>">
-    💳 ชำระค่าปรับเดือนนี้ &nbsp; ฿<?= number_format($total_bill, 2) ?>
+    💳 <?= $is_residual ? 'ชำระค่าปรับคงค้าง' : 'ชำระค่าปรับเดือนนี้' ?> &nbsp; ฿<?= number_format($owed, 2) ?>
   </a>
   <?php else: ?>
   <div class="rounded-xl py-3 px-4 text-center text-sm font-medium" style="background:#eff6ff;color:#1d4ed8">
@@ -116,7 +124,7 @@ $has_overdue = !empty(array_filter($penalties, fn($p) => $p->status === 'overdue
 <?php endforeach; ?>
 
 <!-- Total summary bar -->
-<?php if ($has_overdue): ?>
+<?php if ($total_due > 0): ?>
 <div class="card" style="background:#fef2f2;border:2px solid #fca5a5">
   <div class="flex items-center justify-between">
     <div>
