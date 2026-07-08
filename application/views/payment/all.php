@@ -151,18 +151,22 @@ foreach ($students as $s) {
 
 <!-- Penalty tab -->
 <?php
-$penalty_rows = [];   // one row per (student, overdue month) — includes fee-overdue even before a penalty accrues
+$penalty_rows = [];   // rows still owing money: fee overdue, OR fee paid but penalty remaining
 foreach ($students as $s) {
     foreach ($active_months as $m) {
         $p = $s->payments[$m] ?? null;
-        if ($p && $p->status === 'overdue') {
+        if (!$p) continue;
+        $is_overdue   = ($p->status === 'overdue');
+        $residual_pen = ($p->status === 'paid' && (float)$p->penalty > 0);   // paid room fee, penalty still owed
+        if ($is_overdue || $residual_pen) {
             $penalty_rows[] = [
-                'name'  => $s->name,
-                'id'    => $s->student_id,
-                'month' => $m,
-                'fee'   => (float)$p->amount,
-                'pen'   => (float)$p->penalty,
-                'rec'   => [   // payload for the openStatus payment form
+                'name'     => $s->name,
+                'id'       => $s->student_id,
+                'month'    => $m,
+                'fee'      => $is_overdue ? (float)$p->amount : 0.0,   // fee already paid → nothing owed on it
+                'pen'      => (float)$p->penalty,
+                'paid_fee' => $residual_pen,                            // true = only penalty left to collect
+                'rec'      => [   // payload for the openStatus payment form
                     'id'        => $p->id ?? null,
                     'month'     => $m,
                     'student'   => $s->name,
@@ -223,7 +227,13 @@ $penalty_students = count(array_unique(array_column($penalty_rows, 'id')));
             <td rowspan="<?= $n ?>" class="font-mono text-xs text-slate-500" style="vertical-align:middle"><?= $r['id'] ?></td>
             <?php endif; ?>
             <td style="text-align:center"><span style="background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:700;padding:2px 9px;border-radius:6px"><?= $th_months[$r['month']] ?></span></td>
-            <td style="text-align:right;color:#dc2626;font-weight:600;font-size:13px">฿<?= number_format($r['fee'], 2) ?></td>
+            <td style="text-align:right;font-size:13px">
+              <?php if (!empty($r['paid_fee'])): ?>
+                <span style="color:#16a34a;font-weight:600">จ่ายแล้ว ✓</span>
+              <?php else: ?>
+                <span style="color:#dc2626;font-weight:600">฿<?= number_format($r['fee'], 2) ?></span>
+              <?php endif; ?>
+            </td>
             <td style="text-align:right;<?= $r['pen'] > 0 ? 'color:#dc2626;font-weight:700' : 'color:#94a3b8' ?>"><?= $r['pen'] > 0 ? '฿'.number_format($r['pen'], 2) : '—' ?></td>
             <td style="text-align:right;color:#dc2626;font-weight:800">฿<?= number_format($r['fee']+$r['pen'], 2) ?></td>
             <td style="text-align:center">
