@@ -43,6 +43,9 @@ class Fund extends MY_Controller {
                 'note'       => $this->input->post('note', TRUE),
                 'created_by' => $this->get_user()['id'],
             ]);
+            // Recompute every running balance in date order — a back-dated entry would
+            // otherwise leave later rows (and the total) wrong.
+            $this->Fund_model->recalc_balances();
         }
         redirect('fund');
     }
