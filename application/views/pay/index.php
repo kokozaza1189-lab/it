@@ -123,6 +123,23 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
 </head>
 <body>
 
+<!-- In-app browser warning (LINE / Facebook / Instagram block file uploads) -->
+<div id="inapp-warn" style="display:none;max-width:640px;margin:0 auto 14px;background:#fff8e1;border:1.5px solid #ffca28;border-radius:14px;padding:14px 16px">
+  <div style="display:flex;gap:10px;align-items:flex-start">
+    <span style="font-size:22px;line-height:1">⚠️</span>
+    <div style="flex:1">
+      <p style="margin:0 0 4px;font-weight:700;color:#8d6e00;font-size:14px">แนบสลิปไม่ได้ใช่ไหม?</p>
+      <p style="margin:0;color:#7a6200;font-size:13px;line-height:1.55">
+        คุณกำลังเปิดในแอป <b id="inapp-name">LINE</b> ซึ่งมักอัปโหลดไฟล์ไม่ได้ —
+        แตะปุ่ม <b>⋯</b> มุมขวาบน แล้วเลือก <b>“เปิดในเบราว์เซอร์”</b> (Safari / Chrome) แล้วลองแนบสลิปใหม่
+      </p>
+      <button id="inapp-open" type="button" style="margin-top:10px;background:#f59e0b;color:#fff;border:none;border-radius:9px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
+        เปิดในเบราว์เซอร์ &nbsp;↗
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="app">
 
   <!-- SUCCESS — hidden by default; Vue shows it when submitted=true -->
@@ -317,14 +334,15 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
       <!-- Drop zone -->
       <label v-show="!slipPreview" for="slipInput"
              :class="['drop-zone', dragging ? 'dragging' : '']"
-             style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:8px;text-align:center"
+             style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:8px;text-align:center"
              @dragover.prevent="dragging=true"
              @dragleave="dragging=false"
              @drop.prevent="onDrop">
         <span style="font-size:36px">📎</span>
         <p class="text-sm font-medium text-gray-600">แตะหรือลากไฟล์มาวางที่นี่</p>
         <p class="text-xs text-gray-400">PNG, JPG, PDF ไม่เกิน 5MB</p>
-        <input id="slipInput" type="file" accept="image/*,.pdf" style="display:none" @change="onFile"/>
+        <input id="slipInput" type="file" accept="image/*,.pdf" @change="onFile"
+               style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"/>
       </label>
 
       <p v-show="errSlip" style="display:none;margin-top:6px;color:#d93025;font-size:12px" v-text="errSlip"></p>
@@ -521,6 +539,33 @@ createApp({
     }
   }
 }).mount('#app')
+
+// Warn when opened inside an in-app browser (LINE/FB/IG) that blocks file uploads
+;(function(){
+  var ua = navigator.userAgent || '';
+  var isLine = /Line\//i.test(ua);
+  var isFB   = /FBAN|FBAV|FB_IAB/i.test(ua);
+  var isIG   = /Instagram/i.test(ua);
+  if (!(isLine || isFB || isIG)) return;
+  var box = document.getElementById('inapp-warn'); if (!box) return;
+  document.getElementById('inapp-name').textContent = isLine ? 'LINE' : (isFB ? 'Facebook' : 'Instagram');
+  box.style.display = 'block';
+  var btn = document.getElementById('inapp-open');
+  if (isLine) {
+    // LINE bounces out to the system browser when the URL carries openExternalBrowser=1
+    btn.onclick = function(){
+      var u = location.href.split('#')[0];
+      u += (u.indexOf('?') > -1 ? '&' : '?') + 'openExternalBrowser=1';
+      location.href = u;
+    };
+  } else {
+    btn.textContent = 'คัดลอกลิงก์';
+    btn.onclick = function(){
+      if (navigator.clipboard) { navigator.clipboard.writeText(location.href).then(function(){ btn.textContent = 'คัดลอกแล้ว ✓'; }); }
+      else { prompt('คัดลอกลิงก์ไปเปิดในเบราว์เซอร์:', location.href); }
+    };
+  }
+})();
 </script>
 
 </body>
