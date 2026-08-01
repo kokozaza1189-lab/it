@@ -393,8 +393,10 @@ const { createApp, ref, computed } = Vue
 
 createApp({
   setup() {
-    const LOOKUP_URL = '<?= base_url('pay/lookup') ?>'
-    const SUBMIT_URL = '<?= base_url('pay/submit') ?>'
+    // Via /index.php/pay/* — the /pay/ subdir shadows the clean /pay/lookup route (404 there),
+    // but the main app's Pay::lookup/submit are always reachable through the front controller.
+    const LOOKUP_URL = '<?= base_url('index.php/pay/lookup') ?>'
+    const SUBMIT_URL = '<?= base_url('index.php/pay/submit') ?>'
     const MONTH      = <?= (int)$month ?>;
     const YEAR       = <?= (int)$year ?>;
 
