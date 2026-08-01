@@ -47,7 +47,8 @@ class Penalty extends MY_Controller {
         $now     = time();
         $is_past_due  = $now > $due_ts;
         $days_overdue = $is_past_due ? max(0, (int)(($now - $due_ts) / 86400)) : 0;
-        $days_left    = !$is_past_due ? (int)(($due_ts - $now) / 86400) : 0;
+        // whole calendar days from today (midnight) to due date — 1 Aug → 6 Aug = 5, not 4
+        $days_left    = !$is_past_due ? max(0, (int)round(($due_ts - mktime(0, 0, 0)) / 86400)) : 0;
 
         $this->render('penalty/payform', [
             'title'        => 'ชำระค่าปรับ',
