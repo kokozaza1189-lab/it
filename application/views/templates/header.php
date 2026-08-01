@@ -19,7 +19,7 @@
   }
 </script>
 <!-- SheetJS: only needed on button click -->
-<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script defer src="<?= base_url('assets/js/xlsx.full.min.js') ?>"></script>
 <!-- Vue, Axios, Chart.js are loaded at end of body in footer.php so they never block page render -->
 <style>
 *{ font-family:'Sarabun',sans-serif; box-sizing:border-box }

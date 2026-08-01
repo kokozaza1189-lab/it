@@ -78,10 +78,10 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
-<!-- CDN libraries loaded at end of body — HTML renders first, no blocking -->
-<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Self-hosted libs (jsdelivr is blocked on some Thai mobile networks → Vue never loads) -->
+<script src="<?= base_url('assets/js/vue.global.prod.js') ?>"></script>
+<script src="<?= base_url('assets/js/axios.min.js') ?>"></script>
+<script src="<?= base_url('assets/js/chart.umd.min.js') ?>"></script>
 <script>
 // Configure axios
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';

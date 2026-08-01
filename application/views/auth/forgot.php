@@ -6,8 +6,8 @@
 <title><?= isset($title) ? $title : 'ลืมรหัสผ่าน — IT Finance System' ?></title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="<?= base_url('assets/js/vue.global.prod.js') ?>"></script>
+<script src="<?= base_url('assets/js/axios.min.js') ?>"></script>
 <style>
 *{font-family:'Sarabun',sans-serif;box-sizing:border-box}
 body{margin:0}
