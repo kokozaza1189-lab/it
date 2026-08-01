@@ -332,7 +332,7 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
       </div>
 
       <!-- Drop zone -->
-      <label v-show="!slipPreview" for="slipInput"
+      <label v-show="!slipPreview"
              :class="['drop-zone', dragging ? 'dragging' : '']"
              style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:8px;text-align:center"
              @dragover.prevent="dragging=true"
