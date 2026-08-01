@@ -265,22 +265,22 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;justify-content:space-between" class="text-sm" v-show="displayAmt > 0">
             <span class="text-gray-600">ค่าธรรมเนียมเดือน <?= $month_names[$month] ?? '' ?></span>
-            <span class="font-medium text-gray-800">฿<span v-text="displayAmt.toFixed(2)"><?= number_format($_view_fee, 2) ?></span></span>
+            <span class="font-medium text-gray-800">฿<span v-text="displayAmt.toFixed(2)"></span></span>
           </div>
           <div style="display:none" v-show="displayPen > 0">
             <div style="display:flex;justify-content:space-between" class="text-sm">
               <span style="color:#c62828">ค่าปรับค้างชำระ</span>
-              <span class="font-medium" style="color:#c62828">+฿<span v-text="displayPen.toFixed(2)"><?= number_format($penalty, 2) ?></span></span>
+              <span class="font-medium" style="color:#c62828">+฿<span v-text="displayPen.toFixed(2)"></span></span>
             </div>
           </div>
           <div style="display:flex;justify-content:space-between;border-top:1px solid #d1c4e9;padding-top:8px">
             <span class="font-semibold text-gray-800">รวมทั้งสิ้น</span>
-            <span class="text-xl font-bold" style="color:#673ab7">฿<span v-text="displayTotal.toFixed(2)"><?= number_format($_view_fee + $penalty, 2) ?></span></span>
+            <span class="text-xl font-bold" style="color:#673ab7">฿<span v-text="displayTotal.toFixed(2)"></span></span>
           </div>
         </div>
         <span class="inline-block mt-3 text-xs font-medium px-3 py-1 rounded-full"
               :style="isOverdue ? 'background:#ffebee;color:#c62828' : 'background:#e8f5e9;color:#2e7d32'">
-          <span v-text="isOverdue ? '🔴 เกินกำหนดชำระแล้ว' : '🟢 ยังไม่เกินกำหนด'"><?= $is_past_due ? '🔴 เกินกำหนดชำระแล้ว' : '🟢 ยังไม่เกินกำหนด' ?></span>
+          <span v-text="isOverdue ? '🔴 เกินกำหนดชำระแล้ว' : '🟢 ยังไม่เกินกำหนด'"></span>
         </span>
       </div>
     </div>
@@ -359,7 +359,7 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         <p v-show="isPending" style="display:none;color:#e65100;font-size:13px;font-weight:600;margin-bottom:6px">⏳ ส่งสลิปแล้วแล้ว รอเจ้าหน้าที่ยืนยัน</p>
         <button class="btn-primary" :disabled="submitting || isFullyPaid || isPending" @click="submit">
           <span v-show="submitting" style="display:none" class="spin">⏳</span>
-          <span v-text="submitting ? 'กำลังส่ง...' : 'ส่งแบบฟอร์ม'">ส่งแบบฟอร์ม</span>
+          <span v-text="submitting ? 'กำลังส่ง...' : 'ส่งแบบฟอร์ม'"></span>
         </button>
       </div>
       <button @click="reset" class="text-sm" style="color:#673ab7;background:none;border:none;cursor:pointer">ล้างแบบฟอร์ม</button>
