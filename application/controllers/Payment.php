@@ -127,17 +127,17 @@ class Payment extends MY_Controller {
         $year  = (int)($this->input->post('year') ?: $this->acad_year);
         $sid   = $user['student_id'];
         if (!$sid) { $this->json(['success' => false, 'error' => 'บัญชีนี้ไม่มีรหัสนิสิต'], 400); return; }
+        // Save the slip WITHOUT CI's strict MIME check (it wrongly rejects some real
+        // phone-app JPEGs). Validate by extension + size only, then move the file.
         $file  = '';
-        if (!empty($_FILES['slip']['name'])) {
-            $config = [
-                'upload_path'   => FCPATH . 'assets/uploads/slips/',
-                'allowed_types' => 'jpg|jpeg|png|pdf|webp|heic|heif|gif',
-                'max_size'      => 5120,
-                'file_name'     => 'slip_' . $sid . '_' . $year . '_' . $month . '_' . time(),
-            ];
-            $this->load->library('upload', $config);
-            if ($this->upload->do_upload('slip')) {
-                $file = $this->upload->data('file_name');
+        if (!empty($_FILES['slip']['name']) && !empty($_FILES['slip']['tmp_name']) && is_uploaded_file($_FILES['slip']['tmp_name'])) {
+            $ext = strtolower(pathinfo($_FILES['slip']['name'], PATHINFO_EXTENSION));
+            if ((int)$_FILES['slip']['size'] <= 5 * 1024 * 1024
+                && in_array($ext, ['jpg','jpeg','png','pdf','webp','heic','heif','gif'], true)) {
+                $dir = FCPATH . 'assets/uploads/slips/';
+                if (!is_dir($dir)) @mkdir($dir, 0755, true);
+                $fn = 'slip_' . $sid . '_' . $year . '_' . $month . '_' . time() . '.' . $ext;
+                if (@move_uploaded_file($_FILES['slip']['tmp_name'], $dir . $fn)) $file = $fn;
             }
         }
         // PENALTY-ONLY payment: the room fee is already paid, only a residual penalty
