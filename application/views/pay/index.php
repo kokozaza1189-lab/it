@@ -203,8 +203,8 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         </div>
       </div>
 
-      <!-- Deadline — dates computed in controller (Pay.php), passed as $display_year, $days_left, $is_past_due -->
-      <div class="mt-3" style="display:flex;align-items:center;gap:12px;background:<?= $is_past_due ? '#fef2f2' : '#fff3e0' ?>;border-left:4px solid <?= $is_past_due ? '#dc2626' : '#ff6d00' ?>;border-radius:0 12px 12px 0;padding:12px 16px">
+      <!-- Deadline — hidden once the looked-up student is already paid / pending (it's month-generic) -->
+      <div v-show="!isFullyPaid && !isPending" class="mt-3" style="display:flex;align-items:center;gap:12px;background:<?= $is_past_due ? '#fef2f2' : '#fff3e0' ?>;border-left:4px solid <?= $is_past_due ? '#dc2626' : '#ff6d00' ?>;border-radius:0 12px 12px 0;padding:12px 16px">
         <span style="font-size:20px"><?= $is_past_due ? '⚠️' : '⏰' ?></span>
         <div class="flex-1">
           <p class="text-xs font-semibold" style="color:<?= $is_past_due ? '#b91c1c' : '#e65100' ?>">กำหนดชำระ</p>
@@ -422,7 +422,8 @@ createApp({
 
     // Computed: amounts shown in the UI
     const displayAmt   = computed(() => dbPayment.value !== null ? dbPayment.value.amount  : BASE_FEE)
-    const displayPen   = computed(() => dbPayment.value !== null ? dbPayment.value.penalty : BASE_PENALTY)
+    // Penalty is per-student — show 0 until the student is looked up (don't scare everyone with a default penalty)
+    const displayPen   = computed(() => dbPayment.value !== null ? dbPayment.value.penalty : 0)
     const displayTotal = computed(() => displayAmt.value + displayPen.value)
 
     // Status helpers
