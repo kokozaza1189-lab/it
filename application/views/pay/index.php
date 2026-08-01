@@ -442,6 +442,22 @@ createApp({
       setTimeout(() => toastShow.value = false, 3500)
     }
 
+    async function doLookup() {
+      if (studentId.value.length !== 10) return
+      lookupState.value = 'loading'
+      try {
+        const r = await axios.get(LOOKUP_URL, { params: { id: studentId.value, month: MONTH, year: YEAR } })
+        if (r.data.found) {
+          foundName.value = r.data.name
+          lookupState.value = 'found'
+          dbPayment.value = r.data.payment || null
+        } else {
+          lookupState.value = 'miss'
+        }
+      } catch(e) {
+        lookupState.value = ''
+      }
+    }
     function onSidInput() {
       lookupState.value = ''
       foundName.value = ''
@@ -450,20 +466,7 @@ createApp({
       clearTimeout(lookupTimer)
       if (studentId.value.length < 10) return
       lookupState.value = 'loading'
-      lookupTimer = setTimeout(async () => {
-        try {
-          const r = await axios.get(LOOKUP_URL, { params: { id: studentId.value, month: MONTH, year: YEAR } })
-          if (r.data.found) {
-            foundName.value = r.data.name
-            lookupState.value = 'found'
-            dbPayment.value = r.data.payment || null
-          } else {
-            lookupState.value = 'miss'
-          }
-        } catch(e) {
-          lookupState.value = ''
-        }
-      }, 400)
+      lookupTimer = setTimeout(doLookup, 400)
     }
 
     function validateSid() {
@@ -500,13 +503,17 @@ createApp({
     async function submit() {
       if (isFullyPaid.value) { showToast('ชำระครบแล้วสำหรับเดือนนี้', false); return }
       if (isPending.value)   { showToast('ส่งสลิปแล้ว รอเจ้าหน้าที่ยืนยัน', false); return }
-      const sidOk = validateSid()
-      if (!slipFile.value) errSlip.value = 'กรุณาอัปโหลดสลิปการโอนเงิน'
-      if (!sidOk || errSlip.value) {
-        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', false); return
+      if (!studentId.value || studentId.value.length !== 10) {
+        errSid.value = 'กรุณากรอกรหัสนิสิตให้ครบ 10 หลัก'; showToast('กรุณากรอกรหัสนิสิตให้ครบ 10 หลัก', false); return
       }
+      if (!slipFile.value) {
+        errSlip.value = 'กรุณาอัปโหลดสลิปการโอนเงิน'; showToast('กรุณาแนบสลิปการโอนเงิน', false); return
+      }
+      // Verify the student NOW — don't depend on the debounced input lookup having finished/succeeded
       if (lookupState.value !== 'found') {
-        showToast('กรุณาตรวจสอบรหัสนิสิตก่อนส่ง', false); return
+        await doLookup()
+        if (lookupState.value === 'miss') { errSid.value = 'ไม่พบรหัสนิสิตนี้ในระบบ'; showToast('ไม่พบรหัสนิสิตนี้ในระบบ', false); return }
+        if (lookupState.value !== 'found') { showToast('เชื่อมต่อไม่ได้ กรุณาลองใหม่อีกครั้ง', false); return }
       }
       submitting.value = true
       try {
