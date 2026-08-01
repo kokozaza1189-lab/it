@@ -131,7 +131,7 @@ class Payment extends MY_Controller {
         if (!empty($_FILES['slip']['name'])) {
             $config = [
                 'upload_path'   => FCPATH . 'assets/uploads/slips/',
-                'allowed_types' => 'jpg|jpeg|png|pdf',
+                'allowed_types' => 'jpg|jpeg|png|pdf|webp|heic|heif|gif',
                 'max_size'      => 5120,
                 'file_name'     => 'slip_' . $sid . '_' . $year . '_' . $month . '_' . time(),
             ];
