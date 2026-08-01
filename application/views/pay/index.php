@@ -384,10 +384,10 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-const BASE_FEE      = <?= $_view_fee ?>
-const BASE_PENALTY  = <?= (float)$penalty ?>
-const BASE_TOTAL    = <?= $_view_fee + (float)$penalty ?>
-const IS_OVERDUE_BASE = <?= $is_past_due ? 'true' : 'false' ?>
+const BASE_FEE      = <?= $_view_fee ?>;
+const BASE_PENALTY  = <?= (float)$penalty ?>;
+const BASE_TOTAL    = <?= $_view_fee + (float)$penalty ?>;
+const IS_OVERDUE_BASE = <?= $is_past_due ? 'true' : 'false' ?>;
 
 const { createApp, ref, computed } = Vue
 
@@ -395,8 +395,8 @@ createApp({
   setup() {
     const LOOKUP_URL = '<?= base_url('pay/lookup') ?>'
     const SUBMIT_URL = '<?= base_url('pay/submit') ?>'
-    const MONTH      = <?= (int)$month ?>
-    const YEAR       = <?= (int)$year ?>
+    const MONTH      = <?= (int)$month ?>;
+    const YEAR       = <?= (int)$year ?>;
 
     const studentId   = ref('<?= isset($prefill_sid) ? $prefill_sid : '' ?>')
     const foundName   = ref('')
