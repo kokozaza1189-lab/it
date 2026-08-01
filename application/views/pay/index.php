@@ -331,19 +331,23 @@ body { background: #f0f2f5; margin: 0; padding: 32px 12px; min-height: 100vh; }
         <p class="text-xs text-center mt-1" style="color:#2e7d32">✅ เลือกสลิปแล้ว</p>
       </div>
 
-      <!-- Drop zone -->
-      <label v-show="!slipPreview"
-             :class="['drop-zone', dragging ? 'dragging' : '']"
-             style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:8px;text-align:center"
-             @dragover.prevent="dragging=true"
-             @dragleave="dragging=false"
-             @drop.prevent="onDrop">
+      <!-- Hidden real input — opened via JS .click() from a user tap (most reliable
+           cross-mobile pattern). Visually hidden but present in DOM. -->
+      <input id="slipInput" type="file" accept="image/*,.pdf" @change="onFile"
+             style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"/>
+
+      <!-- Drop zone / tap target -->
+      <div v-show="!slipPreview" @click="pickFile"
+           :class="['drop-zone', dragging ? 'dragging' : '']"
+           style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;gap:8px;text-align:center;cursor:pointer"
+           @dragover.prevent="dragging=true"
+           @dragleave="dragging=false"
+           @drop.prevent="onDrop">
         <span style="font-size:36px">📎</span>
-        <p class="text-sm font-medium text-gray-600">แตะหรือลากไฟล์มาวางที่นี่</p>
+        <p class="text-sm font-medium text-gray-600">แตะเพื่อเลือกไฟล์สลิป</p>
         <p class="text-xs text-gray-400">PNG, JPG, PDF ไม่เกิน 5MB</p>
-        <input id="slipInput" type="file" accept="image/*,.pdf" @change="onFile"
-               style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"/>
-      </label>
+        <p v-show="slipName" style="display:none;margin-top:8px;font-size:13px;font-weight:700;color:#2e7d32" v-text="'✅ เลือกแล้ว: ' + slipName"></p>
+      </div>
 
       <p v-show="errSlip" style="display:none;margin-top:6px;color:#d93025;font-size:12px" v-text="errSlip"></p>
     </div>
@@ -401,6 +405,7 @@ createApp({
 
     const slipFile    = ref(null)
     const slipPreview = ref(null)
+    const slipName    = ref('')
     const dragging    = ref(false)
     const errSlip     = ref('')
 
@@ -467,14 +472,16 @@ createApp({
       return true
     }
 
+    function pickFile() { const el = document.getElementById('slipInput'); if (el) el.click() }
     function onFile(e) { loadFile(e.target.files[0]) }
     function onDrop(e) { dragging.value = false; loadFile(e.dataTransfer.files[0]) }
     function loadFile(file) {
       if (!file) return
       if (file.size > 5 * 1024 * 1024) { showToast('ไฟล์ใหญ่เกิน 5MB', false); return }
       slipFile.value = file
+      slipName.value = file.name || 'สลิป'
       errSlip.value = ''
-      if (file.type.startsWith('image/')) {
+      if (file.type && file.type.startsWith('image/')) {
         const r = new FileReader()
         r.onload = e => slipPreview.value = e.target.result
         r.readAsDataURL(file)
@@ -483,7 +490,7 @@ createApp({
       }
     }
     function clearSlip() {
-      slipFile.value = null; slipPreview.value = null
+      slipFile.value = null; slipPreview.value = null; slipName.value = ''
       const inp = document.getElementById('slipInput')
       if (inp) inp.value = ''
     }
@@ -531,11 +538,11 @@ createApp({
 
     return {
       studentId, foundName, lookupState, errSid,
-      slipFile, slipPreview, dragging, errSlip,
+      slipFile, slipPreview, slipName, dragging, errSlip,
       submitting, submitted, toastShow, toastMsg, toastOk,
       dbPayment, displayAmt, displayPen, displayTotal,
       isFullyPaid, isPending, isOverdue,
-      onSidInput, validateSid, onFile, onDrop, clearSlip, submit, reset
+      onSidInput, validateSid, pickFile, onFile, onDrop, clearSlip, submit, reset
     }
   }
 }).mount('#app')
