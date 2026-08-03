@@ -145,7 +145,48 @@ class Pay extends CI_Controller {
             ? (float)($settings['fee_january'] ?? 35)
             : (float)($settings['monthly_fee'] ?? 50);
         $this->Payment_model->submit_payment($sid, $year, $month, $file, $monthly_fee);
-        $this->_json(['success' => true, 'name' => $s->name]);
+
+        // AUTO slip verification via SlipOK — if the transfer covers the room fee,
+        // approve immediately (penalty waived); otherwise it stays pending for review.
+        $auto = 'pending';
+        if ($file) {
+            $rec = $this->Payment_model->get_month($sid, $year, $month);
+            $fee = $rec ? (float)$rec->amount : $monthly_fee;
+            if ($fee <= 0) $fee = $monthly_fee;
+            $v = $this->_slipok_verify(FCPATH . 'assets/uploads/slips/' . $file, $settings);
+            if (!empty($v['verified']) && $rec && ((float)$v['amount'] + 0.01) >= $fee) {
+                $this->Payment_model->update_status($rec->id, 'paid', date('Y-m-d'), 0, null); // penalty waived
+                $auto = 'paid';
+            }
+        }
+        $this->_json(['success' => true, 'name' => $s->name, 'auto' => $auto]);
+    }
+
+    // Verify a slip with SlipOK: returns ['verified'=>bool,'amount'=>float].
+    private function _slipok_verify($local_path, $settings) {
+        $key    = $settings['slipok_api_key']   ?? '';
+        $branch = $settings['slipok_branch_id'] ?? '';
+        if (!$key || !$branch || !is_file($local_path) || !function_exists('curl_init')) {
+            return ['verified' => false, 'amount' => 0];
+        }
+        $ch = curl_init('https://api.slipok.com/api/line/apikey/' . $branch);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_TIMEOUT        => 25,
+            CURLOPT_HTTPHEADER     => ['x-authorization: ' . $key],
+            CURLOPT_POSTFIELDS     => ['files' => new CURLFile($local_path), 'log' => 'true'],
+        ]);
+        $resp = curl_exec($ch);
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        $j = json_decode($resp, true) ?: [];
+        $d = isset($j['data']) && is_array($j['data']) ? $j['data'] : $j;
+        $amount = isset($d['amount']) ? (float)$d['amount'] : (isset($d['paidLocalAmount']) ? (float)$d['paidLocalAmount'] : 0);
+        if ($http == 200 && !empty($j['success']) && $amount > 0) {
+            return ['verified' => true, 'amount' => $amount];
+        }
+        return ['verified' => false, 'amount' => $amount];
     }
 
     private function _json($data, $code = 200) {
