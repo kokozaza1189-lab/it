@@ -5,6 +5,8 @@ class Profile extends MY_Controller {
 
     public function index() {
         $this->require_login();
+        header('X-LiteSpeed-Cache-Control: no-cache');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         $user_id = $this->get_user()['id'];
         $user    = $this->db->where('id', $user_id)->get('users')->row();
         $this->render('profile/index', [
