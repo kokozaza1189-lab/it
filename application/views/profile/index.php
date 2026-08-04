@@ -42,18 +42,18 @@ $role_labels = [
   <div class="col-span-1 lg:col-span-2">
     <div class="card">
       <h3 class="font-bold text-slate-800 mb-5">เปลี่ยนรหัสผ่าน</h3>
-      <div class="space-y-4 max-w-md">
+      <form class="space-y-4 max-w-md" id="cpForm" @submit.prevent="submit">
         <div>
           <label class="lbl">รหัสผ่านปัจจุบัน <span class="text-red-500">*</span></label>
-          <input id="cp_current" v-model="form.current" type="password" class="inp" placeholder="รหัสผ่านปัจจุบัน"/>
+          <input id="cp_current" name="current_password" v-model="form.current" type="password" class="inp" placeholder="รหัสผ่านปัจจุบัน"/>
         </div>
         <div>
           <label class="lbl">รหัสผ่านใหม่ <span class="text-red-500">*</span></label>
-          <input id="cp_new" v-model="form.new_pass" type="password" class="inp" placeholder="อย่างน้อย 8 ตัวอักษร"/>
+          <input id="cp_new" name="new_password" v-model="form.new_pass" type="password" class="inp" placeholder="อย่างน้อย 8 ตัวอักษร"/>
         </div>
         <div>
           <label class="lbl">ยืนยันรหัสผ่านใหม่ <span class="text-red-500">*</span></label>
-          <input id="cp_confirm" v-model="form.confirm" type="password" class="inp" placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"/>
+          <input id="cp_confirm" name="confirm_password" v-model="form.confirm" type="password" class="inp" placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"/>
         </div>
 
         <!-- Strength indicator -->
@@ -66,11 +66,11 @@ $role_labels = [
         <p v-show="error" style="display:none" class="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg p-3" v-text="error"></p>
         <p v-show="success" style="display:none" class="text-emerald-600 text-sm bg-emerald-50 border border-emerald-100 rounded-lg p-3" v-text="success"></p>
 
-        <button class="btn btn-blue" @click="submit" :disabled="saving">
+        <button type="submit" class="btn btn-blue" :disabled="saving">
           <span v-if="saving" class="spin">⏳</span>
           🔐 เปลี่ยนรหัสผ่าน
         </button>
-      </div>
+      </form>
     </div>
   </div>
 </div>
@@ -108,12 +108,15 @@ createApp({
 
     async function submit() {
       error.value = ''; success.value = ''
-      // Read straight from the DOM — browser autofill can populate a field without
-      // firing the input event that v-model relies on, leaving the model empty.
-      var _g = function(id){ var el = document.getElementById(id); return el ? el.value : '' }
-      form.current  = _g('cp_current')  || form.current
-      form.new_pass = _g('cp_new')      || form.new_pass
-      form.confirm  = _g('cp_confirm')  || form.confirm
+      // Read via FormData from the real <form> — this captures browser-autofilled
+      // values that Chrome hides from JS .value and that v-model never received.
+      var _f = document.getElementById('cpForm')
+      var _fd = _f ? new FormData(_f) : null
+      if (_fd) {
+        form.current  = (_fd.get('current_password') || form.current || '').toString()
+        form.new_pass = (_fd.get('new_password')     || form.new_pass || '').toString()
+        form.confirm  = (_fd.get('confirm_password') || form.confirm || '').toString()
+      }
       if (!form.current || !form.new_pass || !form.confirm) {
         error.value = 'กรุณากรอกข้อมูลให้ครบ'; return
       }
