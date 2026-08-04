@@ -42,7 +42,12 @@ $role_labels = [
   <div class="col-span-1 lg:col-span-2">
     <div class="card">
       <h3 class="font-bold text-slate-800 mb-5">เปลี่ยนรหัสผ่าน</h3>
-      <form class="space-y-4 max-w-md" id="cpForm" @submit.prevent="submit">
+      <?php if ($m = $this->session->flashdata('pw_success')): ?>
+        <p class="text-emerald-600 text-sm bg-emerald-50 border border-emerald-100 rounded-lg p-3 mb-4 max-w-md">✅ <?= htmlspecialchars($m) ?></p>
+      <?php elseif ($m = $this->session->flashdata('pw_error')): ?>
+        <p class="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg p-3 mb-4 max-w-md">⚠️ <?= htmlspecialchars($m) ?></p>
+      <?php endif; ?>
+      <form method="post" action="<?= base_url('profile/change_password') ?>" class="space-y-4 max-w-md" autocomplete="off">
         <div>
           <label class="lbl">รหัสผ่านปัจจุบัน <span class="text-red-500">*</span></label>
           <input id="cp_current" name="current_password" v-model="form.current" type="password" class="inp" placeholder="รหัสผ่านปัจจุบัน"/>
@@ -66,10 +71,7 @@ $role_labels = [
         <p v-show="error" style="display:none" class="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg p-3" v-text="error"></p>
         <p v-show="success" style="display:none" class="text-emerald-600 text-sm bg-emerald-50 border border-emerald-100 rounded-lg p-3" v-text="success"></p>
 
-        <button type="submit" class="btn btn-blue" :disabled="saving">
-          <span v-if="saving" class="spin">⏳</span>
-          🔐 เปลี่ยนรหัสผ่าน
-        </button>
+        <button type="submit" class="btn btn-blue">🔐 เปลี่ยนรหัสผ่าน</button>
       </form>
     </div>
   </div>

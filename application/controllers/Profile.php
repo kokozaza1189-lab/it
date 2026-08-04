@@ -15,30 +15,36 @@ class Profile extends MY_Controller {
         ]);
     }
 
+    // Native form POST (not AJAX) so browser-autofilled values are submitted reliably —
+    // Chrome hides autofilled password values from JS, which broke the old axios flow.
     public function change_password() {
         $this->require_login();
-        $current = $this->input->post('current_password');
-        $new     = $this->input->post('new_password');
-        $confirm = $this->input->post('confirm_password');
+        $current = (string)$this->input->post('current_password');
+        $new     = (string)$this->input->post('new_password');
+        $confirm = (string)$this->input->post('confirm_password');
 
-        if (!$current || !$new || !$confirm) {
-            $this->json(['error' => 'กรุณากรอกข้อมูลให้ครบ'], 400); return;
+        $err = null;
+        if ($current === '' || $new === '' || $confirm === '') $err = 'กรุณากรอกข้อมูลให้ครบ';
+        elseif ($new !== $confirm)                             $err = 'รหัสผ่านใหม่ไม่ตรงกัน';
+        elseif (strlen($new) < 8)                              $err = 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
+        else {
+            $user_id = $this->get_user()['id'];
+            $user    = $this->db->where('id', $user_id)->get('users')->row();
+            if (!$user || !password_verify($current, $user->password)) {
+                $err = 'รหัสผ่านปัจจุบันไม่ถูกต้อง';
+            } else {
+                $this->db->where('id', $user_id)->update('users', [
+                    'password'   => password_hash($new, PASSWORD_BCRYPT),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+            }
         }
-        if ($new !== $confirm) {
-            $this->json(['error' => 'รหัสผ่านใหม่ไม่ตรงกัน'], 400); return;
+        // Support both AJAX (legacy) and native form POST
+        if (strtolower((string)$this->input->server('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest') {
+            $err ? $this->json(['error' => $err], 400) : $this->json(['success' => true]);
+            return;
         }
-        if (strlen($new) < 8) {
-            $this->json(['error' => 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'], 400); return;
-        }
-        $user_id = $this->get_user()['id'];
-        $user    = $this->db->where('id', $user_id)->get('users')->row();
-        if (!password_verify($current, $user->password)) {
-            $this->json(['error' => 'รหัสผ่านปัจจุบันไม่ถูกต้อง'], 400); return;
-        }
-        $this->db->where('id', $user_id)->update('users', [
-            'password'   => password_hash($new, PASSWORD_BCRYPT),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-        $this->json(['success' => true]);
+        $this->session->set_flashdata($err ? 'pw_error' : 'pw_success', $err ?: 'เปลี่ยนรหัสผ่านสำเร็จ');
+        redirect('profile');
     }
 }
