@@ -45,15 +45,15 @@ $role_labels = [
       <div class="space-y-4 max-w-md">
         <div>
           <label class="lbl">รหัสผ่านปัจจุบัน <span class="text-red-500">*</span></label>
-          <input v-model="form.current" type="password" class="inp" placeholder="รหัสผ่านปัจจุบัน"/>
+          <input id="cp_current" v-model="form.current" type="password" class="inp" placeholder="รหัสผ่านปัจจุบัน"/>
         </div>
         <div>
           <label class="lbl">รหัสผ่านใหม่ <span class="text-red-500">*</span></label>
-          <input v-model="form.new_pass" type="password" class="inp" placeholder="อย่างน้อย 8 ตัวอักษร"/>
+          <input id="cp_new" v-model="form.new_pass" type="password" class="inp" placeholder="อย่างน้อย 8 ตัวอักษร"/>
         </div>
         <div>
           <label class="lbl">ยืนยันรหัสผ่านใหม่ <span class="text-red-500">*</span></label>
-          <input v-model="form.confirm" type="password" class="inp" placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"/>
+          <input id="cp_confirm" v-model="form.confirm" type="password" class="inp" placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"/>
         </div>
 
         <!-- Strength indicator -->
@@ -108,6 +108,12 @@ createApp({
 
     async function submit() {
       error.value = ''; success.value = ''
+      // Read straight from the DOM — browser autofill can populate a field without
+      // firing the input event that v-model relies on, leaving the model empty.
+      var _g = function(id){ var el = document.getElementById(id); return el ? el.value : '' }
+      form.current  = _g('cp_current')  || form.current
+      form.new_pass = _g('cp_new')      || form.new_pass
+      form.confirm  = _g('cp_confirm')  || form.confirm
       if (!form.current || !form.new_pass || !form.confirm) {
         error.value = 'กรุณากรอกข้อมูลให้ครบ'; return
       }
