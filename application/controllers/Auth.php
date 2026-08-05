@@ -57,7 +57,8 @@ class Auth extends MY_Controller {
         $data = [];
         if ($this->input->post()) {
             $this->form_validation->set_rules('name',       'ชื่อ-นามสกุล', 'required|trim|min_length[3]');
-            $this->form_validation->set_rules('student_id', 'รหัสนิสิต',    'required|min_length[10]|max_length[10]');
+            $this->form_validation->set_rules('student_id', 'รหัสนิสิต',    'required|min_length[10]|max_length[10]|is_unique[users.student_id]',
+                ['is_unique' => 'รหัสนิสิตนี้มีบัญชีอยู่แล้ว — กรุณาเข้าสู่ระบบ หรือกด "ลืมรหัสผ่าน" ถ้าจำรหัสไม่ได้']);
             $this->form_validation->set_rules('email',      'อีเมล',        'required|valid_email|is_unique[users.email]');
             $this->form_validation->set_rules('password',   'รหัสผ่าน',    'required|min_length[8]');
             $this->form_validation->set_rules('confirm',    'ยืนยันรหัสผ่าน','required|matches[password]');
