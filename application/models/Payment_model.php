@@ -64,6 +64,22 @@ class Payment_model extends CI_Model {
         }
     }
 
+    // Ensure every student has a record for the month (one efficient bulk insert).
+    // Missing rows are created with the given status so non-payers show up and can
+    // accrue penalties. Returns how many rows were created.
+    public function ensure_month_records($year, $month, $amount, $status) {
+        $this->db->query(
+            "INSERT INTO payment_records (student_id, year, month, status, amount, penalty, created_at)
+             SELECT s.student_id, ?, ?, ?, ?, 0, NOW() FROM students s
+             WHERE NOT EXISTS (
+                 SELECT 1 FROM payment_records pr
+                 WHERE pr.student_id = s.student_id AND pr.year = ? AND pr.month = ?
+             )",
+            [$year, $month, $status, $amount, $year, $month]
+        );
+        return $this->db->affected_rows();
+    }
+
     // Create payment records for all students in a month (if not already exists)
     public function generate_month($year, $month, $amount = 50) {
         $students = $this->db->get('students')->result();

@@ -57,10 +57,17 @@ class Payment extends MY_Controller {
         if ($year == $this->acad_year) {
             $cur_month = (int)date('n');
             if (in_array($cur_month, $active)) {
+                $due_day  = (int)($this->settings['due_day'] ?? 8);
+                // Ensure every student has a row for the current month so non-payers show up
+                // (as overdue once past the due date) and accrue penalties — no manual setup.
+                $past_due = time() > mktime(0, 0, 0, $cur_month, $due_day, $year - 543);
+                $this->Payment_model->ensure_month_records(
+                    $year, $cur_month, $this->fee_for_month($cur_month), $past_due ? 'overdue' : 'pending'
+                );
                 $this->Payment_model->recalc_penalties(
                     $year, $cur_month,
                     (float)($this->settings['penalty_per_day'] ?? 5),
-                    (int)($this->settings['due_day'] ?? 8)
+                    $due_day
                 );
             }
         }
