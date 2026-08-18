@@ -116,13 +116,15 @@ foreach ($students as $s) {
           <td>
             <button class="badge <?= $cls ?> cursor-pointer hover:opacity-80"
                     @click="openStatus(<?= htmlspecialchars(json_encode([
-                      'id'        => $p->id ?? null,
-                      'month'     => $m,
-                      'student'   => $s->name,
-                      'status'    => $p->status,
-                      'amount'    => isset($p->amount)  ? (float)$p->amount  : 35,
-                      'penalty'   => isset($p->penalty) ? (float)$p->penalty : 0,
-                      'slip_file' => isset($p->slip_file) ? $p->slip_file : null,
+                      'id'         => $p->id ?? null,
+                      'student_id' => $s->student_id,
+                      'year'       => $year,
+                      'month'      => $m,
+                      'student'    => $s->name,
+                      'status'     => $p->status,
+                      'amount'     => isset($p->amount)  ? (float)$p->amount  : 35,
+                      'penalty'    => isset($p->penalty) ? (float)$p->penalty : 0,
+                      'slip_file'  => isset($p->slip_file) ? $p->slip_file : null,
                     ]), ENT_QUOTES) ?>)">
               <?= $lbl ?>
               <?php
@@ -167,13 +169,15 @@ foreach ($students as $s) {
                 'pen'      => (float)$p->penalty,
                 'paid_fee' => $residual_pen,                            // true = only penalty left to collect
                 'rec'      => [   // payload for the openStatus payment form
-                    'id'        => $p->id ?? null,
-                    'month'     => $m,
-                    'student'   => $s->name,
-                    'status'    => $p->status,
-                    'amount'    => (float)$p->amount,
-                    'penalty'   => (float)$p->penalty,
-                    'slip_file' => $p->slip_file ?? null,
+                    'id'         => $p->id ?? null,
+                    'student_id' => $s->student_id,
+                    'year'       => $year,
+                    'month'      => $m,
+                    'student'    => $s->name,
+                    'status'     => $p->status,
+                    'amount'     => (float)$p->amount,
+                    'penalty'    => (float)$p->penalty,
+                    'slip_file'  => $p->slip_file ?? null,
                 ],
             ];
         }
@@ -355,7 +359,7 @@ createApp({
     const activeTab   = ref(_tabParam === 'penalty' ? 'penalty' : 'payment')
     const statusModal = ref(false)
     const saving      = ref(false)
-    const editData    = reactive({ id:null, month:0, student:'', status:'', paid_date:'', penalty:0, amount:0, slip_file:null })
+    const editData    = reactive({ id:null, student_id:'', year:0, month:0, student:'', status:'', paid_date:'', penalty:0, amount:0, slip_file:null })
     const slipUrl     = computed(() => editData.slip_file ? SLIP_BASE_URL + editData.slip_file : '')
 
     function exportExcel() {
@@ -383,15 +387,18 @@ createApp({
     }
 
     async function saveStatus() {
-      if (!editData.id) { showToast('ไม่พบ ID รายการ', false); return }
+      if (!editData.id && (!editData.student_id || !editData.month)) { showToast('ข้อมูลไม่ครบ', false); return }
       saving.value = true
       try {
         const fd = new FormData()
-        fd.append('id',        editData.id)
-        fd.append('status',    editData.status)
-        fd.append('amount',    editData.amount || 0)
-        fd.append('penalty',   editData.penalty || 0)
-        fd.append('paid_date', editData.paid_date || '')
+        fd.append('id',         editData.id || '')
+        fd.append('student_id', editData.student_id || '')
+        fd.append('year',       editData.year || '')
+        fd.append('month',      editData.month || '')
+        fd.append('status',     editData.status)
+        fd.append('amount',     editData.amount || 0)
+        fd.append('penalty',    editData.penalty || 0)
+        fd.append('paid_date',  editData.paid_date || '')
         const res = await axios.post('<?= base_url('payment/update_status') ?>', fd)
         // update_status returns JSON {success:true}; anything else = session/permission problem
         if (!res.data || res.data.success !== true) {

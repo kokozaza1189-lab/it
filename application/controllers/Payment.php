@@ -236,6 +236,33 @@ class Payment extends MY_Controller {
                    ? (float)$this->input->post('penalty') : null;
         $amount  = $this->input->post('amount') !== null && $this->input->post('amount') !== ''
                    ? (float)$this->input->post('amount') : null;
+
+        // No record yet for this student/month → find or create one, so a status can be
+        // set for any month (e.g. a restored student missing a past-month row).
+        if (!$id) {
+            $sid   = trim((string)$this->input->post('student_id'));
+            $year  = (int)($this->input->post('year') ?: $this->acad_year);
+            $month = (int)$this->input->post('month');
+            if ($sid && $month) {
+                $existing = $this->Payment_model->get_month($sid, $year, $month);
+                if ($existing) {
+                    $id = (int)$existing->id;
+                } else {
+                    $this->db->insert('payment_records', [
+                        'student_id' => $sid,
+                        'year'       => $year,
+                        'month'      => $month,
+                        'status'     => $status ?: 'overdue',
+                        'amount'     => $amount  !== null ? $amount  : $this->fee_for_month($month),
+                        'penalty'    => $penalty !== null ? $penalty : 0,
+                        'paid_date'  => $date,
+                    ]);
+                    $this->json(['success' => true, 'created' => true]);
+                    return;
+                }
+            }
+        }
+        if (!$id) { $this->json(['success' => false, 'error' => 'ไม่พบ ID รายการ'], 400); return; }
         $this->Payment_model->update_status($id, $status, $date, $penalty, $amount);
         $this->json(['success' => true]);
     }
